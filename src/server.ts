@@ -6,30 +6,30 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
-// Load environment variables
+// 環境変数の読み込み
 dotenv.config();
 
-// Import database
+// データベースのインポート
 import { testConnection } from './config/database';
 
-// Import routes
+// ルートのインポート
 import authRoutes from './routes/auth';
 import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
 
-// Import middleware
+// ミドルウェアのインポート
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
-// Security middleware
+// セキュリティミドルウェア
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable for development, configure properly in production
+  contentSecurityPolicy: false, // 開発環境では無効、本番環境では適切に設定
 }));
 
-// CORS configuration
+// CORS設定
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? process.env.APP_URL
@@ -37,40 +37,40 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
+// レート制限
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later',
+  windowMs: 15 * 60 * 1000, // 15分
+  max: 100, // 各IPを15分あたり100リクエストに制限
+  message: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
 });
 
 app.use('/api/', limiter);
 
-// Body parsing middleware
+// ボディパーサーミドルウェア
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Cookie parser
+// Cookieパーサー
 app.use(cookieParser());
 
-// Static files
+// 静的ファイル
 app.use(express.static(path.join(__dirname, '../public')));
 
-// View engine setup
+// ビューエンジンの設定
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Health check endpoint
+// ヘルスチェックエンドポイント
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API Routes
+// APIルート
 app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Serve basic HTML pages (for demonstration)
+// 基本的なHTMLページの提供（デモ用）
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -78,7 +78,7 @@ app.get('/', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Facility Reservation System</title>
+      <title>施設予約システム</title>
       <style>
         body {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -107,87 +107,87 @@ app.get('/', (req, res) => {
     </head>
     <body>
       <h1>施設予約システム</h1>
-      <p>Facility Reservation System - API Server</p>
+      <p>施設予約システム - APIサーバー</p>
 
       <div class="section">
-        <h2>API Endpoints</h2>
-        <p><strong>Public API:</strong></p>
+        <h2>APIエンドポイント</h2>
+        <p><strong>公開API:</strong></p>
         <ul>
-          <li>GET /api/rooms - List all rooms</li>
-          <li>GET /api/rooms/:id/availability - Check room availability</li>
-          <li>GET /api/equipment - List all equipment</li>
-          <li>POST /api/applications - Create reservation</li>
+          <li>GET /api/rooms - 全部屋の一覧取得</li>
+          <li>GET /api/rooms/:id/availability - 部屋の空き状況確認</li>
+          <li>GET /api/equipment - 全設備の一覧取得</li>
+          <li>POST /api/applications - 予約の作成</li>
         </ul>
 
-        <p><strong>Authentication:</strong></p>
+        <p><strong>認証:</strong></p>
         <ul>
-          <li>POST /api/auth/register - User registration</li>
-          <li>POST /api/auth/login - User login</li>
-          <li>POST /api/auth/logout - User logout</li>
+          <li>POST /api/auth/register - ユーザー登録</li>
+          <li>POST /api/auth/login - ログイン</li>
+          <li>POST /api/auth/logout - ログアウト</li>
         </ul>
 
-        <p><strong>Admin API:</strong></p>
+        <p><strong>管理者API:</strong></p>
         <ul>
-          <li>GET /api/admin/applications - List all applications</li>
-          <li>GET /api/admin/rooms - Manage rooms</li>
-          <li>GET /api/admin/equipment - Manage equipment</li>
+          <li>GET /api/admin/applications - 全申請の一覧取得</li>
+          <li>GET /api/admin/rooms - 部屋の管理</li>
+          <li>GET /api/admin/equipment - 設備の管理</li>
         </ul>
       </div>
 
       <div class="section">
-        <h2>Documentation</h2>
-        <p>For detailed API documentation and usage examples, see the README.md file.</p>
-        <p>Health check: <a href="/health">/health</a></p>
+        <h2>ドキュメント</h2>
+        <p>詳細なAPIドキュメントと使用例については、README.mdファイルを参照してください。</p>
+        <p>ヘルスチェック: <a href="/health">/health</a></p>
       </div>
     </body>
     </html>
   `);
 });
 
-// 404 handler
+// 404ハンドラー
 app.use(notFoundHandler);
 
-// Error handler (must be last)
+// エラーハンドラー（最後に配置する必要がある）
 app.use(errorHandler);
 
-// Start server
+// サーバーの起動
 async function startServer() {
   try {
-    // Test database connection
+    // データベース接続のテスト
     const dbConnected = await testConnection();
     if (!dbConnected) {
-      console.error('Failed to connect to database. Please check your configuration.');
+      console.error('データベースへの接続に失敗しました。設定を確認してください。');
       process.exit(1);
     }
 
-    // Start listening
+    // リスニング開始
     app.listen(PORT, HOST, () => {
       console.log('='.repeat(50));
-      console.log('Facility Reservation System');
+      console.log('施設予約システム');
       console.log('='.repeat(50));
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Server running at: http://${HOST}:${PORT}`);
-      console.log(`Health check: http://${HOST}:${PORT}/health`);
+      console.log(`環境: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`サーバー稼働中: http://${HOST}:${PORT}`);
+      console.log(`ヘルスチェック: http://${HOST}:${PORT}/health`);
       console.log('='.repeat(50));
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('サーバーの起動に失敗しました:', error);
     process.exit(1);
   }
 }
 
-// Handle graceful shutdown
+// グレースフルシャットダウンの処理
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  console.log('SIGTERMを受信しました。グレースフルシャットダウンを開始します...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
+  console.log('SIGINTを受信しました。グレースフルシャットダウンを開始します...');
   process.exit(0);
 });
 
-// Start the server
+// サーバーの起動
 startServer();
 
 export default app;

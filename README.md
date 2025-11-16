@@ -1,198 +1,198 @@
-# Facility Reservation System (施設予約システム)
+# 施設予約システム
 
-A production-ready web application for managing public facility room rentals and reservations with online payment integration.
+公共施設の部屋貸出・予約管理のための本番環境対応Webアプリケーションです。オンライン決済機能を統合しています。
 
-## Features
+## 主な機能
 
-- **Multi-room, Multi-date Reservations**: Book multiple rooms across multiple dates in a single application
-- **Flexible Time Slots**: Morning (09:00-12:00), Afternoon (13:00-17:00), Evening (18:00-21:30)
-- **Extension Blocks**: Optional midday (12:00-13:00) and evening (17:00-18:00) extensions
-- **Dynamic Pricing**: Automatic price calculation based on entrance fees (1.0x, 1.5x, 2.0x multipliers)
-- **Equipment Rental**: Comprehensive equipment catalog with per-slot and flat pricing
-- **Air Conditioning Tracking**: Staff-entered actual usage hours for accurate billing
-- **Online Payments**: Integration with payment providers (Stripe/Pay.jp)
-- **User Management**: Email-verified user registration and authentication
-- **Admin Dashboard**: Full management interface for staff
-- **Cancellation Policy**: Automatic fee calculation (0% before date, 100% on/after date)
+- **複数部屋・複数日予約**: 1つの申請で複数の部屋と日付を同時に予約可能
+- **柔軟な時間帯設定**: 午前（09:00-12:00）、午後（13:00-17:00）、夜間（18:00-21:30）
+- **延長時間帯**: 正午延長（12:00-13:00）、夕方延長（17:00-18:00）オプション
+- **動的料金計算**: 入場料金に応じた自動料金計算（1.0倍、1.5倍、2.0倍）
+- **設備レンタル**: ステージ、照明、音響機器などの包括的な設備カタログ
+- **空調使用追跡**: 職員が実際の使用時間を入力して正確な請求を実現
+- **オンライン決済**: 決済プロバイダー（Stripe/Pay.jp）との統合
+- **ユーザー管理**: メール認証付きユーザー登録と認証機能
+- **管理者ダッシュボード**: 職員向けの完全な管理インターフェース
+- **キャンセルポリシー**: 自動キャンセル料金計算（使用日前0%、当日以降100%）
 
-## Tech Stack
+## 技術スタック
 
-### Backend
-- **Runtime**: Node.js 20+
-- **Language**: TypeScript
-- **Framework**: Express.js
-- **Database**: MySQL 8.0 / MariaDB 10.11
+### バックエンド
+- **実行環境**: Node.js 20+
+- **言語**: TypeScript
+- **フレームワーク**: Express.js
+- **データベース**: MySQL 8.0 / MariaDB 10.11
 
-### Frontend
-- **Rendering**: Server-side EJS templates
-- **Styling**: Responsive CSS (mobile-first for public, desktop for admin)
-- **JavaScript**: Plain JavaScript (ES6+)
+### フロントエンド
+- **レンダリング**: サーバーサイドEJSテンプレート
+- **スタイリング**: レスポンシブCSS（一般向けはモバイルファースト、管理者向けはデスクトップ）
+- **JavaScript**: プレーンJavaScript（ES6+）
 
-### Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Reverse Proxy**: Nginx
-- **Process Manager**: systemd (for non-Docker deployments)
+### インフラストラクチャ
+- **コンテナ化**: Docker & Docker Compose
+- **リバースプロキシ**: Nginx
+- **プロセス管理**: systemd（非Docker環境向け）
 
-## Prerequisites
+## 必要な環境
 
-### For Docker Deployment
-- Docker 20.10+
-- Docker Compose 2.0+
+### Docker環境の場合
+- Docker 20.10以上
+- Docker Compose 2.0以上
 
-### For Non-Docker Deployment
-- Node.js 20+
-- MySQL 8.0 or MariaDB 10.11+
-- Nginx (optional, for reverse proxy)
+### 非Docker環境の場合
+- Node.js 20以上
+- MySQL 8.0 または MariaDB 10.11以上
+- Nginx（オプション、リバースプロキシ用）
 
-## Installation & Setup
+## インストールとセットアップ
 
-### 1. Clone the Repository
+### 1. リポジトリのクローン
 
 ```bash
 git clone https://github.com/your-org/facility-reservation-system.git
 cd facility-reservation-system
 ```
 
-### 2. Environment Configuration
+### 2. 環境変数の設定
 
-Copy the example environment file and configure it:
+サンプルの環境変数ファイルをコピーして設定します：
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your settings:
+`.env`ファイルを編集して設定を行います：
 
 ```env
-# Database
+# データベース設定
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=facility_user
 DB_PASSWORD=your_secure_password
 DB_NAME=facility_reservation
 
-# JWT Secret (generate a strong random string)
+# JWT秘密鍵（強力なランダム文字列を生成してください）
 JWT_SECRET=your_jwt_secret_key
 
-# Email Configuration
+# メール設定
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=noreply@example.com
 SMTP_PASSWORD=your_smtp_password
 
-# Payment Provider
+# 決済プロバイダー設定
 PAYMENT_PROVIDER=stripe
 PAYMENT_API_KEY=sk_live_your_key
 
-# Application URL
+# アプリケーションURL
 APP_URL=https://your-domain.com
 ```
 
-### 3A. Docker Deployment (Recommended)
+### 3A. Docker環境でのデプロイ（推奨）
 
-#### Start All Services
+#### 全サービスの起動
 
 ```bash
 docker-compose up -d
 ```
 
-This will start:
-- Application server (Node.js)
-- Database (MariaDB)
-- Reverse proxy (Nginx)
+以下のサービスが起動します：
+- アプリケーションサーバー（Node.js）
+- データベース（MariaDB）
+- リバースプロキシ（Nginx）
 
-#### Run Database Migrations
+#### データベースマイグレーションの実行
 
 ```bash
 docker-compose exec app npm run migrate
 ```
 
-#### View Logs
+#### ログの確認
 
 ```bash
-# All services
+# 全サービスのログ
 docker-compose logs -f
 
-# Specific service
+# 特定のサービスのログ
 docker-compose logs -f app
 docker-compose logs -f db
 docker-compose logs -f nginx
 ```
 
-#### Stop Services
+#### サービスの停止
 
 ```bash
 docker-compose down
 ```
 
-#### Access the Application
+#### アプリケーションへのアクセス
 
 - HTTP: http://localhost
-- HTTPS: https://localhost (after SSL configuration)
-- API Health Check: http://localhost/health
+- HTTPS: https://localhost（SSL設定後）
+- APIヘルスチェック: http://localhost/health
 
-### 3B. Non-Docker Deployment
+### 3B. 非Docker環境でのデプロイ
 
-#### Install Dependencies
+#### 依存関係のインストール
 
 ```bash
 npm install
 ```
 
-#### Set Up MySQL Database
+#### MySQLデータベースのセットアップ
 
 ```bash
-# Login to MySQL
+# MySQLにログイン
 mysql -u root -p
 
-# Create database and user
+# データベースとユーザーの作成
 CREATE DATABASE facility_reservation CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'facility_user'@'localhost' IDENTIFIED BY 'your_secure_password';
 GRANT ALL PRIVILEGES ON facility_reservation.* TO 'facility_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-#### Run Database Migrations
+#### データベースマイグレーションの実行
 
 ```bash
 npm run build
 npm run migrate
 ```
 
-#### Start the Application
+#### アプリケーションの起動
 
-**Development Mode:**
+**開発モード：**
 ```bash
 npm run dev
 ```
 
-**Production Mode:**
+**本番モード：**
 ```bash
 npm run build
 npm start
 ```
 
-#### systemd Service Setup (Production)
+#### systemdサービスのセットアップ（本番環境）
 
-1. Build the application:
+1. アプリケーションのビルド：
 ```bash
 npm run build
 ```
 
-2. Copy files to deployment directory:
+2. デプロイディレクトリへのファイルコピー：
 ```bash
 sudo mkdir -p /var/www/facility-reservation
 sudo cp -r dist node_modules migrations public uploads package.json /var/www/facility-reservation/
 sudo cp .env /var/www/facility-reservation/.env
 ```
 
-3. Create application user:
+3. アプリケーション用ユーザーの作成：
 ```bash
 sudo useradd -r -s /bin/false appuser
 sudo chown -R appuser:appuser /var/www/facility-reservation
 ```
 
-4. Install systemd service:
+4. systemdサービスのインストール：
 ```bash
 sudo cp facility-reservation.service /etc/systemd/system/
 sudo systemctl daemon-reload
@@ -200,15 +200,15 @@ sudo systemctl enable facility-reservation
 sudo systemctl start facility-reservation
 ```
 
-5. Check status:
+5. ステータスの確認：
 ```bash
 sudo systemctl status facility-reservation
 sudo journalctl -u facility-reservation -f
 ```
 
-### 4. Nginx Configuration (Non-Docker)
+### 4. Nginx設定（非Docker環境）
 
-For non-Docker deployments, configure Nginx as a reverse proxy:
+非Docker環境の場合、Nginxをリバースプロキシとして設定します：
 
 ```bash
 sudo cp nginx/conf.d/default.conf /etc/nginx/sites-available/facility-reservation
@@ -217,209 +217,209 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## Default Admin Account
+## デフォルト管理者アカウント
 
-After running migrations, a default admin account is created:
+マイグレーション実行後、デフォルトの管理者アカウントが作成されます：
 
-- **Email**: admin@example.com
-- **Password**: admin123
+- **メールアドレス**: admin@example.com
+- **パスワード**: admin123
 
-**⚠️ IMPORTANT**: Change this password immediately after first login!
+**⚠️ 重要**: 初回ログイン後、必ずパスワードを変更してください！
 
-## API Documentation
+## API ドキュメント
 
-### Public Endpoints
+### 公開エンドポイント
 
-#### Rooms
-- `GET /api/rooms` - List all active rooms
-- `GET /api/rooms/:id` - Get room details
-- `GET /api/rooms/:id/availability?year=2025&month=12` - Check availability
+#### 部屋（Rooms）
+- `GET /api/rooms` - 利用可能な部屋の一覧取得
+- `GET /api/rooms/:id` - 部屋の詳細情報取得
+- `GET /api/rooms/:id/availability?year=2025&month=12` - 空き状況の確認
 
-#### Equipment
-- `GET /api/equipment` - List all equipment (grouped by category)
+#### 設備（Equipment）
+- `GET /api/equipment` - 全設備の一覧取得（カテゴリー別）
 
-#### Applications (Reservations)
-- `POST /api/applications` - Create new reservation
-- `GET /api/applications/:id` - Get reservation details
-- `GET /api/my-applications` - Get user's reservations (authenticated)
+#### 申請・予約（Applications）
+- `POST /api/applications` - 新規予約の作成
+- `GET /api/applications/:id` - 予約の詳細取得
+- `GET /api/my-applications` - ユーザーの予約一覧取得（要認証）
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/verify-email` - Verify email with code
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `POST /api/auth/request-password-reset` - Request password reset
-- `POST /api/auth/reset-password` - Reset password with token
+### 認証（Authentication）
+- `POST /api/auth/register` - 新規ユーザー登録
+- `POST /api/auth/verify-email` - メールアドレスの認証（コード入力）
+- `POST /api/auth/login` - ログイン
+- `POST /api/auth/logout` - ログアウト
+- `POST /api/auth/request-password-reset` - パスワードリセット要求
+- `POST /api/auth/reset-password` - パスワードリセット（トークン使用）
 
-### Admin Endpoints (Require Admin Authentication)
+### 管理者エンドポイント（管理者認証が必要）
 
-#### Application Management
-- `GET /api/admin/applications` - List all applications (with filters)
-- `GET /api/admin/applications/:id` - Get application details
-- `PATCH /api/admin/applications/:id` - Update application
-- `POST /api/admin/applications/:id/cancel` - Cancel application
+#### 申請管理
+- `GET /api/admin/applications` - 全申請の一覧取得（フィルター機能付き）
+- `GET /api/admin/applications/:id` - 申請の詳細取得
+- `PATCH /api/admin/applications/:id` - 申請の更新
+- `POST /api/admin/applications/:id/cancel` - 申請のキャンセル
 
-#### Room Management
-- `GET /api/admin/rooms` - List all rooms
-- `POST /api/admin/rooms` - Create room
-- `PATCH /api/admin/rooms/:id` - Update room
-- `DELETE /api/admin/rooms/:id` - Delete room (soft delete)
+#### 部屋管理
+- `GET /api/admin/rooms` - 全部屋の一覧取得
+- `POST /api/admin/rooms` - 部屋の作成
+- `PATCH /api/admin/rooms/:id` - 部屋の更新
+- `DELETE /api/admin/rooms/:id` - 部屋の削除（論理削除）
 
-#### Equipment Management
-- `GET /api/admin/equipment` - List all equipment
-- `POST /api/admin/equipment` - Create equipment
-- `PATCH /api/admin/equipment/:id` - Update equipment
-- `DELETE /api/admin/equipment/:id` - Delete equipment (soft delete)
+#### 設備管理
+- `GET /api/admin/equipment` - 全設備の一覧取得
+- `POST /api/admin/equipment` - 設備の作成
+- `PATCH /api/admin/equipment/:id` - 設備の更新
+- `DELETE /api/admin/equipment/:id` - 設備の削除（論理削除）
 
-#### Usage Management
-- `PATCH /api/admin/usages/:id/ac-hours` - Update AC hours
+#### 使用実績管理
+- `PATCH /api/admin/usages/:id/ac-hours` - 空調使用時間の更新
 
-## Testing
+## テスト
 
-Run unit tests for pricing logic:
+料金計算ロジックの単体テストを実行：
 
 ```bash
 npm test
 ```
 
-## Pricing Logic
+## 料金計算ロジック
 
-The system implements complex pricing rules:
+システムは複雑な料金計算ルールを実装しています：
 
-### Time Slots
-- **Morning**: 09:00-12:00
-- **Afternoon**: 13:00-17:00
-- **Evening**: 18:00-21:30
+### 時間帯
+- **午前**: 09:00-12:00
+- **午後**: 13:00-17:00
+- **夜間**: 18:00-21:30
 
-### Extension Blocks
-- **Midday Extension**: 12:00-13:00 (FREE if Morning + Afternoon, otherwise charged)
-- **Evening Extension**: 17:00-18:00 (FREE if Afternoon + Evening, otherwise charged)
+### 延長時間帯
+- **正午延長**: 12:00-13:00（午前+午後利用時は無料、それ以外は有料）
+- **夕方延長**: 17:00-18:00（午後+夜間利用時は無料、それ以外は有料）
 
-### Entrance Fee Multiplier
-Applies ONLY to room charges:
-- Free or ¥0: 1.0x
-- ¥1-¥3,000: 1.5x
-- ¥3,001+: 2.0x
+### 入場料倍率
+部屋料金のみに適用：
+- 無料または¥0: 1.0倍
+- ¥1〜¥3,000: 1.5倍
+- ¥3,001以上: 2.0倍
 
-### Equipment Pricing
-- **per_slot**: `unit_price × quantity × slot_count`
-- **flat**: `unit_price` (one-time fee)
-- **free**: ¥0
+### 設備料金
+- **per_slot（枠単位）**: `単価 × 数量 × 使用枠数`
+- **flat（一律）**: `単価`（1回の料金）
+- **free（無料）**: ¥0
 
-### Air Conditioning
-- Charged based on actual hours used (staff-entered)
-- Formula: `ac_hours × ac_price_per_hour`
+### 空調料金
+- 実際の使用時間（職員入力）に基づいて計算
+- 計算式: `使用時間 × 時間単価`
 
-### Cancellation Fees
-- Cancelled BEFORE usage date: 0%
-- Cancelled ON or AFTER usage date: 100%
+### キャンセル料金
+- 使用日前のキャンセル: 0%
+- 使用日当日以降のキャンセル: 100%
 
-## SSL/TLS Configuration
+## SSL/TLS設定
 
-### Let's Encrypt (Recommended for Production)
+### Let's Encrypt（本番環境推奨）
 
-1. Install Certbot:
+1. Certbotのインストール：
 ```bash
 sudo apt-get install certbot python3-certbot-nginx
 ```
 
-2. Obtain certificate:
+2. 証明書の取得：
 ```bash
 sudo certbot --nginx -d your-domain.com
 ```
 
-3. Update `nginx/conf.d/default.conf` with SSL configuration
+3. `nginx/conf.d/default.conf`をSSL設定で更新
 
-4. Auto-renewal:
+4. 自動更新の設定：
 ```bash
 sudo certbot renew --dry-run
 ```
 
-## Backup & Maintenance
+## バックアップとメンテナンス
 
-### Database Backup
+### データベースバックアップ
 
 ```bash
-# Docker
+# Docker環境
 docker-compose exec db mysqldump -u facility_user -p facility_reservation > backup.sql
 
-# Non-Docker
+# 非Docker環境
 mysqldump -u facility_user -p facility_reservation > backup.sql
 ```
 
-### Database Restore
+### データベースリストア
 
 ```bash
-# Docker
+# Docker環境
 docker-compose exec -T db mysql -u facility_user -p facility_reservation < backup.sql
 
-# Non-Docker
+# 非Docker環境
 mysql -u facility_user -p facility_reservation < backup.sql
 ```
 
-## Troubleshooting
+## トラブルシューティング
 
-### Database Connection Issues
+### データベース接続の問題
 
 ```bash
-# Check database is running
+# データベースが起動しているか確認
 docker-compose ps db
 
-# Check connection from app container
+# アプリコンテナから接続確認
 docker-compose exec app npm run migrate
 ```
 
-### Port Conflicts
+### ポート競合
 
-If port 80 or 3306 is already in use, modify `docker-compose.yml`:
+ポート80または3306が既に使用中の場合、`docker-compose.yml`を修正：
 
 ```yaml
 nginx:
   ports:
-    - "8080:80"  # Use port 8080 instead
+    - "8080:80"  # ポート8080を使用
 
 db:
   ports:
-    - "3307:3306"  # Use port 3307 instead
+    - "3307:3306"  # ポート3307を使用
 ```
 
-### Email Not Sending
+### メールが送信されない
 
-In development, check console logs for email content:
+開発環境では、コンソールログでメール内容を確認：
 
 ```bash
 docker-compose logs -f app | grep "\[DEV\]"
 ```
 
-## Security Recommendations
+## セキュリティ推奨事項
 
-1. **Change default admin password** immediately
-2. **Use strong JWT secret** (minimum 32 characters)
-3. **Enable HTTPS** in production
-4. **Configure firewall** to restrict database access
-5. **Set up regular backups**
-6. **Keep dependencies updated**: `npm audit` and `npm update`
-7. **Use environment variables** for all secrets
-8. **Enable rate limiting** (already configured)
+1. **デフォルト管理者パスワードを即座に変更**
+2. **強力なJWT秘密鍵を使用**（最低32文字）
+3. **本番環境ではHTTPSを有効化**
+4. **ファイアウォールを設定**してデータベースアクセスを制限
+5. **定期的なバックアップを設定**
+6. **依存関係を最新に保つ**: `npm audit`と`npm update`を実行
+7. **全ての秘密情報は環境変数を使用**
+8. **レート制限を有効化**（既に設定済み）
 
-## Contributing
+## 貢献
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -am 'Add new feature'`
-4. Push to the branch: `git push origin feature/my-feature`
-5. Submit a pull request
+1. リポジトリをフォーク
+2. 機能ブランチを作成: `git checkout -b feature/my-feature`
+3. 変更をコミット: `git commit -am '新機能を追加'`
+4. ブランチにプッシュ: `git push origin feature/my-feature`
+5. プルリクエストを送信
 
-## License
+## ライセンス
 
 ISC
 
-## Support
+## サポート
 
-For issues and questions:
+問題や質問がある場合：
 - GitHub Issues: https://github.com/your-org/facility-reservation-system/issues
 - Email: support@example.com
 
 ---
 
-**Built with ❤️ for public facility management**
+**公共施設管理のために ❤️ を込めて開発**

@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Database configuration
+// データベース設定
 export const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306', 10),
@@ -13,35 +13,35 @@ export const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: '+00:00', // Store dates as UTC
+  timezone: '+00:00', // 日付をUTCとして保存
   dateStrings: false,
 };
 
-// Create connection pool
+// コネクションプールの作成
 export const pool = mysql.createPool(dbConfig);
 
 /**
- * Test database connection
+ * データベース接続のテスト
  */
 export async function testConnection(): Promise<boolean> {
   try {
     const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
-    console.log('✓ Database connection successful');
+    console.log('✓ データベース接続成功');
     return true;
   } catch (error: any) {
-    console.error('✗ Database connection failed:', error.message);
+    console.error('✗ データベース接続失敗:', error.message);
     return false;
   }
 }
 
 /**
- * Close all connections in the pool
+ * プール内のすべての接続を閉じる
  */
 export async function closePool(): Promise<void> {
   await pool.end();
-  console.log('Database pool closed');
+  console.log('データベースプールをクローズしました');
 }
 
 export default pool;

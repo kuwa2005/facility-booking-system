@@ -1,58 +1,58 @@
 /**
- * Pricing calculation module for facility reservation system
+ * 施設予約システムの料金計算モジュール
  *
- * This module implements all pricing logic including:
- * - Room base charges and extension charges
- * - Entrance fee multipliers
- * - Equipment charges
- * - Air conditioning charges
- * - Cancellation fees
+ * このモジュールは以下の料金計算ロジックを実装しています：
+ * - 部屋の基本料金と延長料金
+ * - 入場料倍率
+ * - 設備料金
+ * - 空調料金
+ * - キャンセル料金
  */
 
 export interface Room {
   id: number;
   name: string;
-  base_price_morning: number;
-  base_price_afternoon: number;
-  base_price_evening: number;
-  extension_price_midday: number;
-  extension_price_evening: number;
-  ac_price_per_hour: number;
+  base_price_morning: number;      // 午前の基本料金
+  base_price_afternoon: number;    // 午後の基本料金
+  base_price_evening: number;      // 夜間の基本料金
+  extension_price_midday: number;  // 正午延長料金
+  extension_price_evening: number; // 夕方延長料金
+  ac_price_per_hour: number;       // 空調の時間単価
 }
 
 export interface UsageInput {
-  useMorning: boolean;
-  useAfternoon: boolean;
-  useEvening: boolean;
-  useMiddayExtension: boolean;
-  useEveningExtension: boolean;
-  acRequested: boolean;
-  acHours?: number; // Actual hours used (may be null during reservation)
+  useMorning: boolean;           // 午前を使用
+  useAfternoon: boolean;         // 午後を使用
+  useEvening: boolean;           // 夜間を使用
+  useMiddayExtension: boolean;   // 正午延長を使用
+  useEveningExtension: boolean;  // 夕方延長を使用
+  acRequested: boolean;          // 空調を要求
+  acHours?: number;              // 実際の使用時間（予約時はnullの可能性あり）
 }
 
 export interface EquipmentUsageInput {
-  equipmentId: number;
-  priceType: 'per_slot' | 'flat' | 'free';
-  unitPrice: number;
-  quantity: number;
-  slotCount: number; // Number of main slots (morning, afternoon, evening)
+  equipmentId: number;                      // 設備ID
+  priceType: 'per_slot' | 'flat' | 'free'; // 料金タイプ
+  unitPrice: number;                        // 単価
+  quantity: number;                         // 数量
+  slotCount: number;                        // 主要枠数（午前、午後、夜間）
 }
 
 export interface UsageCharges {
-  roomBaseChargeBeforeMultiplier: number;
-  roomChargeAfterMultiplier: number;
-  equipmentCharge: number;
-  acCharge: number;
-  subtotalAmount: number;
+  roomBaseChargeBeforeMultiplier: number; // 倍率適用前の部屋料金
+  roomChargeAfterMultiplier: number;      // 倍率適用後の部屋料金
+  equipmentCharge: number;                 // 設備料金
+  acCharge: number;                        // 空調料金
+  subtotalAmount: number;                  // 小計金額
 }
 
 /**
- * Calculate the ticket multiplier based on entrance fee amount
+ * 入場料金額に基づいて入場料倍率を計算
  *
- * Rules:
- * - Free (0 yen): 1.0x
- * - 1-3000 yen: 1.5x
- * - 3001+ yen: 2.0x
+ * ルール：
+ * - 無料（0円）: 1.0倍
+ * - 1〜3000円: 1.5倍
+ * - 3001円以上: 2.0倍
  */
 export function calculateTicketMultiplier(
   entranceFeeType: 'free' | 'paid',
@@ -74,7 +74,7 @@ export function calculateTicketMultiplier(
 }
 
 /**
- * Calculate the number of main slots (morning, afternoon, evening) being used
+ * 使用している主要枠（午前、午後、夜間）の数を計算
  */
 function countMainSlots(usage: UsageInput): number {
   let count = 0;
@@ -85,17 +85,17 @@ function countMainSlots(usage: UsageInput): number {
 }
 
 /**
- * Calculate room base charges including main slots and extension blocks
+ * 主要枠と延長枠を含む部屋の基本料金を計算
  *
- * Rules:
- * - Main slots are charged at their base prices
- * - Extension blocks are FREE if both adjacent slots are booked
- * - Extension blocks are CHARGED if used without continuous adjacent booking
+ * ルール：
+ * - 主要枠は基本料金で課金
+ * - 延長枠は隣接する両方の枠が予約されている場合は無料
+ * - 延長枠は連続予約なしで使用される場合は課金
  */
 function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
   let charge = 0;
 
-  // Add base slot charges
+  // 基本枠の料金を追加
   if (usage.useMorning) {
     charge += room.base_price_morning;
   }
@@ -108,18 +108,18 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
     charge += room.base_price_evening;
   }
 
-  // Handle midday extension (12:00-13:00, between Morning and Afternoon)
+  // 正午延長（12:00-13:00、午前と午後の間）を処理
   if (usage.useMiddayExtension) {
-    // Free if both Morning AND Afternoon are booked
+    // 午前と午後の両方が予約されている場合は無料
     const isFree = usage.useMorning && usage.useAfternoon;
     if (!isFree) {
       charge += room.extension_price_midday;
     }
   }
 
-  // Handle evening extension (17:00-18:00, between Afternoon and Evening)
+  // 夕方延長（17:00-18:00、午後と夜間の間）を処理
   if (usage.useEveningExtension) {
-    // Free if both Afternoon AND Evening are booked
+    // 午後と夜間の両方が予約されている場合は無料
     const isFree = usage.useAfternoon && usage.useEvening;
     if (!isFree) {
       charge += room.extension_price_evening;
@@ -130,7 +130,7 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
 }
 
 /**
- * Calculate equipment charges based on price type and quantity
+ * 料金タイプと数量に基づいて設備料金を計算
  */
 function calculateEquipmentCharge(equipmentUsages: EquipmentUsageInput[]): number {
   let total = 0;
@@ -141,10 +141,10 @@ function calculateEquipmentCharge(equipmentUsages: EquipmentUsageInput[]): numbe
     }
 
     if (equipment.priceType === 'per_slot') {
-      // Charge = unit_price * quantity * slot_count
+      // 料金 = 単価 × 数量 × 枠数
       total += equipment.unitPrice * equipment.quantity * equipment.slotCount;
     } else if (equipment.priceType === 'flat') {
-      // Charge = unit_price (flat fee, ignore slot_count)
+      // 料金 = 単価（定額料金、枠数は無視）
       total += equipment.unitPrice;
     }
   }
@@ -153,9 +153,9 @@ function calculateEquipmentCharge(equipmentUsages: EquipmentUsageInput[]): numbe
 }
 
 /**
- * Calculate air conditioning charge
+ * 空調料金を計算
  *
- * Charge = actual_hours * ac_price_per_hour
+ * 料金 = 実使用時間 × 時間単価
  */
 function calculateAcCharge(room: Room, usage: UsageInput): number {
   if (!usage.acRequested || !usage.acHours || usage.acHours <= 0) {
@@ -166,13 +166,13 @@ function calculateAcCharge(room: Room, usage: UsageInput): number {
 }
 
 /**
- * Calculate all charges for a single usage line
+ * 1つの使用明細のすべての料金を計算
  *
- * @param room - The room being used
- * @param usageInput - Usage details (slots, AC, etc.)
- * @param equipmentUsages - Equipment being used
- * @param ticketMultiplier - Multiplier based on entrance fee (1.0, 1.5, or 2.0)
- * @returns Detailed breakdown of all charges
+ * @param room - 使用する部屋
+ * @param usageInput - 使用詳細（枠、空調など）
+ * @param equipmentUsages - 使用する設備
+ * @param ticketMultiplier - 入場料に基づく倍率（1.0、1.5、または2.0）
+ * @returns すべての料金の詳細内訳
  */
 export function calculateUsageCharges(
   room: Room,
@@ -180,19 +180,19 @@ export function calculateUsageCharges(
   equipmentUsages: EquipmentUsageInput[],
   ticketMultiplier: number
 ): UsageCharges {
-  // Calculate room base charge (before multiplier)
+  // 部屋の基本料金を計算（倍率適用前）
   const roomBaseChargeBeforeMultiplier = calculateRoomBaseCharge(room, usageInput);
 
-  // Apply entrance fee multiplier to room charge ONLY
+  // 入場料倍率を部屋料金のみに適用
   const roomChargeAfterMultiplier = Math.round(roomBaseChargeBeforeMultiplier * ticketMultiplier);
 
-  // Calculate equipment charge (NOT affected by multiplier)
+  // 設備料金を計算（倍率の影響を受けない）
   const equipmentCharge = calculateEquipmentCharge(equipmentUsages);
 
-  // Calculate AC charge (NOT affected by multiplier)
+  // 空調料金を計算（倍率の影響を受けない）
   const acCharge = calculateAcCharge(room, usageInput);
 
-  // Total subtotal
+  // 小計合計
   const subtotalAmount = roomChargeAfterMultiplier + equipmentCharge + acCharge;
 
   return {
@@ -205,28 +205,28 @@ export function calculateUsageCharges(
 }
 
 /**
- * Calculate cancellation fee based on cancellation date and usage date
+ * キャンセル日と使用日に基づいてキャンセル料金を計算
  *
- * Rules:
- * - If cancelled BEFORE the usage date (calendar date): 0% (no fee)
- * - If cancelled ON or AFTER the usage date: 100% (full charge)
+ * ルール：
+ * - 使用日前（暦日）にキャンセル: 0%（料金なし）
+ * - 使用日当日以降にキャンセル: 100%（全額）
  *
- * @param usageDate - The date of the scheduled usage
- * @param cancelledAt - The datetime when cancellation occurred (null if not cancelled)
- * @param subtotalAmount - The total amount to be charged for this usage
- * @returns Cancellation fee amount
+ * @param usageDate - 予定されている使用日
+ * @param cancelledAt - キャンセルが発生した日時（キャンセルされていない場合はnull）
+ * @param subtotalAmount - この使用に対して課金される合計金額
+ * @returns キャンセル料金額
  */
 export function calculateCancellationFee(
   usageDate: Date,
   cancelledAt: Date | null,
   subtotalAmount: number
 ): number {
-  // Not cancelled
+  // キャンセルされていない
   if (!cancelledAt) {
     return 0;
   }
 
-  // Compare calendar dates (ignore time)
+  // 暦日を比較（時刻は無視）
   const usageDateOnly = new Date(usageDate.getFullYear(), usageDate.getMonth(), usageDate.getDate());
   const cancelledDateOnly = new Date(
     cancelledAt.getFullYear(),
@@ -234,24 +234,24 @@ export function calculateCancellationFee(
     cancelledAt.getDate()
   );
 
-  // If cancelled before the usage date: 0% fee
+  // 使用日前にキャンセルされた場合: 0%料金
   if (cancelledDateOnly < usageDateOnly) {
     return 0;
   }
 
-  // If cancelled on or after the usage date: 100% fee
+  // 使用日当日以降にキャンセルされた場合: 100%料金
   return subtotalAmount;
 }
 
 /**
- * Helper function to calculate total application amount from multiple usages
+ * 複数の使用から申請合計金額を計算するヘルパー関数
  */
 export function calculateApplicationTotal(usageCharges: UsageCharges[]): number {
   return usageCharges.reduce((total, usage) => total + usage.subtotalAmount, 0);
 }
 
 /**
- * Validate usage input to ensure at least one slot is selected
+ * 少なくとも1つの枠が選択されていることを確認するために使用入力を検証
  */
 export function validateUsageInput(usage: UsageInput): { valid: boolean; error?: string } {
   const hasMainSlot = usage.useMorning || usage.useAfternoon || usage.useEvening;
@@ -259,22 +259,22 @@ export function validateUsageInput(usage: UsageInput): { valid: boolean; error?:
   if (!hasMainSlot) {
     return {
       valid: false,
-      error: 'At least one main time slot (morning, afternoon, or evening) must be selected',
+      error: '少なくとも1つの主要時間枠（午前、午後、または夜間）を選択する必要があります',
     };
   }
 
-  // Extension blocks require at least one adjacent main slot
+  // 延長枠には少なくとも1つの隣接する主要枠が必要
   if (usage.useMiddayExtension && !usage.useMorning && !usage.useAfternoon) {
     return {
       valid: false,
-      error: 'Midday extension requires morning or afternoon slot to be selected',
+      error: '正午延長には午前または午後の枠を選択する必要があります',
     };
   }
 
   if (usage.useEveningExtension && !usage.useAfternoon && !usage.useEvening) {
     return {
       valid: false,
-      error: 'Evening extension requires afternoon or evening slot to be selected',
+      error: '夕方延長には午後または夜間の枠を選択する必要があります',
     };
   }
 
