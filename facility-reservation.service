@@ -1,0 +1,39 @@
+[Unit]
+Description=Facility Reservation Web Application
+Documentation=https://github.com/your-org/facility-reservation-system
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+WorkingDirectory=/var/www/facility-reservation
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=/var/www/facility-reservation/.env
+
+# Main process
+ExecStart=/usr/bin/node /var/www/facility-reservation/dist/server.js
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Resource limits
+LimitNOFILE=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=facility-reservation
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/facility-reservation/uploads
+ReadOnlyPaths=/var/www/facility-reservation
+
+[Install]
+WantedBy=multi-user.target
