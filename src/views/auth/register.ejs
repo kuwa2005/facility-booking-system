@@ -1,0 +1,74 @@
+<div class="card" style="max-width: 600px; margin: 2rem auto;">
+  <h2 class="card-title">新規会員登録</h2>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <form action="/api/auth/register" method="POST" id="registerForm">
+    <div class="form-group">
+      <label for="email">メールアドレス *</label>
+      <input type="email" id="email" name="email" required>
+      <div class="form-help">認証コードを送信します</div>
+    </div>
+
+    <div class="form-group">
+      <label for="password">パスワード *</label>
+      <input type="password" id="password" name="password" required minlength="8">
+      <div class="form-help">8文字以上で入力してください</div>
+    </div>
+
+    <div class="form-group">
+      <label for="name">氏名 *</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="phone">電話番号 *</label>
+      <input type="tel" id="phone" name="phone" required>
+    </div>
+
+    <div class="form-group">
+      <label for="organization_name">組織・団体名</label>
+      <input type="text" id="organization_name" name="organization_name">
+    </div>
+
+    <div class="form-group">
+      <label for="address">住所</label>
+      <textarea id="address" name="address"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">登録する</button>
+  </form>
+
+  <p style="margin-top: 1.5rem; text-align: center;">
+    既にアカウントをお持ちですか？ <a href="/login" style="color: #2563eb;">ログイン</a>
+  </p>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+
+  try {
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert('登録が完了しました。メールに送信された認証コードを入力してください。');
+      window.location.href = '/verify-email';
+    } else {
+      alert(result.error || '登録に失敗しました');
+    }
+  } catch (error) {
+    alert('エラーが発生しました');
+  }
+});
+</script>

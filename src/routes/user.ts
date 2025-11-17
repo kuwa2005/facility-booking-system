@@ -1,0 +1,43 @@
+import express from 'express';
+import { UserProfileController, profileImageUpload } from '../controllers/UserProfileController';
+import { UserReservationController } from '../controllers/UserReservationController';
+import { authenticate } from '../middleware/auth';
+
+const router = express.Router();
+
+// 全てのルートで認証が必要
+router.use(authenticate);
+
+// プロフィール管理
+router.get('/profile', UserProfileController.getProfile);
+router.patch(
+  '/profile',
+  UserProfileController.updateProfileValidation,
+  UserProfileController.updateProfile
+);
+router.patch(
+  '/profile/nickname',
+  UserProfileController.updateNicknameValidation,
+  UserProfileController.updateNickname
+);
+router.post(
+  '/profile/image',
+  profileImageUpload.single('image'),
+  UserProfileController.uploadProfileImage
+);
+router.delete('/profile/image', UserProfileController.deleteProfileImage);
+router.delete('/account', UserProfileController.deleteAccount);
+
+// お気に入り部屋
+router.get('/favorites/rooms', UserProfileController.getFavoriteRooms);
+router.post('/favorites/rooms/:roomId', UserProfileController.addFavoriteRoom);
+router.delete('/favorites/rooms/:roomId', UserProfileController.removeFavoriteRoom);
+
+// 予約管理
+router.get('/reservations', UserReservationController.getMyReservations);
+router.get('/reservations/:id', UserReservationController.getReservationDetail);
+router.get('/reservations/:id/check-modifiable', UserReservationController.checkModifiable);
+router.post('/reservations/:id/cancel', UserReservationController.cancelReservation);
+router.patch('/reservations/:id', UserReservationController.modifyReservation);
+
+export default router;

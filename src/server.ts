@@ -16,6 +16,8 @@ import { testConnection } from './config/database';
 import authRoutes from './routes/auth';
 import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
+import userRoutes from './routes/user';
+import pageRoutes from './routes/pages';
 
 // ミドルウェアのインポート
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -55,6 +57,7 @@ app.use(cookieParser());
 
 // 静的ファイル
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ビューエンジンの設定
 app.set('view engine', 'ejs');
@@ -68,81 +71,11 @@ app.get('/health', (req, res) => {
 // APIルート
 app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 
-// 基本的なHTMLページの提供（デモ用）
-app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="ja">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>施設予約システム</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-          max-width: 800px;
-          margin: 50px auto;
-          padding: 20px;
-          line-height: 1.6;
-        }
-        h1 { color: #2563eb; }
-        .links { margin-top: 30px; }
-        .links a {
-          display: inline-block;
-          margin-right: 20px;
-          color: #2563eb;
-          text-decoration: none;
-          font-weight: 500;
-        }
-        .links a:hover { text-decoration: underline; }
-        .section {
-          margin-top: 30px;
-          padding: 20px;
-          background: #f5f5f5;
-          border-radius: 8px;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>施設予約システム</h1>
-      <p>施設予約システム - APIサーバー</p>
-
-      <div class="section">
-        <h2>APIエンドポイント</h2>
-        <p><strong>公開API:</strong></p>
-        <ul>
-          <li>GET /api/rooms - 全部屋の一覧取得</li>
-          <li>GET /api/rooms/:id/availability - 部屋の空き状況確認</li>
-          <li>GET /api/equipment - 全設備の一覧取得</li>
-          <li>POST /api/applications - 予約の作成</li>
-        </ul>
-
-        <p><strong>認証:</strong></p>
-        <ul>
-          <li>POST /api/auth/register - ユーザー登録</li>
-          <li>POST /api/auth/login - ログイン</li>
-          <li>POST /api/auth/logout - ログアウト</li>
-        </ul>
-
-        <p><strong>管理者API:</strong></p>
-        <ul>
-          <li>GET /api/admin/applications - 全申請の一覧取得</li>
-          <li>GET /api/admin/rooms - 部屋の管理</li>
-          <li>GET /api/admin/equipment - 設備の管理</li>
-        </ul>
-      </div>
-
-      <div class="section">
-        <h2>ドキュメント</h2>
-        <p>詳細なAPIドキュメントと使用例については、README.mdファイルを参照してください。</p>
-        <p>ヘルスチェック: <a href="/health">/health</a></p>
-      </div>
-    </body>
-    </html>
-  `);
-});
+// ページルート
+app.use('/', pageRoutes);
 
 // 404ハンドラー
 app.use(notFoundHandler);

@@ -1,0 +1,93 @@
+<h2 style="margin-bottom: 2rem;">マイページ</h2>
+
+<div class="grid grid-2">
+  <!-- プロフィール -->
+  <div class="card">
+    <h3 class="card-title">プロフィール</h3>
+
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <% if (profile.profile_image_path) { %>
+        <img src="/<%= profile.profile_image_path %>" alt="プロフィール画像"
+             style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb;">
+      <% } else { %>
+        <div style="width: 120px; height: 120px; border-radius: 50%; background-color: #e5e7eb;
+                    display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 3rem; color: #6b7280;">
+          👤
+        </div>
+      <% } %>
+    </div>
+
+    <dl style="margin: 1rem 0;">
+      <dt style="font-weight: 600; margin-top: 1rem;">氏名</dt>
+      <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.name %></dd>
+
+      <% if (profile.nickname) { %>
+        <dt style="font-weight: 600; margin-top: 1rem;">ニックネーム</dt>
+        <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.nickname %></dd>
+      <% } %>
+
+      <dt style="font-weight: 600; margin-top: 1rem;">メールアドレス</dt>
+      <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.email %></dd>
+
+      <dt style="font-weight: 600; margin-top: 1rem;">電話番号</dt>
+      <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.phone %></dd>
+
+      <% if (profile.organization_name) { %>
+        <dt style="font-weight: 600; margin-top: 1rem;">組織・団体名</dt>
+        <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.organization_name %></dd>
+      <% } %>
+    </dl>
+
+    <div style="margin-top: 1.5rem;">
+      <a href="/my-page/edit" class="btn btn-primary btn-block">プロフィール編集</a>
+    </div>
+  </div>
+
+  <!-- クイックアクション -->
+  <div>
+    <div class="card">
+      <h3 class="card-title">予約管理</h3>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <a href="/my-reservations" class="btn btn-outline">予約一覧</a>
+        <a href="/availability" class="btn btn-primary">新規予約</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">お気に入り</h3>
+      <a href="/my-page/favorites" class="btn btn-outline btn-block">お気に入りの部屋</a>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">アカウント設定</h3>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <a href="/my-page/change-password" class="btn btn-outline">パスワード変更</a>
+        <a href="/my-page/delete-account" class="btn btn-danger" onclick="return confirm('本当に退会しますか？この操作は取り消せません。')">退会</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (upcomingReservations && upcomingReservations.length > 0) { %>
+  <div class="card" style="margin-top: 2rem;">
+    <h3 class="card-title">直近の予約</h3>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <% upcomingReservations.slice(0, 3).forEach(function(reservation) { %>
+        <div style="padding: 1rem; background-color: #f9fafb; border-radius: 4px; border-left: 4px solid #2563eb;">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <h4 style="font-weight: 600; margin-bottom: 0.5rem;"><%= reservation.event_name %></h4>
+              <p style="color: #6b7280; font-size: 0.875rem;">
+                <%= reservation.first_date %> 〜 <%= reservation.last_date %>
+              </p>
+            </div>
+            <a href="/my-reservations/<%= reservation.id %>" class="btn btn-outline" style="padding: 0.5rem 1rem;">詳細</a>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+    <div style="margin-top: 1rem; text-align: center;">
+      <a href="/my-reservations" style="color: #2563eb;">すべての予約を見る</a>
+    </div>
+  </div>
+<% } %>
