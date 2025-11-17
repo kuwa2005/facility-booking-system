@@ -1,230 +1,218 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { Transporter } from 'nodemailer';
 
-const APP_URL = process.env.APP_URL || 'http://localhost:3000';
-
+/**
+ * メール送信サービス
+ * Nodemailerを使用してメールを送信
+ */
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: Transporter | null = null;
+  private isConfigured: boolean = false;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    });
+    this.initializeTransporter();
   }
 
   /**
-   * Send verification email
+   * メール送信設定を初期化
    */
-  async sendVerificationEmail(to: string, name: string, code: string): Promise<void> {
-    const mailOptions = {
-      from: process.env.SMTP_FROM,
-      to,
-      subject: 'Email Verification - Facility Reservation System',
-      html: `
-        <h2>Welcome ${name}!</h2>
-        <p>Thank you for registering with our Facility Reservation System.</p>
-        <p>Your verification code is: <strong style="font-size: 24px; color: #2563eb;">${code}</strong></p>
-        <p>This code will expire in 15 minutes.</p>
-        <p>If you did not request this, please ignore this email.</p>
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          Facility Reservation System<br>
-          ${APP_URL}
-        </p>
-      `,
-    };
-
+  private initializeTransporter(): void {
     try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Verification email sent to ${to}`);
-    } catch (error: any) {
-      console.error('Failed to send verification email:', error.message);
-      // In development, log the verification code
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[DEV] Verification code for ${to}: ${code}`);
+      const emailConfig = {
+        host: process.env.SMTP_HOST || 'localhost',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER || '',
+          pass: process.env.SMTP_PASS || '',
+        },
+      };
+
+      // 設定が不完全な場合は開発モードとして動作
+      if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+        console.warn(
+          'Email configuration is incomplete. Running in development mode.',
+        );
+        console.warn(
+          'To enable email sending, set SMTP_HOST, SMTP_USER, and SMTP_PASS in environment variables.',
+        );
+
+        // 開発環境ではetherealmailのテストアカウントを使用
+        this.createTestAccount();
+        return;
       }
+
+      this.transporter = nodemailer.createTransporter(emailConfig);
+      this.isConfigured = true;
+
+      console.log('Email service initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize email service:', error);
+      this.isConfigured = false;
     }
   }
 
   /**
-   * Send password reset email
+   * 開発用テストアカウントを作成
    */
-  async sendPasswordResetEmail(to: string, name: string, token: string): Promise<void> {
-    const resetUrl = `${APP_URL}/reset-password?token=${token}`;
+  private async createTestAccount(): Promise<void> {
+    try {
+      const testAccount = await nodemailer.createTestAccount();
 
-    const mailOptions = {
-      from: process.env.SMTP_FROM,
-      to,
-      subject: 'Password Reset Request - Facility Reservation System',
-      html: `
-        <h2>Hello ${name},</h2>
-        <p>You have requested to reset your password.</p>
-        <p>Click the link below to reset your password:</p>
-        <p><a href="${resetUrl}" style="color: #2563eb; font-weight: bold;">${resetUrl}</a></p>
-        <p>This link will expire in 60 minutes.</p>
-        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          Facility Reservation System<br>
-          ${APP_URL}
-        </p>
-      `,
-    };
+      this.transporter = nodemailer.createTransporter({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+
+      this.isConfigured = true;
+      console.log('Test email account created:');
+      console.log('  User:', testAccount.user);
+      console.log('  Pass:', testAccount.pass);
+    } catch (error) {
+      console.error('Failed to create test account:', error);
+      this.isConfigured = false;
+    }
+  }
+
+  /**
+   * メールを送信
+   */
+  async sendEmail(options: {
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+    from?: string;
+  }): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
+    if (!this.isConfigured || !this.transporter) {
+      console.error('Email service is not configured');
+      return {
+        success: false,
+        error: 'Email service is not configured',
+      };
+    }
 
     try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Password reset email sent to ${to}`);
-    } catch (error: any) {
-      console.error('Failed to send password reset email:', error.message);
-      // In development, log the reset URL
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[DEV] Password reset URL for ${to}: ${resetUrl}`);
+      const from =
+        options.from || process.env.SMTP_FROM || 'no-reply@facility.local';
+
+      const mailOptions = {
+        from,
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html || options.text,
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+
+      console.log('Email sent successfully:', info.messageId);
+
+      // 開発環境の場合、プレビューURLを取得
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+
+      if (previewUrl) {
+        console.log('Preview URL:', previewUrl);
+        return {
+          success: true,
+          messageId: info.messageId,
+          previewUrl: previewUrl as string,
+        };
       }
+
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error: any) {
+      console.error('Failed to send email:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   }
 
   /**
-   * Send reservation confirmation email
+   * 複数のメールを一括送信
    */
-  async sendReservationConfirmation(
-    to: string,
-    name: string,
-    applicationId: number,
-    eventName: string,
-    totalAmount: number,
-    usageDetails: string
-  ): Promise<void> {
-    const mailOptions = {
-      from: process.env.SMTP_FROM,
-      to,
-      subject: `Reservation Confirmation - ${eventName}`,
-      html: `
-        <h2>Reservation Confirmed</h2>
-        <p>Dear ${name},</p>
-        <p>Your facility reservation has been confirmed.</p>
+  async sendBulkEmails(emails: Array<{
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+  }>): Promise<{
+    success: number;
+    failed: number;
+    results: Array<{ to: string; success: boolean; messageId?: string; error?: string }>;
+  }> {
+    const results = [];
+    let successCount = 0;
+    let failedCount = 0;
 
-        <h3>Reservation Details</h3>
-        <p><strong>Reservation Number:</strong> ${applicationId}</p>
-        <p><strong>Event Name:</strong> ${eventName}</p>
-        <p><strong>Total Amount:</strong> ¥${totalAmount.toLocaleString()}</p>
+    for (const email of emails) {
+      const result = await this.sendEmail(email);
 
-        <h3>Usage Details</h3>
-        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${usageDetails}</pre>
+      results.push({
+        to: email.to,
+        success: result.success,
+        messageId: result.messageId,
+        error: result.error,
+      });
 
-        <p>You can view your reservation details at: <a href="${APP_URL}/my-reservations">${APP_URL}/my-reservations</a></p>
+      if (result.success) {
+        successCount++;
+      } else {
+        failedCount++;
+      }
 
-        <p>Thank you for using our facility!</p>
+      // レート制限を避けるため、少し待機
+      await this.sleep(100);
+    }
 
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          Facility Reservation System<br>
-          ${APP_URL}
-        </p>
-      `,
+    return {
+      success: successCount,
+      failed: failedCount,
+      results,
     };
+  }
+
+  /**
+   * メールサービスの状態を確認
+   */
+  async verifyConnection(): Promise<boolean> {
+    if (!this.isConfigured || !this.transporter) {
+      return false;
+    }
 
     try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Reservation confirmation email sent to ${to}`);
-    } catch (error: any) {
-      console.error('Failed to send reservation confirmation email:', error.message);
+      await this.transporter.verify();
+      console.log('Email server connection verified');
+      return true;
+    } catch (error) {
+      console.error('Email server connection failed:', error);
+      return false;
     }
   }
 
   /**
-   * Send cancellation notification email
+   * 待機処理
    */
-  async sendCancellationNotification(
-    to: string,
-    name: string,
-    applicationId: number,
-    eventName: string,
-    cancellationFee: number
-  ): Promise<void> {
-    const mailOptions = {
-      from: process.env.SMTP_FROM,
-      to,
-      subject: `Reservation Cancelled - ${eventName}`,
-      html: `
-        <h2>Reservation Cancelled</h2>
-        <p>Dear ${name},</p>
-        <p>Your facility reservation has been cancelled.</p>
-
-        <h3>Cancellation Details</h3>
-        <p><strong>Reservation Number:</strong> ${applicationId}</p>
-        <p><strong>Event Name:</strong> ${eventName}</p>
-        <p><strong>Cancellation Fee:</strong> ¥${cancellationFee.toLocaleString()}</p>
-
-        ${cancellationFee > 0 ? `<p style="color: #dc2626;">A cancellation fee of ¥${cancellationFee.toLocaleString()} has been applied.</p>` : ''}
-
-        <p>If you have any questions, please contact us.</p>
-
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          Facility Reservation System<br>
-          ${APP_URL}
-        </p>
-      `,
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Cancellation notification email sent to ${to}`);
-    } catch (error: any) {
-      console.error('Failed to send cancellation notification email:', error.message);
-    }
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
-   * Send admin notification for new reservation
+   * サービスが設定済みかチェック
    */
-  async sendAdminNotification(
-    applicationId: number,
-    eventName: string,
-    applicantName: string,
-    totalAmount: number
-  ): Promise<void> {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (!adminEmail) {
-      console.log('No admin email configured');
-      return;
-    }
-
-    const mailOptions = {
-      from: process.env.SMTP_FROM,
-      to: adminEmail,
-      subject: `New Reservation - ${eventName}`,
-      html: `
-        <h2>New Facility Reservation</h2>
-        <p>A new reservation has been created.</p>
-
-        <h3>Details</h3>
-        <p><strong>Reservation Number:</strong> ${applicationId}</p>
-        <p><strong>Event Name:</strong> ${eventName}</p>
-        <p><strong>Applicant:</strong> ${applicantName}</p>
-        <p><strong>Total Amount:</strong> ¥${totalAmount.toLocaleString()}</p>
-
-        <p><a href="${APP_URL}/admin/applications/${applicationId}">View Reservation Details</a></p>
-
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          Facility Reservation System Admin Notification
-        </p>
-      `,
-    };
-
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log('Admin notification email sent');
-    } catch (error: any) {
-      console.error('Failed to send admin notification email:', error.message);
-    }
+  isReady(): boolean {
+    return this.isConfigured;
   }
 }
 
-export default new EmailService();
+// シングルトンインスタンス
+export const emailService = new EmailService();

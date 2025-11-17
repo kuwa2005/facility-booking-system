@@ -415,3 +415,117 @@ export interface CreateUserNoteDto {
 export interface UserNoteWithStaffDto extends UserNote {
   staff_name: string;
 }
+
+// 通知システム関連
+
+// 通知テンプレート
+export interface NotificationTemplate {
+  id: number;
+  template_code: string;
+  template_name: string;
+  description: string | null;
+  subject: string;
+  body_text: string;
+  body_html: string | null;
+  available_variables: string[] | null;
+  is_active: boolean;
+  is_system: boolean;
+  created_by: number | null;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+// 通知ログ
+export interface NotificationLog {
+  id: number;
+  template_code: string;
+  notification_type: 'email' | 'sms' | 'push';
+  recipient_type: 'user' | 'staff';
+  recipient_id: number;
+  recipient_email: string;
+  subject: string;
+  body_text: string | null;
+  status: 'pending' | 'sent' | 'failed' | 'bounced';
+  error_message: string | null;
+  related_entity_type: string | null;
+  related_entity_id: number | null;
+  sent_at: Date | null;
+  opened_at: Date | null;
+  clicked_at: Date | null;
+  created_at: Date;
+}
+
+// 通知設定
+export interface NotificationSettings {
+  id: number;
+  setting_key: string;
+  setting_name: string;
+  description: string | null;
+  is_enabled: boolean;
+  template_code: string | null;
+  send_timing: string | null;
+  schedule_config: any | null;
+  updated_by: number | null;
+  updated_at: Date;
+}
+
+// スケジュール通知
+export interface ScheduledNotification {
+  id: number;
+  template_code: string;
+  recipient_type: 'user' | 'staff';
+  recipient_id: number;
+  related_entity_type: string | null;
+  related_entity_id: number | null;
+  scheduled_at: Date;
+  status: 'pending' | 'sent' | 'cancelled' | 'failed';
+  notification_data: any | null;
+  sent_at: Date | null;
+  error_message: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// DTOs for notification templates
+export interface CreateNotificationTemplateDto {
+  template_code: string;
+  template_name: string;
+  description?: string | null;
+  subject: string;
+  body_text: string;
+  body_html?: string | null;
+  available_variables?: string[];
+  is_active?: boolean;
+}
+
+export interface UpdateNotificationTemplateDto {
+  template_name?: string;
+  description?: string | null;
+  subject?: string;
+  body_text?: string;
+  body_html?: string | null;
+  available_variables?: string[];
+  is_active?: boolean;
+}
+
+// DTO for sending notification
+export interface SendNotificationDto {
+  template_code: string;
+  recipient_type: 'user' | 'staff';
+  recipient_id: number;
+  variables?: Record<string, any>;
+  related_entity_type?: string;
+  related_entity_id?: number;
+}
+
+// DTO for scheduling notification
+export interface ScheduleNotificationDto {
+  template_code: string;
+  recipient_type: 'user' | 'staff';
+  recipient_id: number;
+  scheduled_at: string | Date;
+  notification_data?: any;
+  related_entity_type?: string;
+  related_entity_id?: number;
+}
