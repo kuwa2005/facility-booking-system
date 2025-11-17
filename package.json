@@ -1,7 +1,7 @@
 {
-  "name": "facility-reservation-system",
+  "name": "facility-booking-system",
   "version": "1.0.0",
-  "description": "Public facility room rental and reservation system",
+  "description": "Public facility room rental and booking system",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",

@@ -49,8 +49,8 @@
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/your-org/facility-reservation-system.git
-cd facility-reservation-system
+git clone https://github.com/your-org/facility-booking-system.git
+cd facility-booking-system
 ```
 
 ### 2. 環境変数の設定
@@ -181,29 +181,29 @@ npm run build
 
 2. デプロイディレクトリへのファイルコピー：
 ```bash
-sudo mkdir -p /var/www/facility-reservation
-sudo cp -r dist node_modules migrations public uploads package.json /var/www/facility-reservation/
-sudo cp .env /var/www/facility-reservation/.env
+sudo mkdir -p /var/www/facility-booking
+sudo cp -r dist node_modules migrations public uploads package.json /var/www/facility-booking/
+sudo cp .env /var/www/facility-booking/.env
 ```
 
 3. アプリケーション用ユーザーの作成：
 ```bash
 sudo useradd -r -s /bin/false appuser
-sudo chown -R appuser:appuser /var/www/facility-reservation
+sudo chown -R appuser:appuser /var/www/facility-booking
 ```
 
 4. systemdサービスのインストール：
 ```bash
-sudo cp facility-reservation.service /etc/systemd/system/
+sudo cp facility-booking.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable facility-reservation
-sudo systemctl start facility-reservation
+sudo systemctl enable facility-booking
+sudo systemctl start facility-booking
 ```
 
 5. ステータスの確認：
 ```bash
-sudo systemctl status facility-reservation
-sudo journalctl -u facility-reservation -f
+sudo systemctl status facility-booking
+sudo journalctl -u facility-booking -f
 ```
 
 ### 4. Nginx設定（非Docker環境）
@@ -211,8 +211,8 @@ sudo journalctl -u facility-reservation -f
 非Docker環境の場合、Nginxをリバースプロキシとして設定します：
 
 ```bash
-sudo cp nginx/conf.d/default.conf /etc/nginx/sites-available/facility-reservation
-sudo ln -s /etc/nginx/sites-available/facility-reservation /etc/nginx/sites-enabled/
+sudo cp nginx/conf.d/default.conf /etc/nginx/sites-available/facility-booking
+sudo ln -s /etc/nginx/sites-available/facility-booking /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -417,7 +417,7 @@ ISC
 ## サポート
 
 問題や質問がある場合：
-- GitHub Issues: https://github.com/your-org/facility-reservation-system/issues
+- GitHub Issues: https://github.com/your-org/facility-booking-system/issues
 - Email: support@example.com
 
 ---
