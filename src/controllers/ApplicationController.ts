@@ -14,6 +14,7 @@ import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
 import PaymentService from '../services/PaymentService';
 import EmailService from '../services/EmailService';
+import { notificationService } from '../services/NotificationService';
 import { CreateApplicationDto, CreateUsageDto } from '../models/types';
 
 export class ApplicationController {
@@ -257,6 +258,14 @@ export class ApplicationController {
         applicationData.applicant_representative,
         totalAmount
       );
+
+      // Send notification using the new notification service
+      if (applicationData.user_id) {
+        await notificationService.sendApplicationCreatedNotification(
+          result.application.id,
+          applicationData.user_id
+        );
+      }
 
       res.status(201).json({
         message: 'Application created successfully',

@@ -11,6 +11,7 @@ import { ExtendedFacilityController } from '../controllers/ExtendedFacilityContr
 import { AnnouncementController } from '../controllers/AnnouncementController';
 import { MessageController } from '../controllers/MessageController';
 import { UserNoteController } from '../controllers/UserNoteController';
+import { NotificationController, notificationController } from '../controllers/NotificationController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -182,6 +183,23 @@ router.get('/notes/categories', userNoteController.getNoteCountsByCategory.bind(
 router.get('/notes/users-by-category/:category', userNoteController.getUsersByNoteCategory.bind(userNoteController));
 router.get('/notes/stats', userNoteController.getNoteStats.bind(userNoteController));
 router.get('/notes/recent', userNoteController.getRecentNotes.bind(userNoteController));
+
+// ===== 通知管理 =====
+router.get('/notifications/templates', notificationController.getAllTemplates.bind(notificationController));
+router.get('/notifications/templates/:code', notificationController.getTemplateByCode.bind(notificationController));
+router.get('/notifications/settings', notificationController.getAllSettings.bind(notificationController));
+router.patch(
+  '/notifications/settings/:settingKey',
+  NotificationController.updateSettingValidation,
+  notificationController.updateSetting.bind(notificationController)
+);
+router.get('/notifications/logs', notificationController.getNotificationLogs.bind(notificationController));
+router.get('/notifications/stats', notificationController.getNotificationStats.bind(notificationController));
+router.post(
+  '/notifications/test',
+  NotificationController.sendTestNotificationValidation,
+  notificationController.sendTestNotification.bind(notificationController)
+);
 
 // ===== 職員管理（管理者のみ） =====
 router.use('/management', requireAdmin);
