@@ -44,6 +44,10 @@ export interface Room {
   ac_price_per_hour: number;
   description: string | null;
   is_active: boolean;
+  is_flexible_time: boolean;
+  min_duration_minutes: number | null;
+  time_unit_minutes: number | null;
+  price_per_unit: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -133,8 +137,95 @@ export interface ClosedDate {
   id: number;
   date: Date;
   reason: string | null;
+  closure_type: 'full' | 'partial' | 'year_end';
+  affected_rooms: number[] | null;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface TimeSlot {
+  id: number;
+  name: string;
+  code: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  slot_type: 'regular' | 'extension' | 'flexible';
+  display_order: number;
+  is_active: boolean;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RoomTimeSlotPrice {
+  id: number;
+  room_id: number;
+  time_slot_id: number;
+  base_price: number;
+  ac_price_per_hour: number;
+  is_available: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RoomEquipment {
+  id: number;
+  room_id: number;
+  equipment_id: number;
+  is_available: boolean;
+  notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+  cost: number | null;
+  stock_quantity: number | null;
+  is_available: boolean;
+  description: string | null;
+  display_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Sale {
+  id: number;
+  application_id: number | null;
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  sold_by: number;
+  sold_at: Date;
+  customer_name: string | null;
+  notes: string | null;
+  created_at: Date;
+}
+
+export interface RoomClosedDate {
+  id: number;
+  room_id: number;
+  date: Date;
+  reason: string;
+  closed_time_slots: number[] | null;
+  created_by: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ApplicationProxy {
+  id: number;
+  application_id: number;
+  created_by_staff: number;
+  user_id: number | null;
+  proxy_type: 'for_member' | 'for_guest';
+  notes: string | null;
+  created_at: Date;
 }
 
 export interface AuditLog {

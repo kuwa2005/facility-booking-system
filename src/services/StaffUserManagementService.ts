@@ -243,6 +243,109 @@ export class StaffUserManagementService {
   }
 
   /**
+   * 職員による会員新規登録
+   */
+  async registerMemberByStaff(
+    staffId: number,
+    data: {
+      email: string;
+      password: string;
+      name: string;
+      phone: string;
+      organization_name?: string;
+      address?: string;
+    }
+  ): Promise<any> {
+    // メールアドレスの重複チェック
+    const existing = await UserRepository.findByEmail(data.email);
+    if (existing) {
+      throw new Error('Email already registered');
+    }
+
+    // AuthServiceを使ってパスワードをハッシュ化
+    const AuthService = (await import('./AuthService')).default;
+    const password_hash = await AuthService.hashPassword(data.password);
+
+    // ユーザーを作成
+    const user = await UserRepository.create({
+      email: data.email,
+      password: data.password,
+      password_hash,
+      name: data.name,
+      phone: data.phone,
+      organization_name: data.organization_name || null,
+      address: data.address || null,
+      is_admin: false,
+    });
+
+    // 職員が登録した場合は自動的にメール認証済みにする
+    await UserRepository.update(user.id, {
+      email_verified: true,
+      role: 'user',
+    });
+
+    await this.logActivity(
+      staffId,
+      'create',
+      'user',
+      user.id,
+      `Member registered by staff: ${data.email}`
+    );
+
+    const updatedUser = await UserRepository.findById(user.id);
+    if (updatedUser) {
+      const { password_hash: _, ...userInfo } = updatedUser;
+      return userInfo;
+    }
+
+    return user;
+  }
+
+  /**
+   * 職員による会員退会処理
+   */
+  async withdrawMemberByStaff(userId: number, staffId: number): Promise<void> {
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.role !== 'user') {
+      throw new Error('Can only withdraw regular user accounts');
+    }
+
+    // アクティブな予約がある場合はエラー
+    const [reservations] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) as count
+       FROM applications a
+       JOIN usages u ON a.id = u.application_id
+       WHERE a.user_id = ?
+         AND u.date >= CURDATE()
+         AND a.cancel_status = 'none'`,
+      [userId]
+    );
+
+    if (reservations[0].count > 0) {
+      throw new Error('Cannot withdraw user with active reservations');
+    }
+
+    // 論理削除
+    await UserRepository.update(userId, {
+      deleted_at: new Date(),
+      is_active: false,
+      email: `deleted_${userId}_${user.email}`, // メールアドレスを変更して再登録可能にする
+    });
+
+    await this.logActivity(
+      staffId,
+      'delete',
+      'user',
+      userId,
+      `Member withdrawn by staff`
+    );
+  }
+
+  /**
    * アクティビティログを記録
    */
   private async logActivity(

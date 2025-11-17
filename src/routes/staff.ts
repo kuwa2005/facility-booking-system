@@ -7,6 +7,7 @@ import { StaffUsageController } from '../controllers/StaffUsageController';
 import { StaffUserController } from '../controllers/StaffUserController';
 import { StaffFacilityController } from '../controllers/StaffFacilityController';
 import { StaffManagementController } from '../controllers/StaffManagementController';
+import { ExtendedFacilityController } from '../controllers/ExtendedFacilityController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -108,6 +109,46 @@ router.get('/facilities/equipment/:id/usage-stats', StaffFacilityController.getE
 router.get('/facilities/closed-dates', StaffFacilityController.getClosedDates);
 router.post('/facilities/closed-dates', StaffFacilityController.addClosedDate);
 router.delete('/facilities/closed-dates/:id', StaffFacilityController.deleteClosedDate);
+
+// ===== 拡張機能 =====
+
+// 時間帯管理
+router.get('/timeslots', ExtendedFacilityController.getTimeSlots);
+router.post('/timeslots', ExtendedFacilityController.createTimeSlot);
+router.patch('/timeslots/:id', ExtendedFacilityController.updateTimeSlot);
+router.delete('/timeslots/:id', ExtendedFacilityController.deleteTimeSlot);
+router.post('/rooms/:roomId/timeslots/:timeSlotId/prices', ExtendedFacilityController.setRoomTimeSlotPrices);
+router.get('/rooms/:roomId/timeslots/prices', ExtendedFacilityController.getRoomTimeSlotPrices);
+
+// 物販管理
+router.get('/products', ExtendedFacilityController.getProducts);
+router.post('/products', ExtendedFacilityController.createProduct);
+router.patch('/products/:id', ExtendedFacilityController.updateProduct);
+router.delete('/products/:id', ExtendedFacilityController.deleteProduct);
+router.post('/sales', ExtendedFacilityController.createSale);
+router.get('/sales', ExtendedFacilityController.getSales);
+router.get('/sales/stats', ExtendedFacilityController.getSalesStats);
+
+// 予約代行
+router.post('/proxy-reservations/member', ExtendedFacilityController.createProxyReservationForMember);
+router.post('/proxy-reservations/guest', ExtendedFacilityController.createProxyReservationForGuest);
+router.get('/proxy-reservations', ExtendedFacilityController.getProxyReservations);
+router.get('/proxy-reservations/stats', ExtendedFacilityController.getProxyStats);
+
+// 部屋設備管理
+router.get('/rooms/:roomId/equipment', ExtendedFacilityController.getRoomEquipment);
+router.get('/equipment/:equipmentId/rooms', ExtendedFacilityController.getEquipmentRooms);
+router.put('/rooms/:roomId/equipment', ExtendedFacilityController.setRoomEquipmentBulk);
+router.put('/equipment/:equipmentId/rooms', ExtendedFacilityController.setEquipmentRoomsBulk);
+
+// 部屋別休館日
+router.post('/room-closed-dates', ExtendedFacilityController.addRoomClosedDate);
+router.get('/room-closed-dates', ExtendedFacilityController.getRoomClosedDates);
+router.delete('/room-closed-dates/:id', ExtendedFacilityController.deleteRoomClosedDate);
+
+// 会員管理（職員用）
+router.post('/members/register', ExtendedFacilityController.registerMemberByStaff);
+router.delete('/members/:userId/withdraw', ExtendedFacilityController.withdrawMemberByStaff);
 
 // ===== 職員管理（管理者のみ） =====
 router.use('/management', requireAdmin);
