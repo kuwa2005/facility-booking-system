@@ -12,11 +12,22 @@ export interface User {
   address: string | null;
   is_active: boolean;
   is_admin: boolean;
+  role: 'user' | 'staff' | 'admin';
+  staff_code: string | null;
+  department: string | null;
+  position: string | null;
+  hire_date: Date | null;
+  staff_status: 'active' | 'on_leave' | 'retired' | null;
   email_verified: boolean;
   verification_code: string | null;
   verification_code_expires_at: Date | null;
   password_reset_token: string | null;
   password_reset_expires_at: Date | null;
+  nickname: string | null;
+  profile_image_path: string | null;
+  bio: string | null;
+  deleted_at: Date | null;
+  last_login_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }

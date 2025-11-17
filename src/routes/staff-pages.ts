@@ -1,0 +1,35 @@
+import express from 'express';
+import { authenticate, requireStaff, requireAdmin } from '../middleware/auth';
+import { StaffPageController } from '../controllers/StaffPageController';
+
+const router = express.Router();
+
+// 職員ログインページ（認証不要）
+router.get('/login', StaffPageController.login);
+
+// 以降は認証が必要
+router.use(authenticate);
+router.use(requireStaff);
+
+// ダッシュボード
+router.get('/', StaffPageController.dashboard);
+
+// プロフィール
+router.get('/profile', StaffPageController.profile);
+
+// 予約管理
+router.get('/reservations', StaffPageController.reservations);
+
+// 利用記録管理
+router.get('/usages', StaffPageController.usages);
+
+// 利用者管理
+router.get('/users', StaffPageController.users);
+
+// 施設管理
+router.get('/facilities/rooms', StaffPageController.rooms);
+
+// 職員管理（管理者のみ）
+router.get('/management', requireAdmin, StaffPageController.staffManagement);
+
+export default router;

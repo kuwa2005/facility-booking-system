@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || '職員ページ' %> - 施設予約システム</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+
+    /* ヘッダー */
+    .header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .header-nav {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .header-nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .header-nav a:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* サイドバー */
+    .layout {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 80px);
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: white;
+      padding: 2rem 0;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+    }
+
+    .sidebar nav a {
+      display: block;
+      padding: 0.75rem 2rem;
+      color: #333;
+      text-decoration: none;
+      transition: background-color 0.2s, color 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background-color: #ecf0f1;
+      color: #3498db;
+      border-left-color: #3498db;
+    }
+
+    .sidebar-section {
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-section-title {
+      padding: 0.5rem 2rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #7f8c8d;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* メインコンテンツ */
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-description {
+      color: #7f8c8d;
+    }
+
+    /* カード */
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    /* ボタン */
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #2980b9;
+    }
+
+    .btn-success {
+      background-color: #27ae60;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background-color: #229954;
+    }
+
+    .btn-danger {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #c0392b;
+    }
+
+    /* テーブル */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+    }
+
+    .table th,
+    .table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .table tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    /* バッジ */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .badge-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .badge-warning {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .badge-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .badge-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+
+    /* フッター */
+    .footer {
+      background-color: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+  </style>
+  <%- typeof additionalStyles !== 'undefined' ? additionalStyles : '' %>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-content">
+      <h1>施設予約システム - 職員管理画面</h1>
+      <nav class="header-nav">
+        <div class="header-user">
+          <% if (user) { %>
+            <span><%= user.name %> (<%= user.role === 'admin' ? '管理者' : '職員' %>)</span>
+            <a href="/staff/profile">プロフィール</a>
+            <a href="/logout">ログアウト</a>
+          <% } %>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- レイアウト -->
+  <div class="layout">
+    <!-- サイドバー -->
+    <aside class="sidebar">
+      <nav>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">メインメニュー</div>
+          <a href="/staff" class="<%= currentPath === '/staff' ? 'active' : '' %>">ダッシュボード</a>
+          <a href="/staff/reservations" class="<%= currentPath === '/staff/reservations' ? 'active' : '' %>">予約管理</a>
+          <a href="/staff/usages" class="<%= currentPath === '/staff/usages' ? 'active' : '' %>">利用記録管理</a>
+          <a href="/staff/users" class="<%= currentPath === '/staff/users' ? 'active' : '' %>">利用者管理</a>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">施設管理</div>
+          <a href="/staff/facilities/rooms" class="<%= currentPath === '/staff/facilities/rooms' ? 'active' : '' %>">部屋管理</a>
+          <a href="/staff/facilities/equipment" class="<%= currentPath === '/staff/facilities/equipment' ? 'active' : '' %>">設備管理</a>
+          <a href="/staff/facilities/closed-dates" class="<%= currentPath === '/staff/facilities/closed-dates' ? 'active' : '' %>">休館日管理</a>
+        </div>
+
+        <% if (user && user.role === 'admin') { %>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">管理者メニュー</div>
+          <a href="/staff/management" class="<%= currentPath === '/staff/management' ? 'active' : '' %>">職員管理</a>
+        </div>
+        <% } %>
+      </nav>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+      <%- body %>
+    </main>
+  </div>
+
+  <!-- フッター -->
+  <footer class="footer">
+    <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+  </footer>
+
+  <%- typeof additionalScripts !== 'undefined' ? additionalScripts : '' %>
+</body>
+</html>

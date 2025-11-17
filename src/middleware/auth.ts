@@ -9,6 +9,7 @@ declare global {
         userId: number;
         email: string;
         isAdmin: boolean;
+        role: 'user' | 'staff' | 'admin';
       };
     }
   }
@@ -63,8 +64,45 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
     return;
   }
 
-  if (!req.user.isAdmin) {
+  if (req.user.role !== 'admin') {
     res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+
+  next();
+};
+
+/**
+ * Staff or Admin middleware
+ * Must be used after authenticate middleware
+ * Allows both staff and admin roles
+ */
+export const requireStaff = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  if (req.user.role !== 'staff' && req.user.role !== 'admin') {
+    res.status(403).json({ error: 'Staff access required' });
+    return;
+  }
+
+  next();
+};
+
+/**
+ * User-only middleware (excludes staff and admin)
+ * Must be used after authenticate middleware
+ */
+export const requireUser = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  if (req.user.role !== 'user') {
+    res.status(403).json({ error: 'User access required' });
     return;
   }
 

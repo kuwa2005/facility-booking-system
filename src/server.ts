@@ -17,7 +17,9 @@ import authRoutes from './routes/auth';
 import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
 import userRoutes from './routes/user';
+import staffRoutes from './routes/staff';
 import pageRoutes from './routes/pages';
+import staffPageRoutes from './routes/staff-pages';
 
 // ミドルウェアのインポート
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -73,8 +75,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/staff', staffRoutes);
 
 // ページルート
+app.use('/staff', staffPageRoutes);
 app.use('/', pageRoutes);
 
 // 404ハンドラー

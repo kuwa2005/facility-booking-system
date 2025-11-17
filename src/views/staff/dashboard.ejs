@@ -1,0 +1,146 @@
+<div class="page-header">
+  <h1 class="page-title">ダッシュボード</h1>
+  <p class="page-description">システムの概要と統計情報</p>
+</div>
+
+<!-- 統計カード -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">本日の予約</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="todayReservations">-</p>
+  </div>
+
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今後の予約</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="upcomingReservations">-</p>
+  </div>
+
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">未払い</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #e74c3c;" id="pendingPayments">-</p>
+  </div>
+
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今月の売上</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #f39c12;" id="monthlyRevenue">-</p>
+  </div>
+</div>
+
+<!-- 最近の申請 -->
+<div class="card">
+  <h2 class="card-title">最近の申請</h2>
+  <div id="recentApplicationsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 本日の利用 -->
+<div class="card">
+  <h2 class="card-title">本日の利用</h2>
+  <div id="todayUsagesContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<script>
+  // トークンを取得
+  const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
+  // ダッシュボード統計を取得
+  fetch('/api/staff/dashboard/stats', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+  .then(res => res.json())
+  .then(stats => {
+    document.getElementById('todayReservations').textContent = stats.todayReservations;
+    document.getElementById('upcomingReservations').textContent = stats.upcomingReservations;
+    document.getElementById('pendingPayments').textContent = stats.pendingPayments;
+    document.getElementById('monthlyRevenue').textContent = '¥' + stats.monthlyRevenue.toLocaleString();
+
+    // 最近の申請を表示
+    if (stats.recentApplications && stats.recentApplications.length > 0) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>イベント名</th>
+              <th>申請者</th>
+              <th>金額</th>
+              <th>決済状況</th>
+              <th>キャンセル</th>
+              <th>申請日</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stats.recentApplications.map(app => `
+              <tr>
+                <td>${app.id}</td>
+                <td>${app.eventName}</td>
+                <td>${app.applicantName}</td>
+                <td>¥${app.totalAmount.toLocaleString()}</td>
+                <td>
+                  <span class="badge badge-${app.paymentStatus === 'paid' ? 'success' : app.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
+                    ${app.paymentStatus === 'paid' ? '支払済' : app.paymentStatus === 'unpaid' ? '未払い' : '返金済'}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-${app.cancelStatus === 'cancelled' ? 'danger' : 'success'}">
+                    ${app.cancelStatus === 'cancelled' ? 'キャンセル済' : '有効'}
+                  </span>
+                </td>
+                <td>${new Date(app.createdAt).toLocaleDateString('ja-JP')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('recentApplicationsContainer').innerHTML = html;
+    } else {
+      document.getElementById('recentApplicationsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">申請がありません</p>';
+    }
+
+    // 本日の利用を表示
+    if (stats.todayUsages && stats.todayUsages.length > 0) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>部屋</th>
+              <th>イベント名</th>
+              <th>時間帯</th>
+              <th>エアコン</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stats.todayUsages.map(usage => {
+              const slots = [];
+              if (usage.useMorning) slots.push('午前');
+              if (usage.useAfternoon) slots.push('午後');
+              if (usage.useEvening) slots.push('夜間');
+
+              return `
+                <tr>
+                  <td>${usage.roomName}</td>
+                  <td>${usage.eventName}</td>
+                  <td>${slots.join(', ')}</td>
+                  <td>${usage.acRequested ? (usage.acHours ? usage.acHours + '時間' : '未入力') : '-'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('todayUsagesContainer').innerHTML = html;
+    } else {
+      document.getElementById('todayUsagesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">本日の利用予定はありません</p>';
+    }
+  })
+  .catch(error => {
+    console.error('Error loading dashboard stats:', error);
+    document.getElementById('recentApplicationsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+    document.getElementById('todayUsagesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  });
+</script>

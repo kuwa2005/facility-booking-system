@@ -37,9 +37,9 @@ export class AuthService {
   /**
    * Generate JWT token
    */
-  generateToken(userId: number, email: string, isAdmin: boolean = false): AuthToken {
+  generateToken(userId: number, email: string, isAdmin: boolean = false, role: 'user' | 'staff' | 'admin' = 'user'): AuthToken {
     const token = jwt.sign(
-      { userId, email, isAdmin },
+      { userId, email, isAdmin, role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -53,13 +53,14 @@ export class AuthService {
   /**
    * Verify JWT token
    */
-  verifyToken(token: string): { userId: number; email: string; isAdmin: boolean } | null {
+  verifyToken(token: string): { userId: number; email: string; isAdmin: boolean; role: 'user' | 'staff' | 'admin' } | null {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       return {
         userId: decoded.userId,
         email: decoded.email,
         isAdmin: decoded.isAdmin || false,
+        role: decoded.role || 'user',
       };
     } catch (error) {
       return null;
@@ -152,12 +153,20 @@ export class AuthService {
       throw new Error('Account is deactivated');
     }
 
+    // Check if account has been deleted
+    if (user.deleted_at) {
+      throw new Error('Account has been deleted');
+    }
+
     const isValidPassword = await this.verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       throw new Error('Invalid email or password');
     }
 
-    const token = this.generateToken(user.id, user.email, user.is_admin);
+    const token = this.generateToken(user.id, user.email, user.is_admin, user.role);
+
+    // Update last login time
+    await UserRepository.update(user.id, { last_login_at: new Date() });
 
     return {
       user: this.sanitizeUser(user),
