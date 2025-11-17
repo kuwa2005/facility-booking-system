@@ -8,11 +8,17 @@ import { StaffUserController } from '../controllers/StaffUserController';
 import { StaffFacilityController } from '../controllers/StaffFacilityController';
 import { StaffManagementController } from '../controllers/StaffManagementController';
 import { ExtendedFacilityController } from '../controllers/ExtendedFacilityController';
+import { AnnouncementController } from '../controllers/AnnouncementController';
+import { MessageController } from '../controllers/MessageController';
+import { UserNoteController } from '../controllers/UserNoteController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
+const announcementController = new AnnouncementController();
+const messageController = new MessageController();
+const userNoteController = new UserNoteController();
 
 // 全ての職員ルートに認証を適用
 router.use(authenticate);
@@ -149,6 +155,33 @@ router.delete('/room-closed-dates/:id', ExtendedFacilityController.deleteRoomClo
 // 会員管理（職員用）
 router.post('/members/register', ExtendedFacilityController.registerMemberByStaff);
 router.delete('/members/:userId/withdraw', ExtendedFacilityController.withdrawMemberByStaff);
+
+// ===== お知らせ管理 =====
+router.get('/announcements', announcementController.getAllAnnouncements.bind(announcementController));
+router.get('/announcements/:id', announcementController.getAnnouncementById.bind(announcementController));
+router.post('/announcements', announcementController.createAnnouncement.bind(announcementController));
+router.patch('/announcements/:id', announcementController.updateAnnouncement.bind(announcementController));
+router.delete('/announcements/:id', announcementController.deleteAnnouncement.bind(announcementController));
+router.post('/announcements/:id/toggle', announcementController.toggleAnnouncementStatus.bind(announcementController));
+
+// ===== メッセージ管理 =====
+router.post('/messages', messageController.sendMessageFromStaff.bind(messageController));
+router.get('/messages', messageController.getStaffMessages.bind(messageController));
+router.get('/messages/stats', messageController.getMessageStats.bind(messageController));
+router.get('/messages/user/:userId', messageController.getMessagesByUser.bind(messageController));
+router.get('/messages/:id/thread', messageController.getMessageThread.bind(messageController));
+router.delete('/messages/:id', messageController.deleteMessageByStaff.bind(messageController));
+router.post('/messages/cleanup', messageController.cleanupExpiredMessages.bind(messageController));
+
+// ===== ユーザーメモ管理 =====
+router.get('/users/:userId/notes', userNoteController.getUserNotes.bind(userNoteController));
+router.post('/users/:userId/notes', userNoteController.addUserNote.bind(userNoteController));
+router.patch('/users/:userId/notes/:noteId', userNoteController.updateUserNote.bind(userNoteController));
+router.delete('/users/:userId/notes/:noteId', userNoteController.deleteUserNote.bind(userNoteController));
+router.get('/notes/categories', userNoteController.getNoteCountsByCategory.bind(userNoteController));
+router.get('/notes/users-by-category/:category', userNoteController.getUsersByNoteCategory.bind(userNoteController));
+router.get('/notes/stats', userNoteController.getNoteStats.bind(userNoteController));
+router.get('/notes/recent', userNoteController.getRecentNotes.bind(userNoteController));
 
 // ===== 職員管理（管理者のみ） =====
 router.use('/management', requireAdmin);

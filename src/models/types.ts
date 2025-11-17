@@ -313,3 +313,105 @@ export interface DayAvailability {
   afternoon_available: boolean;
   evening_available: boolean;
 }
+
+// お知らせ機能
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  announcement_type: 'public' | 'user';
+  priority: number;
+  is_active: boolean;
+  starts_at: Date | null;
+  ends_at: Date | null;
+  created_by: number;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+// メッセージ機能
+export interface Message {
+  id: number;
+  sender_type: 'user' | 'staff';
+  sender_id: number;
+  recipient_type: 'user' | 'staff';
+  recipient_id: number;
+  subject: string;
+  content: string;
+  parent_message_id: number | null;
+  expires_at: Date | null;
+  read_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+// ユーザーメモ（管理者専用）
+export interface UserNote {
+  id: number;
+  user_id: number;
+  note_content: string;
+  note_category: string | null;
+  created_by: number;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+}
+
+// DTOs for announcements
+export interface CreateAnnouncementDto {
+  title: string;
+  content: string;
+  announcement_type: 'public' | 'user';
+  priority?: number;
+  is_active?: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+}
+
+export interface UpdateAnnouncementDto {
+  title?: string;
+  content?: string;
+  announcement_type?: 'public' | 'user';
+  priority?: number;
+  is_active?: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+}
+
+// DTOs for messages
+export interface CreateMessageDto {
+  recipient_type: 'user' | 'staff';
+  recipient_id: number;
+  subject: string;
+  content: string;
+  parent_message_id?: number | null;
+  expires_at?: string | null;
+}
+
+export interface MessageThreadDto {
+  id: number;
+  subject: string;
+  participants: {
+    user?: { id: number; name: string; email: string };
+    staff?: { id: number; name: string; email: string };
+  };
+  last_message: {
+    content: string;
+    created_at: Date;
+    sender_type: 'user' | 'staff';
+  };
+  unread_count: number;
+  created_at: Date;
+}
+
+// DTOs for user notes
+export interface CreateUserNoteDto {
+  note_content: string;
+  note_category?: string | null;
+}
+
+export interface UserNoteWithStaffDto extends UserNote {
+  staff_name: string;
+}

@@ -1,9 +1,13 @@
 import express from 'express';
 import { UserProfileController, profileImageUpload } from '../controllers/UserProfileController';
 import { UserReservationController } from '../controllers/UserReservationController';
+import { AnnouncementController } from '../controllers/AnnouncementController';
+import { MessageController } from '../controllers/MessageController';
 import { authenticate } from '../middleware/auth';
 
 const router = express.Router();
+const announcementController = new AnnouncementController();
+const messageController = new MessageController();
 
 // 全てのルートで認証が必要
 router.use(authenticate);
@@ -39,5 +43,37 @@ router.get('/reservations/:id', UserReservationController.getReservationDetail);
 router.get('/reservations/:id/check-modifiable', UserReservationController.checkModifiable);
 router.post('/reservations/:id/cancel', UserReservationController.cancelReservation);
 router.patch('/reservations/:id', UserReservationController.modifyReservation);
+
+// お知らせ（一般利用者向け）
+router.get(
+  '/announcements',
+  announcementController.getUserAnnouncements.bind(announcementController)
+);
+
+// メッセージ（一般利用者）
+router.post(
+  '/messages',
+  messageController.sendMessageFromUser.bind(messageController)
+);
+router.get(
+  '/messages',
+  messageController.getUserMessages.bind(messageController)
+);
+router.get(
+  '/messages/unread/count',
+  messageController.getUnreadCount.bind(messageController)
+);
+router.get(
+  '/messages/:id',
+  messageController.getMessageById.bind(messageController)
+);
+router.post(
+  '/messages/:id/read',
+  messageController.markAsRead.bind(messageController)
+);
+router.delete(
+  '/messages/:id',
+  messageController.deleteMessageByUser.bind(messageController)
+);
 
 export default router;

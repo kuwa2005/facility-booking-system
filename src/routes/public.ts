@@ -1,9 +1,17 @@
 import express from 'express';
 import { RoomController } from '../controllers/RoomController';
 import { ApplicationController } from '../controllers/ApplicationController';
+import { AnnouncementController } from '../controllers/AnnouncementController';
 import { authenticate, optionalAuth } from '../middleware/auth';
 
 const router = express.Router();
+const announcementController = new AnnouncementController();
+
+// Announcement routes (public - no authentication required)
+router.get(
+  '/announcements/public',
+  announcementController.getPublicAnnouncements.bind(announcementController)
+);
 
 // Room routes
 router.get('/rooms', RoomController.getRooms);
