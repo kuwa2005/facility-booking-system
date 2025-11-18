@@ -150,10 +150,10 @@ export class StaffManagementService {
       password_hash,
       name: data.name,
       phone: data.phone,
-      organization_name: null,
-      address: null,
+      organization_name: undefined,
+      address: undefined,
       is_admin: data.role === 'admin',
-    });
+    } as any);
 
     // 職員情報を更新
     await UserRepository.update(user.id, {

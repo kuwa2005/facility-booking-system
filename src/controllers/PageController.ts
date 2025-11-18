@@ -23,7 +23,7 @@ export class PageController {
   /**
    * 会員登録ページ
    */
-  static register(req: Request, res: Response): Promise<void> {
+  static register(req: Request, res: Response): void {
     res.render('auth/register', {
       title: '新規会員登録',
       user: req.user,
@@ -33,7 +33,7 @@ export class PageController {
   /**
    * ログインページ
    */
-  static login(req: Request, res: Response): Promise<void> {
+  static login(req: Request, res: Response): void {
     res.render('auth/login', {
       title: 'ログイン',
       user: req.user,

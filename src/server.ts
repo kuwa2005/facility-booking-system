@@ -25,7 +25,7 @@ import staffPageRoutes from './routes/staff-pages';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app: Application = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // セキュリティミドルウェア

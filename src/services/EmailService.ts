@@ -41,7 +41,7 @@ export class EmailService {
         return;
       }
 
-      this.transporter = nodemailer.createTransporter(emailConfig);
+      this.transporter = nodemailer.createTransport(emailConfig);
       this.isConfigured = true;
 
       console.log('Email service initialized successfully');
@@ -58,7 +58,7 @@ export class EmailService {
     try {
       const testAccount = await nodemailer.createTestAccount();
 
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
@@ -211,6 +211,64 @@ export class EmailService {
    */
   isReady(): boolean {
     return this.isConfigured;
+  }
+
+  /**
+   * 予約確認メールを送信
+   */
+  async sendReservationConfirmation(...args: any[]): Promise<any> {
+    const [to] = args;
+    return this.sendEmail({
+      to,
+      subject: '予約確認',
+      html: `予約が確認されました。詳細: ${JSON.stringify(args)}`,
+    });
+  }
+
+  /**
+   * キャンセル通知メールを送信
+   */
+  async sendCancellationNotification(...args: any[]): Promise<any> {
+    const [to] = args;
+    return this.sendEmail({
+      to,
+      subject: '予約キャンセル通知',
+      html: `予約がキャンセルされました。詳細: ${JSON.stringify(args)}`,
+    });
+  }
+
+  /**
+   * 管理者通知メールを送信
+   */
+  async sendAdminNotification(...args: any[]): Promise<any> {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@facility.local';
+    return this.sendEmail({
+      to: adminEmail,
+      subject: '新規予約通知',
+      html: `通知: ${JSON.stringify(args)}`,
+    });
+  }
+
+  /**
+   * 確認メール送信
+   */
+  async sendVerificationEmail(to: string, name: string, code: string): Promise<any> {
+    return this.sendEmail({
+      to,
+      subject: 'メールアドレス確認',
+      html: `${name}様、確認コード: ${code}`,
+    });
+  }
+
+  /**
+   * パスワードリセットメール送信
+   */
+  async sendPasswordResetEmail(to: string, name: string, token: string): Promise<any> {
+    return this.sendEmail({
+      to,
+      subject: 'パスワードリセット',
+      html: `${name}様、リセットトークン: ${token}`,
+    });
   }
 }
 

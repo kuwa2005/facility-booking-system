@@ -13,7 +13,7 @@ import {
 import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
 import PaymentService from '../services/PaymentService';
-import EmailService from '../services/EmailService';
+import { emailService } from '../services/EmailService';
 import { notificationService } from '../services/NotificationService';
 import { CreateApplicationDto, CreateUsageDto } from '../models/types';
 
@@ -243,7 +243,7 @@ export class ApplicationController {
         })
         .join('\n');
 
-      await EmailService.sendReservationConfirmation(
+      await emailService.sendReservationConfirmation(
         applicationData.applicant_email,
         applicationData.applicant_representative,
         result.application.id,
@@ -252,7 +252,7 @@ export class ApplicationController {
         usageDetails
       );
 
-      await EmailService.sendAdminNotification(
+      await emailService.sendAdminNotification(
         result.application.id,
         applicationData.event_name,
         applicationData.applicant_representative,

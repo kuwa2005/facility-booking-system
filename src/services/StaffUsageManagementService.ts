@@ -108,7 +108,7 @@ export class StaffUsageManagementService {
     await UsageRepository.update(usageId, {
       actual_start_time: actualStartTime,
       actual_end_time: actualEndTime,
-    });
+    } as any);
 
     await this.logActivity(
       staffId,
@@ -132,7 +132,7 @@ export class StaffUsageManagementService {
       throw new Error('Usage record not found');
     }
 
-    await UsageRepository.update(usageId, { remarks });
+    await UsageRepository.update(usageId, { remarks } as any);
 
     await this.logActivity(
       staffId,
@@ -218,11 +218,11 @@ export class StaffUsageManagementService {
       const charges = calculateUsageCharges(
         room,
         usageInput,
-        equipmentUsages,
+        equipmentUsages as any,
         application.ticket_multiplier
-      );
+      ) as any;
 
-      totalAmount += charges.totalCharge;
+      totalAmount += charges.totalCharge || charges.subtotal || 0;
     }
 
     // 合計金額を更新

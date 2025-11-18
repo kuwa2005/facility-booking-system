@@ -4,7 +4,7 @@ import RoomRepository from '../models/RoomRepository';
 import EquipmentRepository from '../models/EquipmentRepository';
 import { calculateCancellationFee } from '../utils/pricing';
 import { createError } from '../middleware/errorHandler';
-import EmailService from '../services/EmailService';
+import { emailService } from '../services/EmailService';
 import PaymentService from '../services/PaymentService';
 
 export class AdminController {
@@ -122,7 +122,7 @@ export class AdminController {
       }
 
       // Send cancellation email
-      await EmailService.sendCancellationNotification(
+      await emailService.sendCancellationNotification(
         application.applicant_email,
         application.applicant_representative,
         application.id,
