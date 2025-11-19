@@ -841,7 +841,7 @@
     // レビューを取得・表示
     async function loadReviews() {
       try {
-        const response = await fetch('/api/public/rooms/<%= room.id %>/reviews');
+        const response = await fetch('/api/rooms/<%= room.id %>/reviews');
         const data = await response.json();
 
         if (data.reviews && data.reviews.length > 0) {
