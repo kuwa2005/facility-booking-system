@@ -380,12 +380,15 @@
             method: 'DELETE'
           });
 
-          if (response.ok) {
+          const data = await response.json();
+
+          if (response.ok && data.success) {
             favorites.delete(roomId);
             btn.textContent = '🤍';
           } else {
-            const data = await response.json();
-            alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+            const errorMsg = data.error ? `${data.message}\n詳細: ${data.error}` : (data.message || '不明なエラー');
+            alert('削除に失敗しました: ' + errorMsg);
+            console.error('Favorite remove failed:', data);
           }
         } else {
           // 追加
@@ -397,12 +400,15 @@
             body: JSON.stringify({ room_id: roomId })
           });
 
-          if (response.ok) {
+          const data = await response.json();
+
+          if (response.ok && data.success) {
             favorites.add(roomId);
             btn.textContent = '❤️';
           } else {
-            const data = await response.json();
-            alert('追加に失敗しました: ' + (data.message || '不明なエラー'));
+            const errorMsg = data.error ? `${data.message}\n詳細: ${data.error}` : (data.message || '不明なエラー');
+            alert('追加に失敗しました: ' + errorMsg);
+            console.error('Favorite add failed:', data);
           }
         }
       } catch (error) {
