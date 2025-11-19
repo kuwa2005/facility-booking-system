@@ -5,49 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       line-height: 1.6;
       color: #333;
       background-color: #f5f5f5;
     }
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
+    /* ヘッダー */
     header {
       background-color: #2563eb;
       color: white;
       padding: 1rem 0;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     header .container {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    header h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-
+    header h1 { font-size: 1.5rem; font-weight: 600; }
     header nav {
       display: flex;
       gap: 1.5rem;
       align-items: center;
     }
-
     header nav a {
       color: white;
       text-decoration: none;
@@ -55,126 +39,299 @@
       border-radius: 4px;
       transition: background-color 0.3s;
     }
-
-    header nav a:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
     .btn-primary {
       background-color: white;
       color: #2563eb;
       font-weight: 500;
     }
 
-    main {
-      padding: 3rem 0;
-      min-height: calc(100vh - 200px);
-    }
-
+    /* メインコンテンツ */
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
     .page-title {
       font-size: 2rem;
       margin-bottom: 2rem;
       color: #1f2937;
     }
 
-    .search-card {
-      background-color: white;
+    /* フィルターカード */
+    .filter-card {
+      background: white;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 2rem;
+      padding: 1.5rem;
       margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
-    .form-group {
-      margin-bottom: 1.5rem;
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
     }
-
-    .form-group label {
+    .filter-group label {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
       color: #374151;
+      font-size: 0.875rem;
     }
-
-    .form-group input,
-    .form-group select {
+    .filter-group select {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.5rem;
       border: 1px solid #d1d5db;
       border-radius: 4px;
-      font-size: 1rem;
+      font-size: 0.875rem;
     }
 
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 0.75rem 2rem;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s;
-      text-align: center;
-    }
-
-    .btn-search {
-      background-color: #2563eb;
-      color: white;
-      width: 100%;
-    }
-
-    .btn-search:hover {
-      background-color: #1d4ed8;
-    }
-
-    .room-list {
-      background-color: white;
+    /* カレンダーナビゲーション */
+    .calendar-nav {
+      background: white;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 2rem;
-    }
-
-    .room-item {
       padding: 1.5rem;
-      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-
-    .room-item:last-child {
-      border-bottom: none;
-    }
-
-    .room-item h3 {
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
+    .calendar-month {
+      font-size: 1.5rem;
+      font-weight: 600;
       color: #1f2937;
     }
-
-    .room-item-info {
-      color: #6b7280;
-      margin-bottom: 0.5rem;
+    .nav-buttons {
+      display: flex;
+      gap: 0.5rem;
     }
-
-    .calendar-placeholder {
-      background-color: #f9fafb;
-      border: 2px dashed #d1d5db;
+    .nav-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
       border-radius: 4px;
-      padding: 3rem;
-      text-align: center;
-      margin-top: 1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background 0.3s;
+    }
+    .nav-btn:hover {
+      background: #1d4ed8;
     }
 
-    .calendar-placeholder p {
-      color: #6b7280;
+    /* 施設カード */
+    .room-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .room-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .room-info {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .view-detail-btn {
+      padding: 0.5rem 1rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .view-detail-btn:hover {
+      background: #1d4ed8;
     }
 
+    /* カレンダーグリッド */
+    .calendar-container {
+      overflow-x: auto;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+      min-width: 600px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      padding: 0.5rem;
+      background: #f9fafb;
+      border-radius: 4px;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 0.25rem;
+      position: relative;
+    }
+    .calendar-day:hover:not(.other-month):not(.past-day) {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .calendar-day.other-month {
+      opacity: 0.3;
+      cursor: default;
+    }
+    .calendar-day.past-day {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+    }
+    .calendar-day.today {
+      border: 2px solid #2563eb;
+      background-color: #eff6ff;
+    }
+    .day-number {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .day-slots {
+      display: flex;
+      gap: 2px;
+      margin-top: 0.25rem;
+    }
+    .slot-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .slot-available { background-color: #10b981; }
+    .slot-partial { background-color: #f59e0b; }
+    .slot-unavailable { background-color: #ef4444; }
+
+    /* 凡例 */
+    .legend {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    /* モーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .time-slot-item {
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .slot-time {
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .slot-status {
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .slot-status.available {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .slot-status.partial {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .slot-status.unavailable {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* フッター */
     footer {
       background-color: #1e40af;
       color: white;
@@ -183,15 +340,22 @@
       text-align: center;
     }
 
+    /* レスポンシブ */
     @media (max-width: 768px) {
       header .container {
         flex-direction: column;
         gap: 1rem;
       }
-
       header nav {
         flex-wrap: wrap;
         justify-content: center;
+      }
+      .calendar-nav {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .day-slots {
+        display: none;
       }
     }
   </style>
@@ -221,17 +385,12 @@
     <div class="container">
       <h2 class="page-title"><%= title %></h2>
 
-      <div class="search-card">
-        <h3 style="margin-bottom: 1.5rem; color: #1f2937;">検索条件</h3>
-        <form id="availabilityForm">
-          <div class="form-group">
-            <label for="date">希望日</label>
-            <input type="date" id="date" name="date" required>
-          </div>
-
-          <div class="form-group">
-            <label for="room">施設</label>
-            <select id="room" name="room">
+      <!-- フィルター -->
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label>施設で絞り込み</label>
+            <select id="roomFilter" onchange="filterRooms()">
               <option value="">すべての施設</option>
               <% if (rooms && rooms.length > 0) { %>
                 <% rooms.forEach(room => { %>
@@ -240,53 +399,301 @@
               <% } %>
             </select>
           </div>
-
-          <button type="submit" class="btn btn-search">空き状況を確認</button>
-        </form>
+          <div class="filter-group">
+            <label>定員で絞り込み</label>
+            <select id="capacityFilter" onchange="filterRooms()">
+              <option value="">すべて</option>
+              <option value="50">50名以下</option>
+              <option value="100">100名以下</option>
+              <option value="200">200名以下</option>
+              <option value="999">200名以上</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="room-list">
-        <h3 style="margin-bottom: 1.5rem; color: #1f2937;">施設一覧</h3>
+      <!-- カレンダーナビゲーション -->
+      <div class="calendar-nav">
+        <div class="calendar-month" id="currentMonth"></div>
+        <div class="nav-buttons">
+          <button class="nav-btn" onclick="previousMonth()">◀ 前月</button>
+          <button class="nav-btn" onclick="today()">今月</button>
+          <button class="nav-btn" onclick="nextMonth()">次月 ▶</button>
+        </div>
+      </div>
 
+      <!-- 凡例 -->
+      <div class="legend">
+        <div class="legend-title">空き状況の見方</div>
+        <div class="legend-grid">
+          <div class="legend-item">
+            <div class="legend-color slot-available"></div>
+            <span>予約可能</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color slot-partial"></div>
+            <span>一部空きあり</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color slot-unavailable"></div>
+            <span>予約不可</span>
+          </div>
+        </div>
+        <p style="font-size: 0.875rem; color: #6b7280; margin-top: 1rem;">
+          ※各日付の下にある3つの丸は、午前・午後・夜間の各時間帯の空き状況を示しています。<br>
+          日付をクリックすると詳細が表示されます。
+        </p>
+      </div>
+
+      <!-- 施設別カレンダー -->
+      <div id="roomCalendars">
         <% if (rooms && rooms.length > 0) { %>
           <% rooms.forEach(room => { %>
-            <div class="room-item">
-              <h3><%= room.name %></h3>
-              <% if (room.capacity) { %>
-                <p class="room-item-info">定員: <%= room.capacity %>名</p>
-              <% } %>
-              <p class="room-item-info">
-                料金: ¥<%= room.base_price_morning?.toLocaleString() || '0' %>〜
-              </p>
-              <div class="calendar-placeholder">
-                <p>📅 カレンダー表示は開発中です</p>
-                <p style="font-size: 0.875rem;">詳細は<a href="/rooms/<%= room.id %>" style="color: #2563eb;">こちら</a>からご確認ください</p>
+            <div class="room-card" data-room-id="<%= room.id %>" data-capacity="<%= room.capacity || 0 %>">
+              <div class="room-header">
+                <div>
+                  <div class="room-title"><%= room.name %></div>
+                  <div class="room-info">
+                    <% if (room.capacity) { %>定員: <%= room.capacity %>名 | <% } %>
+                    料金: ¥<%= room.base_price_morning?.toLocaleString() || '0' %>〜
+                  </div>
+                </div>
+                <a href="/rooms/<%= room.id %>" class="view-detail-btn">詳細・予約</a>
+              </div>
+              <div class="calendar-container">
+                <div class="calendar-grid" id="calendar-<%= room.id %>"></div>
               </div>
             </div>
           <% }); %>
         <% } else { %>
-          <p style="text-align: center; color: #6b7280; padding: 2rem;">現在ご利用可能な施設はありません。</p>
+          <div style="text-align: center; padding: 3rem; background: white; border-radius: 8px;">
+            <p style="color: #6b7280; font-size: 1.125rem;">現在ご利用可能な施設はありません。</p>
+          </div>
         <% } %>
       </div>
     </div>
   </main>
 
+  <!-- モーダル -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle"></div>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
   <footer>
     <div class="container">
       <p>&copy; 2025 施設予約システム. All rights reserved.</p>
-      <p style="margin-top: 0.5rem; font-size: 0.875rem;">
-        <a href="/terms" style="color: white; margin: 0 0.5rem;">利用規約</a>
-        <a href="/privacy" style="color: white; margin: 0 0.5rem;">プライバシーポリシー</a>
-        <a href="/contact" style="color: white; margin: 0 0.5rem;">お問い合わせ</a>
-      </p>
     </div>
   </footer>
 
   <script>
-    document.getElementById('availabilityForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      alert('空き状況確認機能は開発中です。\n「部屋一覧」ページから各施設の詳細をご確認ください。');
+    const rooms = <%- JSON.stringify(rooms) %>;
+    let currentDate = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // カレンダー生成
+    function generateCalendars() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+      document.getElementById('currentMonth').textContent = year + '年 ' + monthNames[month];
+
+      rooms.forEach(room => {
+        const calendar = document.getElementById('calendar-' + room.id);
+        if (!calendar) return;
+
+        calendar.innerHTML = '';
+
+        // 曜日ヘッダー
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+        dayNames.forEach((day, index) => {
+          const header = document.createElement('div');
+          header.className = 'calendar-day-header';
+          header.textContent = day;
+          if (index === 0) header.style.color = '#ef4444'; // 日曜日
+          if (index === 6) header.style.color = '#3b82f6'; // 土曜日
+          calendar.appendChild(header);
+        });
+
+        // 月の日付
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        // 前月の日付で埋める
+        const startDay = firstDay.getDay();
+        for (let i = startDay - 1; i >= 0; i--) {
+          const date = new Date(year, month, -i);
+          createDayElement(calendar, date, true, room);
+        }
+
+        // 当月の日付
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+          const date = new Date(year, month, day);
+          createDayElement(calendar, date, false, room);
+        }
+
+        // 次月の日付で埋める
+        const totalCells = calendar.children.length - 7; // ヘッダー分を引く
+        const remainingDays = 7 - (totalCells % 7);
+        if (remainingDays < 7) {
+          for (let i = 1; i <= remainingDays; i++) {
+            const date = new Date(year, month + 1, i);
+            createDayElement(calendar, date, true, room);
+          }
+        }
+      });
+    }
+
+    function createDayElement(calendar, date, isOtherMonth, room) {
+      const day = document.createElement('div');
+      day.className = 'calendar-day';
+
+      if (isOtherMonth) {
+        day.classList.add('other-month');
+      }
+
+      if (date.getTime() === today.getTime() && !isOtherMonth) {
+        day.classList.add('today');
+      }
+
+      if (date < today) {
+        day.classList.add('past-day');
+      }
+
+      const dayNumber = document.createElement('div');
+      dayNumber.className = 'day-number';
+      dayNumber.textContent = date.getDate();
+      day.appendChild(dayNumber);
+
+      // 時間帯の空き状況（ランダムで生成 - 実際はAPIから取得）
+      if (!isOtherMonth && date >= today) {
+        const slots = document.createElement('div');
+        slots.className = 'day-slots';
+
+        // 午前・午後・夜間の3つの時間帯
+        for (let i = 0; i < 3; i++) {
+          const slot = document.createElement('div');
+          slot.className = 'slot-indicator';
+
+          const rand = Math.random();
+          if (rand > 0.7) {
+            slot.classList.add('slot-available');
+          } else if (rand > 0.4) {
+            slot.classList.add('slot-partial');
+          } else {
+            slot.classList.add('slot-unavailable');
+          }
+
+          slots.appendChild(slot);
+        }
+
+        day.appendChild(slots);
+
+        // クリックイベント
+        day.onclick = () => showDayDetail(date, room);
+      }
+
+      calendar.appendChild(day);
+    }
+
+    function showDayDetail(date, room) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      document.getElementById('modalTitle').textContent =
+        `${room.name} - ${year}年${month}月${day}日`;
+
+      // 時間帯の詳細（実際はAPIから取得）
+      const timeSlots = [
+        { time: '午前（9:00-12:00）', status: Math.random() > 0.5 ? 'available' : 'unavailable', label: Math.random() > 0.5 ? '予約可能' : '予約済み' },
+        { time: '午後（13:00-17:00）', status: Math.random() > 0.5 ? 'available' : 'unavailable', label: Math.random() > 0.5 ? '予約可能' : '予約済み' },
+        { time: '夜間（18:00-21:30）', status: Math.random() > 0.5 ? 'available' : 'partial', label: Math.random() > 0.5 ? '予約可能' : '一部空きあり' }
+      ];
+
+      let html = '';
+      timeSlots.forEach(slot => {
+        html += `
+          <div class="time-slot-item">
+            <span class="slot-time">${slot.time}</span>
+            <span class="slot-status ${slot.status}">${slot.label}</span>
+          </div>
+        `;
+      });
+
+      html += `
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+          <a href="/rooms/${room.id}" class="view-detail-btn" style="display: block; text-align: center; padding: 0.75rem;">
+            この施設を予約する
+          </a>
+        </div>
+      `;
+
+      document.getElementById('modalBody').innerHTML = html;
+      document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').classList.remove('active');
+    }
+
+    function previousMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      generateCalendars();
+    }
+
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      generateCalendars();
+    }
+
+    function today() {
+      currentDate = new Date();
+      generateCalendars();
+    }
+
+    function filterRooms() {
+      const roomFilter = document.getElementById('roomFilter').value;
+      const capacityFilter = document.getElementById('capacityFilter').value;
+
+      document.querySelectorAll('.room-card').forEach(card => {
+        let show = true;
+
+        if (roomFilter && card.dataset.roomId !== roomFilter) {
+          show = false;
+        }
+
+        if (capacityFilter) {
+          const capacity = parseInt(card.dataset.capacity);
+          const maxCapacity = parseInt(capacityFilter);
+
+          if (maxCapacity === 999) {
+            if (capacity < 200) show = false;
+          } else {
+            if (capacity > maxCapacity) show = false;
+          }
+        }
+
+        card.style.display = show ? 'block' : 'none';
+      });
+    }
+
+    // モーダル外クリックで閉じる
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
     });
+
+    // 初期表示
+    generateCalendars();
   </script>
 </body>
 </html>
