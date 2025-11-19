@@ -8,62 +8,306 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #f5f5f5;
+      line-height: 1.6;
       color: #333;
+      background-color: #f5f5f5;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
     header {
       background-color: #2563eb;
       color: white;
       padding: 1rem 0;
-      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    header h1 { text-align: center; }
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .breadcrumb {
+      margin-bottom: 2rem;
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .breadcrumb a {
+      color: #2563eb;
+      text-decoration: none;
+    }
     .card {
       background: white;
       border-radius: 8px;
       padding: 2rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .form-group { margin-bottom: 1.5rem; }
+    .card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
     .form-group label {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
+      color: #374151;
     }
     .form-group input,
     .form-group textarea {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.75rem 1rem;
       border: 1px solid #d1d5db;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .form-help {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
     }
     .btn {
       padding: 0.75rem 1.5rem;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-size: 1rem;
       font-weight: 500;
       cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.3s;
     }
     .btn-primary {
       background-color: #2563eb;
       color: white;
+      flex: 1;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     .btn-secondary {
       background-color: #6b7280;
       color: white;
-      margin-left: 1rem;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .error-message {
+      background-color: #fee2e2;
+      color: #991b1b;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .success-message {
+      background-color: #d1fae5;
+      color: #065f46;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <header><h1><%= title %></h1></header>
-  <div class="container">
-    <div class="card">
-      <h2>プロフィール編集</h2>
-      <p style="color: #6b7280; margin: 1rem 0;">この機能は開発中です。</p>
-      <a href="/my-page" class="btn btn-secondary">マイページに戻る</a>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">部屋一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/my-page">マイページ</a>
+        <a href="/my-reservations">予約一覧</a>
+        <a href="/logout">ログアウト</a>
+      </nav>
     </div>
-  </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="/">ホーム</a> / <a href="/my-page">マイページ</a> / プロフィール編集
+      </div>
+
+      <div class="card">
+        <h2>プロフィール編集</h2>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <form id="profileForm">
+          <div class="form-group">
+            <label for="name">氏名</label>
+            <input type="text" id="name" name="name" required value="<%= profile.name %>">
+          </div>
+
+          <div class="form-group">
+            <label for="nickname">ニックネーム</label>
+            <input type="text" id="nickname" name="nickname" value="<%= profile.nickname || '' %>" placeholder="任意">
+            <div class="form-help">他のユーザーに表示される名前です</div>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">電話番号</label>
+            <input type="tel" id="phone" name="phone" required value="<%= profile.phone %>" placeholder="090-1234-5678">
+          </div>
+
+          <div class="form-group">
+            <label for="organization_name">組織・団体名</label>
+            <input type="text" id="organization_name" name="organization_name" value="<%= profile.organization_name || '' %>" placeholder="任意">
+          </div>
+
+          <div class="form-group">
+            <label for="address">住所</label>
+            <textarea id="address" name="address" placeholder="任意"><%= profile.address || '' %></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="bio">自己紹介</label>
+            <textarea id="bio" name="bio" placeholder="任意"><%= profile.bio || '' %></textarea>
+            <div class="form-help">最大1000文字</div>
+          </div>
+
+          <div class="btn-group">
+            <a href="/my-page" class="btn btn-secondary">キャンセル</a>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span id="btnText">保存する</span>
+              <div class="spinner" id="spinner"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const form = document.getElementById('profileForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // メッセージをクリア
+      errorMessage.style.display = 'none';
+      successMessage.style.display = 'none';
+
+      // ボタンを無効化してスピナーを表示
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      spinner.style.display = 'block';
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData);
+
+      // 空の値はnullに変換
+      Object.keys(data).forEach(key => {
+        if (data[key] === '') {
+          data[key] = null;
+        }
+      });
+
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successMessage.textContent = 'プロフィールを更新しました';
+          successMessage.style.display = 'block';
+
+          // 2秒後にマイページへリダイレクト
+          setTimeout(() => {
+            window.location.href = '/my-page';
+          }, 2000);
+        } else {
+          throw new Error(result.error || 'プロフィールの更新に失敗しました');
+        }
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.style.display = 'block';
+        submitBtn.disabled = false;
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>

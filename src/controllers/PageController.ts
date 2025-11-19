@@ -339,6 +339,16 @@ export class PageController {
   }
 
   /**
+   * パスワードリマインダーページ
+   */
+  static forgotPassword(req: Request, res: Response): void {
+    res.render('auth/forgot-password', {
+      title: 'パスワードリマインダー',
+      user: req.user,
+    });
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {

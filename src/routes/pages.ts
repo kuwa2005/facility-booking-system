@@ -16,6 +16,7 @@ router.get('/contact', optionalAuth, PageController.contact);
 // 認証ページ
 router.get('/register', PageController.register);
 router.get('/login', PageController.login);
+router.get('/forgot-password', PageController.forgotPassword);
 router.get('/logout', PageController.logout);
 
 // ユーザーページ（認証必須）

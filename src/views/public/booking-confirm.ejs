@@ -407,6 +407,12 @@
         return;
       }
 
+      // デモシステム：決済確認モーダルを表示
+      const totalAmount = document.getElementById('totalPrice').textContent;
+      if (!confirm(`クレジットカード決済を実行します。\n\n請求金額: ${totalAmount}\n\nよろしいですか？`)) {
+        return;
+      }
+
       const submitBtn = document.getElementById('submitBtn');
       const spinner = document.getElementById('spinner');
       const errorMessage = document.getElementById('errorMessage');
@@ -414,6 +420,9 @@
       submitBtn.disabled = true;
       spinner.style.display = 'inline-block';
       errorMessage.style.display = 'none';
+
+      // デモシステム：決済処理中を模擬（2秒待機）
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const usages = [{
         room_id: room.id,
@@ -456,6 +465,9 @@
         if (!response.ok) {
           throw new Error(result.error || '予約の作成に失敗しました');
         }
+
+        // デモシステム：決済完了メッセージ
+        alert('決済が完了しました！\n予約が確定しました。');
 
         // 予約完了ページへ遷移
         window.location.href = '/booking/success?applicationId=' + result.application.id;
