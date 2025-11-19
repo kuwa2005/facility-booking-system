@@ -39,6 +39,20 @@
     }
     header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
     main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      transition: color 0.3s;
+    }
+    .back-button:hover {
+      color: #1d4ed8;
+    }
     .page-header {
       margin-bottom: 2rem;
     }
@@ -213,6 +227,7 @@
 
   <main>
     <div class="container">
+      <a href="/my-page" class="back-button">← マイページに戻る</a>
       <div class="page-header">
         <h2>❤️ お気に入り施設</h2>
         <p>お気に入りに登録した施設一覧です</p>

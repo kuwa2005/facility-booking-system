@@ -35,6 +35,7 @@ router.delete('/account', UserProfileController.deleteAccount);
 
 // お気に入り部屋
 router.get('/favorites/rooms', UserProfileController.getFavoriteRooms);
+router.post('/favorites/rooms', UserProfileController.addFavoriteRoom);
 router.post('/favorites/rooms/:roomId', UserProfileController.addFavoriteRoom);
 router.delete('/favorites/rooms/:roomId', UserProfileController.removeFavoriteRoom);
 

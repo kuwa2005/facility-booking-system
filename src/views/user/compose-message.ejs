@@ -30,6 +30,22 @@
       width: 100%;
     }
 
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      margin-bottom: 20px;
+      transition: color 0.3s;
+    }
+
+    .back-button:hover {
+      color: #764ba2;
+    }
+
     h1 {
       color: #333;
       font-size: 28px;
@@ -173,6 +189,7 @@
 </head>
 <body>
   <div class="container">
+    <a href="/my-page/messages" class="back-button">← メッセージ一覧に戻る</a>
     <h1>✉️ メッセージを送信</h1>
     <p class="subtitle">施設管理者へお問い合わせください</p>
 

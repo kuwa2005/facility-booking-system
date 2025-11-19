@@ -248,7 +248,14 @@ export class UserProfileController {
         return;
       }
 
-      const { roomId } = req.params;
+      // URLパラメータまたはボディからroomIdを取得
+      const roomId = req.params.roomId || req.body.room_id;
+
+      if (!roomId) {
+        next(createError('room_idが指定されていません', 400));
+        return;
+      }
+
       const pool = (await import('../config/database')).default;
 
       await pool.query(

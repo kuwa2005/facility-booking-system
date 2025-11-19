@@ -48,6 +48,20 @@
 
     /* メインコンテンツ */
     main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      transition: color 0.3s;
+    }
+    .back-button:hover {
+      color: #1d4ed8;
+    }
     .page-title {
       font-size: 2rem;
       margin-bottom: 2rem;
@@ -383,6 +397,7 @@
 
   <main>
     <div class="container">
+      <a href="/" class="back-button">← トップページに戻る</a>
       <h2 class="page-title"><%= title %></h2>
 
       <!-- フィルター -->
