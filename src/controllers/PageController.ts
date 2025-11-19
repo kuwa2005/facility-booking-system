@@ -409,6 +409,51 @@ export class PageController {
   }
 
   /**
+   * お知らせ一覧ページ
+   */
+  static announcements(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/announcements', {
+      title: 'お知らせ',
+      user: req.user,
+    });
+  }
+
+  /**
+   * メッセージ一覧ページ
+   */
+  static messages(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/messages', {
+      title: 'メッセージ',
+      user: req.user,
+    });
+  }
+
+  /**
+   * メッセージ送信ページ
+   */
+  static composeMessage(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/compose-message', {
+      title: 'メッセージ送信',
+      user: req.user,
+    });
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {

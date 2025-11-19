@@ -26,6 +26,9 @@ router.get('/my-page/change-password', authenticate, PageController.changePasswo
 router.get('/my-page/create-review', authenticate, PageController.createReview);
 router.get('/my-page/reviews/:id/edit', authenticate, PageController.editReview);
 router.get('/my-page/favorites', authenticate, PageController.favorites);
+router.get('/my-page/announcements', authenticate, PageController.announcements);
+router.get('/my-page/messages', authenticate, PageController.messages);
+router.get('/my-page/messages/compose', authenticate, PageController.composeMessage);
 router.get('/my-reservations', authenticate, PageController.myReservations);
 router.get('/my-reservations/:id', authenticate, PageController.reservationDetail);
 

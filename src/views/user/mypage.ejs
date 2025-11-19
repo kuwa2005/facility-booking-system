@@ -286,6 +286,29 @@
               お気に入り一覧を見る
             </a>
           </div>
+
+          <div class="card">
+            <h3>📢 お知らせ</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+              施設からの重要なお知らせを確認できます
+            </p>
+            <a href="/my-page/announcements" class="btn btn-outline btn-block">
+              お知らせを見る
+            </a>
+          </div>
+
+          <div class="card">
+            <h3>✉️ メッセージ</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+              施設管理者とのメッセージのやり取りができます
+            </p>
+            <div id="unreadBadge" style="display: none; background-color: #ef4444; color: white; padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; font-weight: 600;">
+              未読メッセージがあります
+            </div>
+            <a href="/my-page/messages" class="btn btn-outline btn-block">
+              メッセージを見る
+            </a>
+          </div>
         </div>
       </div>
 
@@ -439,8 +462,25 @@
       }
     }
 
-    // ページロード時にレビューを取得
+    // 未読メッセージ数を取得・表示
+    async function loadUnreadCount() {
+      try {
+        const response = await fetch('/api/user/messages/unread/count');
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.count > 0) {
+          const badge = document.getElementById('unreadBadge');
+          badge.textContent = `未読メッセージが${result.data.count}件あります`;
+          badge.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load unread count:', error);
+      }
+    }
+
+    // ページロード時にレビューと未読メッセージ数を取得
     loadMyReviews();
+    loadUnreadCount();
   </script>
 </body>
 </html>
