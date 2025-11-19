@@ -196,7 +196,7 @@ export class AuthController {
       }
 
       const { currentPassword, newPassword } = req.body;
-      await AuthService.changePassword(req.user.id, currentPassword, newPassword);
+      await AuthService.changePassword(req.user.userId, currentPassword, newPassword);
 
       res.json({
         message: 'Password changed successfully',
