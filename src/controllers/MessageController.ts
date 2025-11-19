@@ -14,7 +14,7 @@ export class MessageController {
    */
   async sendMessageFromUser(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const data: CreateMessageDto = req.body;
 
       // バリデーション
@@ -54,7 +54,7 @@ export class MessageController {
    */
   async getUserMessages(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const includeDeleted = req.query.includeDeleted === 'true';
 
       const messages = await messageService.getUserMessages(
@@ -83,7 +83,7 @@ export class MessageController {
   async getMessageById(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const userRole = (req as any).user.role;
 
       if (isNaN(messageId)) {
@@ -140,7 +140,7 @@ export class MessageController {
   async markAsRead(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -173,7 +173,7 @@ export class MessageController {
   async deleteMessageByUser(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -205,7 +205,7 @@ export class MessageController {
    */
   async getUnreadCount(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const count = await messageService.getUnreadCount(userId, 'user');
 
       res.json({
@@ -229,7 +229,7 @@ export class MessageController {
   async getUserMessageThread(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -271,7 +271,7 @@ export class MessageController {
    */
   async sendMessageFromStaff(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const data: CreateMessageDto = req.body;
 
       // バリデーション
@@ -311,7 +311,7 @@ export class MessageController {
    */
   async getStaffMessages(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const showAll = req.query.showAll === 'true';
 
       // 管理者の場合は全メッセージを表示可能
@@ -340,7 +340,7 @@ export class MessageController {
   async getMessagesByUser(req: Request, res: Response): Promise<void> {
     try {
       const userId = parseInt(req.params.userId);
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
 
       if (isNaN(userId)) {
         res.status(400).json({
@@ -405,7 +405,7 @@ export class MessageController {
   async deleteMessageByStaff(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -437,7 +437,7 @@ export class MessageController {
    */
   async getMessageStats(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const showAll = req.query.showAll === 'true';
 
       const stats = await messageService.getMessageStats(
@@ -488,7 +488,7 @@ export class MessageController {
    */
   async sendContactMessage(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const { name, email, phone, subject, content } = req.body;
 
       // バリデーション

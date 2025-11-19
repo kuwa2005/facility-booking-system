@@ -262,7 +262,7 @@
               <label>
                 電話番号<span class="required">*</span>
               </label>
-              <input type="tel" id="phone" name="phone" required placeholder="090-1234-5678">
+              <input type="tel" id="phone" name="phone" required placeholder="090-1234-5678" value="<%= user.phone || '' %>">
             </div>
           </div>
 
@@ -275,7 +275,7 @@
 
           <div class="form-group">
             <label>団体名</label>
-            <input type="text" id="groupName" name="groupName" placeholder="任意">
+            <input type="text" id="groupName" name="groupName" placeholder="任意" value="<%= user.organization_name || '' %>">
           </div>
 
           <div class="form-group">

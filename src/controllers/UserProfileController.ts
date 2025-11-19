@@ -244,7 +244,10 @@ export class UserProfileController {
   static async addFavoriteRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user) {
-        next(createError('認証が必要です', 401));
+        res.status(401).json({
+          success: false,
+          message: '認証が必要です',
+        });
         return;
       }
 
@@ -252,7 +255,10 @@ export class UserProfileController {
       const roomId = req.params.roomId || req.body.room_id;
 
       if (!roomId) {
-        next(createError('room_idが指定されていません', 400));
+        res.status(400).json({
+          success: false,
+          message: 'room_idが指定されていません',
+        });
         return;
       }
 
@@ -264,10 +270,15 @@ export class UserProfileController {
       );
 
       res.json({
+        success: true,
         message: 'お気に入りに追加しました',
       });
     } catch (error: any) {
-      next(createError(error.message, 400));
+      res.status(500).json({
+        success: false,
+        message: 'お気に入りの追加に失敗しました',
+        error: error.message,
+      });
     }
   }
 
@@ -277,7 +288,10 @@ export class UserProfileController {
   static async removeFavoriteRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user) {
-        next(createError('認証が必要です', 401));
+        res.status(401).json({
+          success: false,
+          message: '認証が必要です',
+        });
         return;
       }
 
@@ -290,10 +304,15 @@ export class UserProfileController {
       );
 
       res.json({
+        success: true,
         message: 'お気に入りから削除しました',
       });
     } catch (error: any) {
-      next(createError(error.message, 400));
+      res.status(500).json({
+        success: false,
+        message: 'お気に入りの削除に失敗しました',
+        error: error.message,
+      });
     }
   }
 
@@ -303,7 +322,10 @@ export class UserProfileController {
   static async getFavoriteRooms(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user) {
-        next(createError('認証が必要です', 401));
+        res.status(401).json({
+          success: false,
+          message: '認証が必要です',
+        });
         return;
       }
 
@@ -317,9 +339,16 @@ export class UserProfileController {
         [req.user.userId]
       );
 
-      res.json({ rooms });
+      res.json({
+        success: true,
+        rooms
+      });
     } catch (error: any) {
-      next(createError(error.message, 500));
+      res.status(500).json({
+        success: false,
+        message: 'お気に入りの取得に失敗しました',
+        error: error.message,
+      });
     }
   }
 }

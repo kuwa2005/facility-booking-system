@@ -282,12 +282,15 @@ export class PageController {
         return;
       }
 
+      // プロフィール情報を取得
+      const profile = await UserProfileService.getProfile(req.user.userId);
+
       // スロット情報を解析
       const selectedSlots = (slots as string).split(',');
 
       res.render('public/booking-confirm', {
         title: '予約確認',
-        user: req.user,
+        user: profile || req.user, // プロフィール情報があればそれを使用
         room,
         date,
         selectedSlots,
