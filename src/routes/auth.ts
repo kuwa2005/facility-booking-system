@@ -21,4 +21,12 @@ router.post(
 );
 router.post('/resend-verification', AuthController.resendVerification);
 
+// Protected routes
+router.post(
+  '/change-password',
+  authenticate,
+  AuthController.changePasswordValidation,
+  AuthController.changePassword
+);
+
 export default router;

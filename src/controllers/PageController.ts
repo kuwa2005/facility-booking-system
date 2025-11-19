@@ -349,6 +349,36 @@ export class PageController {
   }
 
   /**
+   * パスワード変更ページ
+   */
+  static changePassword(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/change-password', {
+      title: 'パスワード変更',
+      user: req.user,
+    });
+  }
+
+  /**
+   * レビュー作成ページ
+   */
+  static createReview(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/create-review', {
+      title: 'レビューを投稿',
+      user: req.user,
+    });
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {

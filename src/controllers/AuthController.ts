@@ -176,4 +176,33 @@ export class AuthController {
       next(createError(error.message, 400));
     }
   }
+
+  /**
+   * Change password validation rules
+   */
+  static changePasswordValidation = [
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 1 }).withMessage('New password is required'),
+    handleValidationErrors,
+  ];
+
+  /**
+   * Change password (for logged-in users)
+   */
+  static async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new Error('Authentication required');
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      await AuthService.changePassword(req.user.id, currentPassword, newPassword);
+
+      res.json({
+        message: 'Password changed successfully',
+      });
+    } catch (error: any) {
+      next(createError(error.message, 400));
+    }
+  }
 }

@@ -498,9 +498,25 @@
               usageDate.setHours(0, 0, 0, 0);
               return usageDate >= today;
             });
+
+            const isCompleted = usages && usages.length > 0 && usages.every(usage => {
+              const usageDate = new Date(usage.date);
+              usageDate.setHours(0, 0, 0, 0);
+              return usageDate < today;
+            });
+
+            const firstUsage = usages && usages.length > 0 ? usages[0] : null;
           %>
           <% if (canCancel) { %>
             <button class="btn btn-danger" onclick="confirmCancel()">予約をキャンセル</button>
+          <% } else if (isCompleted && firstUsage && firstUsage.room) { %>
+            <a
+              href="/my-page/create-review?applicationId=<%= application.id %>&roomId=<%= firstUsage.room_id %>&roomName=<%= encodeURIComponent(firstUsage.room.name) %>&eventName=<%= encodeURIComponent(application.event_name) %>"
+              class="btn btn-primary"
+              id="reviewBtn"
+            >
+              レビューを投稿
+            </a>
           <% } %>
         <% } %>
       </div>
@@ -543,6 +559,37 @@
       } catch (error) {
         alert('エラー: ' + error.message);
       }
+    }
+
+    // レビュー済みかどうかをチェック
+    async function checkReviewStatus() {
+      const reviewBtn = document.getElementById('reviewBtn');
+      if (!reviewBtn) return;
+
+      try {
+        const response = await fetch('/api/user/applications/<%= application.id %>/can-review');
+        const result = await response.json();
+
+        if (!result.canReview) {
+          if (result.reason === 'Already reviewed') {
+            reviewBtn.textContent = 'レビュー済み';
+            reviewBtn.classList.remove('btn-primary');
+            reviewBtn.classList.add('btn-secondary');
+            reviewBtn.style.pointerEvents = 'none';
+          } else {
+            reviewBtn.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('Error checking review status:', error);
+      }
+    }
+
+    // ページロード時にレビュー状態をチェック
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkReviewStatus);
+    } else {
+      checkReviewStatus();
     }
   </script>
 </body>

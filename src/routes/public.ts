@@ -1,6 +1,7 @@
 import express from 'express';
 import { RoomController } from '../controllers/RoomController';
 import { ApplicationController } from '../controllers/ApplicationController';
+import { ReviewController } from '../controllers/ReviewController';
 import { AnnouncementController } from '../controllers/AnnouncementController';
 import { authenticate, optionalAuth } from '../middleware/auth';
 
@@ -20,6 +21,10 @@ router.get('/rooms/:id/availability', RoomController.getRoomAvailability);
 
 // Equipment routes
 router.get('/equipment', RoomController.getEquipment);
+
+// Review routes (public)
+router.get('/rooms/:roomId/reviews', ReviewController.getRoomReviews);
+router.get('/reviews/recent', ReviewController.getRecentReviews);
 
 // Application routes
 router.post(
