@@ -274,7 +274,7 @@
         };
 
         // 管理者にメッセージを送信（recipient_id: 1 は管理者を想定）
-        const response = await fetch('/api/contact', {
+        const response = await fetch('/api/user/contact', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
