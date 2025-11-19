@@ -206,6 +206,59 @@ export class PageController {
   }
 
   /**
+   * 施設詳細ページ
+   */
+  static async roomDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const room = await RoomRepository.findById(parseInt(id, 10));
+
+      if (!room) {
+        next(createError('施設が見つかりません', 404));
+        return;
+      }
+
+      res.render('public/room-detail', {
+        title: room.name,
+        user: req.user,
+        room,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
+   * 利用規約ページ
+   */
+  static terms(req: Request, res: Response): void {
+    res.render('public/terms', {
+      title: '利用規約',
+      user: req.user,
+    });
+  }
+
+  /**
+   * プライバシーポリシーページ
+   */
+  static privacy(req: Request, res: Response): void {
+    res.render('public/privacy', {
+      title: 'プライバシーポリシー',
+      user: req.user,
+    });
+  }
+
+  /**
+   * お問い合わせページ
+   */
+  static contact(req: Request, res: Response): void {
+    res.render('public/contact', {
+      title: 'お問い合わせ',
+      user: req.user,
+    });
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {

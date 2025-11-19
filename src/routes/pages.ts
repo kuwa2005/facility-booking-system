@@ -7,7 +7,11 @@ const router = express.Router();
 // 公開ページ（認証オプション）
 router.get('/', optionalAuth, PageController.home);
 router.get('/rooms', optionalAuth, PageController.rooms);
+router.get('/rooms/:id', optionalAuth, PageController.roomDetail);
 router.get('/availability', optionalAuth, PageController.availability);
+router.get('/terms', optionalAuth, PageController.terms);
+router.get('/privacy', optionalAuth, PageController.privacy);
+router.get('/contact', optionalAuth, PageController.contact);
 
 // 認証ページ
 router.get('/register', PageController.register);
