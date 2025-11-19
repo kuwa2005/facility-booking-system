@@ -595,10 +595,11 @@ ${message}
         [name, email, phone, category, message]
       );
 
-      // 管理者にもメッセージとして通知（システムユーザーとして送信）
+      // 管理者にもメッセージとして通知（システムメッセージとして記録）
+      // sender_typeは'staff'、sender_id=1（管理者）として記録し、recipient_id=1（管理者宛）として記録
       await pool.query(
         `INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, subject, content, created_at)
-         VALUES ('system', 0, 'staff', 1, ?, ?, NOW())`,
+         VALUES ('staff', 1, 'staff', 1, ?, ?, NOW())`,
         [`【${categoryLabel[category as keyof typeof categoryLabel]}】${name}様からのお問い合わせ`, formattedContent]
       );
 
