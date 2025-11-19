@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+    }
+    header h1 { text-align: center; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+      margin-left: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header><h1><%= title %></h1></header>
+  <div class="container">
+    <div class="card">
+      <h2>プロフィール編集</h2>
+      <p style="color: #6b7280; margin: 1rem 0;">この機能は開発中です。</p>
+      <a href="/my-page" class="btn btn-secondary">マイページに戻る</a>
+    </div>
+  </div>
+</body>
+</html>

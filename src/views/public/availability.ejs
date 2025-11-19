@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    header nav a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-primary {
+      background-color: white;
+      color: #2563eb;
+      font-weight: 500;
+    }
+
+    main {
+      padding: 3rem 0;
+      min-height: calc(100vh - 200px);
+    }
+
+    .page-title {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #1f2937;
+    }
+
+    .search-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .btn-search {
+      background-color: #2563eb;
+      color: white;
+      width: 100%;
+    }
+
+    .btn-search:hover {
+      background-color: #1d4ed8;
+    }
+
+    .room-list {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 2rem;
+    }
+
+    .room-item {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .room-item:last-child {
+      border-bottom: none;
+    }
+
+    .room-item h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+
+    .room-item-info {
+      color: #6b7280;
+      margin-bottom: 0.5rem;
+    }
+
+    .calendar-placeholder {
+      background-color: #f9fafb;
+      border: 2px dashed #d1d5db;
+      border-radius: 4px;
+      padding: 3rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .calendar-placeholder p {
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      header .container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      header nav {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">部屋一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <% if (user) { %>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+          <a href="/logout">ログアウト</a>
+        <% } else { %>
+          <a href="/login">ログイン</a>
+          <a href="/register" class="btn-primary">新規登録</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h2 class="page-title"><%= title %></h2>
+
+      <div class="search-card">
+        <h3 style="margin-bottom: 1.5rem; color: #1f2937;">検索条件</h3>
+        <form id="availabilityForm">
+          <div class="form-group">
+            <label for="date">希望日</label>
+            <input type="date" id="date" name="date" required>
+          </div>
+
+          <div class="form-group">
+            <label for="room">施設</label>
+            <select id="room" name="room">
+              <option value="">すべての施設</option>
+              <% if (rooms && rooms.length > 0) { %>
+                <% rooms.forEach(room => { %>
+                  <option value="<%= room.id %>"><%= room.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-search">空き状況を確認</button>
+        </form>
+      </div>
+
+      <div class="room-list">
+        <h3 style="margin-bottom: 1.5rem; color: #1f2937;">施設一覧</h3>
+
+        <% if (rooms && rooms.length > 0) { %>
+          <% rooms.forEach(room => { %>
+            <div class="room-item">
+              <h3><%= room.name %></h3>
+              <% if (room.capacity) { %>
+                <p class="room-item-info">定員: <%= room.capacity %>名</p>
+              <% } %>
+              <p class="room-item-info">
+                料金: ¥<%= room.base_price_morning?.toLocaleString() || '0' %>〜
+              </p>
+              <div class="calendar-placeholder">
+                <p>📅 カレンダー表示は開発中です</p>
+                <p style="font-size: 0.875rem;">詳細は<a href="/rooms/<%= room.id %>" style="color: #2563eb;">こちら</a>からご確認ください</p>
+              </div>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <p style="text-align: center; color: #6b7280; padding: 2rem;">現在ご利用可能な施設はありません。</p>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+        <a href="/terms" style="color: white; margin: 0 0.5rem;">利用規約</a>
+        <a href="/privacy" style="color: white; margin: 0 0.5rem;">プライバシーポリシー</a>
+        <a href="/contact" style="color: white; margin: 0 0.5rem;">お問い合わせ</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('availabilityForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('空き状況確認機能は開発中です。\n「部屋一覧」ページから各施設の詳細をご確認ください。');
+    });
+  </script>
+</body>
+</html>
