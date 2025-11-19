@@ -552,15 +552,15 @@ ${content}
         return;
       }
 
-      // メールアドレスの簡易バリデーション
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        res.status(400).json({
-          success: false,
-          message: '有効なメールアドレスを入力してください。',
-        });
-        return;
-      }
+      // デモモード：メールアドレスの形式チェックを無効化
+      // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // if (!emailRegex.test(email)) {
+      //   res.status(400).json({
+      //     success: false,
+      //     message: '有効なメールアドレスを入力してください。',
+      //   });
+      //   return;
+      // }
 
       const categoryLabel = {
         'reservation': '予約について',

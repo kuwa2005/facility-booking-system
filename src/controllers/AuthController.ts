@@ -7,9 +7,10 @@ import { createError } from '../middleware/errorHandler';
 export class AuthController {
   /**
    * Register validation rules
+   * デモモード：メールアドレスの形式チェックを無効化
    */
   static registerValidation = [
-    body('email').isEmail().withMessage('Valid email is required'),
+    body('email').notEmpty().withMessage('Email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
     body('name').notEmpty().withMessage('Name is required'),
     body('phone').notEmpty().withMessage('Phone is required'),
@@ -68,9 +69,10 @@ export class AuthController {
 
   /**
    * Login validation rules
+   * デモモード：メールアドレスの形式チェックを無効化
    */
   static loginValidation = [
-    body('email').isEmail().withMessage('Valid email is required'),
+    body('email').notEmpty().withMessage('Email is required'),
     body('password').notEmpty().withMessage('Password is required'),
     handleValidationErrors,
   ];
@@ -110,9 +112,10 @@ export class AuthController {
 
   /**
    * Request password reset validation rules
+   * デモモード：メールアドレスの形式チェックを無効化
    */
   static requestPasswordResetValidation = [
-    body('email').isEmail().withMessage('Valid email is required'),
+    body('email').notEmpty().withMessage('Email is required'),
     handleValidationErrors,
   ];
 

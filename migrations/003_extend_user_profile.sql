@@ -1,17 +1,31 @@
 -- Migration: 003 - ユーザープロフィール機能の拡張
 -- Description: ニックネーム、プロフィール画像、退会フラグなどを追加
 
--- usersテーブルにプロフィール関連のカラムを追加
-ALTER TABLE users
-ADD COLUMN nickname VARCHAR(100) DEFAULT NULL COMMENT 'ニックネーム（表示名）',
-ADD COLUMN profile_image_path VARCHAR(500) DEFAULT NULL COMMENT 'プロフィール画像のパス',
-ADD COLUMN bio TEXT DEFAULT NULL COMMENT '自己紹介',
-ADD COLUMN deleted_at DATETIME DEFAULT NULL COMMENT '退会日時（論理削除）',
-ADD COLUMN last_login_at DATETIME DEFAULT NULL COMMENT '最終ログイン日時';
+-- usersテーブルにプロフィール関連のカラムを追加（既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='users' AND column_name='nickname' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE users ADD COLUMN nickname VARCHAR(100) DEFAULT NULL COMMENT ''ニックネーム（表示名）''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- ニックネームのインデックス追加（検索用）
-ALTER TABLE users
-ADD INDEX idx_nickname (nickname);
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='users' AND column_name='profile_image_path' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE users ADD COLUMN profile_image_path VARCHAR(500) DEFAULT NULL COMMENT ''プロフィール画像のパス''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='users' AND column_name='bio' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE users ADD COLUMN bio TEXT DEFAULT NULL COMMENT ''自己紹介''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='users' AND column_name='deleted_at' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE users ADD COLUMN deleted_at DATETIME DEFAULT NULL COMMENT ''退会日時（論理削除）''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='users' AND column_name='last_login_at' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE users ADD COLUMN last_login_at DATETIME DEFAULT NULL COMMENT ''最終ログイン日時''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ニックネームのインデックス追加（検索用・既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE table_name='users' AND index_name='idx_nickname' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE users ADD INDEX idx_nickname (nickname)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- プロフィール変更履歴テーブル（オプション、監査用）
 CREATE TABLE IF NOT EXISTS user_profile_changes (
@@ -28,11 +42,18 @@ CREATE TABLE IF NOT EXISTS user_profile_changes (
     INDEX idx_changed_at (changed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- applicationsテーブルに予約変更関連のカラムを追加
-ALTER TABLE applications
-ADD COLUMN previous_application_id INT UNSIGNED DEFAULT NULL COMMENT '変更前の予約ID',
-ADD COLUMN modified_at DATETIME DEFAULT NULL COMMENT '最終変更日時',
-ADD COLUMN modification_count INT UNSIGNED DEFAULT 0 COMMENT '変更回数';
+-- applicationsテーブルに予約変更関連のカラムを追加（既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='applications' AND column_name='previous_application_id' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE applications ADD COLUMN previous_application_id INT UNSIGNED DEFAULT NULL COMMENT ''変更前の予約ID''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='applications' AND column_name='modified_at' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE applications ADD COLUMN modified_at DATETIME DEFAULT NULL COMMENT ''最終変更日時''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='applications' AND column_name='modification_count' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE applications ADD COLUMN modification_count INT UNSIGNED DEFAULT 0 COMMENT ''変更回数''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 予約変更履歴テーブル
 CREATE TABLE IF NOT EXISTS application_modifications (
