@@ -122,7 +122,11 @@ export class PageController {
         `SELECT a.*,
                 (SELECT COUNT(*) FROM usages WHERE application_id = a.id) as usage_count,
                 (SELECT MIN(date) FROM usages WHERE application_id = a.id) as first_date,
-                (SELECT MAX(date) FROM usages WHERE application_id = a.id) as last_date
+                (SELECT MAX(date) FROM usages WHERE application_id = a.id) as last_date,
+                (SELECT GROUP_CONCAT(DISTINCT r.name SEPARATOR '、')
+                 FROM usages u
+                 INNER JOIN rooms r ON u.room_id = r.id
+                 WHERE u.application_id = a.id) as room_names
          FROM applications a
          WHERE a.user_id = ?
          ORDER BY a.created_at DESC`,
