@@ -11,6 +11,7 @@ dotenv.config();
 
 // データベースのインポート
 import { testConnection } from './config/database';
+import { runMigrations } from './utils/runMigrations';
 
 // ルートのインポート
 import authRoutes from './routes/auth';
@@ -96,6 +97,9 @@ async function startServer() {
       console.error('データベースへの接続に失敗しました。設定を確認してください。');
       process.exit(1);
     }
+
+    // データベースマイグレーションを実行
+    await runMigrations();
 
     // リスニング開始
     app.listen(PORT, HOST, () => {

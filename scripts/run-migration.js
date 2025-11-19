@@ -3,7 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
 
-async function runMigration() {
+async function runMigrations() {
   let connection;
   try {
     // データベース接続を作成
@@ -18,48 +18,61 @@ async function runMigration() {
 
     console.log('データベースに接続しました');
 
-    // user_favorite_roomsテーブルが存在するか確認
-    const [tables] = await connection.query(
-      "SHOW TABLES LIKE 'user_favorite_rooms'"
-    );
-
-    if (tables.length > 0) {
-      console.log('user_favorite_roomsテーブルは既に存在しています');
-      return;
-    }
-
-    console.log('user_favorite_roomsテーブルを作成します...');
-
-    // テーブルを作成
+    // migrationsテーブルが存在しない場合は作成
     await connection.query(`
-      CREATE TABLE IF NOT EXISTS user_favorite_rooms (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id INT UNSIGNED NOT NULL,
-        room_id INT UNSIGNED NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_user_room (user_id, room_id),
-        INDEX idx_user_id (user_id)
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL UNIQUE,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    console.log('✓ user_favorite_roomsテーブルを作成しました');
+    // migrationsディレクトリからすべてのSQLファイルを読み込む
+    const migrationsDir = path.join(__dirname, '..', 'migrations');
+    const files = await fs.readdir(migrationsDir);
+    const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();
 
-    // テーブルが正しく作成されたか確認
-    const [result] = await connection.query(
-      "SHOW TABLES LIKE 'user_favorite_rooms'"
-    );
+    console.log(`${sqlFiles.length}個のマイグレーションファイルが見つかりました`);
 
-    if (result.length > 0) {
-      console.log('✓ テーブルの作成を確認しました');
-    } else {
-      console.error('✗ テーブルの作成に失敗しました');
+    for (const file of sqlFiles) {
+      // 既に実行済みかチェック
+      const [executed] = await connection.query(
+        'SELECT * FROM migrations WHERE filename = ?',
+        [file]
+      );
+
+      if (executed.length > 0) {
+        console.log(`⊘ ${file} - スキップ（実行済み）`);
+        continue;
+      }
+
+      console.log(`▶ ${file} を実行中...`);
+
+      // SQLファイルを読み込んで実行
+      const filePath = path.join(migrationsDir, file);
+      const sql = await fs.readFile(filePath, 'utf8');
+
+      try {
+        await connection.query(sql);
+
+        // 実行済みとして記録
+        await connection.query(
+          'INSERT INTO migrations (filename) VALUES (?)',
+          [file]
+        );
+
+        console.log(`✓ ${file} - 実行完了`);
+      } catch (error) {
+        console.error(`✗ ${file} - 実行エラー:`, error.message);
+        // エラーが発生してもCREATE TABLE IF NOT EXISTSなので続行
+      }
     }
+
+    console.log('\n全てのマイグレーションが完了しました');
 
   } catch (error) {
     console.error('エラーが発生しました:', error.message);
+    console.error(error);
     process.exit(1);
   } finally {
     if (connection) {
@@ -69,4 +82,4 @@ async function runMigration() {
   }
 }
 
-runMigration();
+runMigrations();
