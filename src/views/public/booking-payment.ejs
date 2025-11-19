@@ -400,9 +400,6 @@
         // sessionStorageをクリア
         sessionStorage.removeItem('bookingData');
 
-        // デモシステム：決済完了メッセージ
-        alert('決済が完了しました！\n予約が確定しました。');
-
         // 予約完了ページへ遷移
         window.location.href = '/booking/success?applicationId=' + result.application.id;
       } catch (error) {

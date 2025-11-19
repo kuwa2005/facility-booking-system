@@ -200,8 +200,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
           </svg>
         </div>
-        <h1 class="success-title">予約が完了しました！</h1>
+        <h1 class="success-title">ご予約を承りました</h1>
         <p class="success-message">
+          決済が完了しました。<br>
           ご予約ありがとうございます。<br>
           確認メールを登録されたメールアドレスに送信しました。
         </p>
@@ -257,13 +258,15 @@
         <p>
           予約の詳細は「マイページ」の「予約一覧」からご確認いただけます。<br>
           予約内容に変更がある場合は、お早めにご連絡ください。<br>
-          キャンセルの場合、キャンセル料が発生する場合がございます。
+          キャンセルの場合、キャンセル料が発生する場合がございます。<br>
+          ご不明な点がございましたら、<a href="/contact" style="color: #2563eb; text-decoration: underline;">お問合せフォーム</a>よりお気軽にお問い合わせください。
         </p>
       </div>
 
       <div class="btn-group">
         <a href="/my-reservations/<%= application.id %>" class="btn btn-primary">予約詳細を見る</a>
         <a href="/my-reservations" class="btn btn-secondary">予約一覧へ</a>
+        <a href="/contact" class="btn btn-secondary">お問合せ</a>
         <a href="/rooms" class="btn btn-secondary">施設一覧へ戻る</a>
       </div>
     </div>
