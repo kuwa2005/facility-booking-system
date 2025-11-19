@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; }
+    .success-card {
+      background: white;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background-color: #10b981;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    .success-icon svg {
+      width: 48px;
+      height: 48px;
+      color: white;
+    }
+    .success-title {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+    .success-message {
+      font-size: 1.125rem;
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .info-value {
+      color: #1f2937;
+    }
+    .highlight {
+      background-color: #dbeafe;
+      color: #1e40af;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .notice-box {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+    }
+    .notice-box h3 {
+      color: #92400e;
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+    .notice-box p {
+      color: #78350f;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">部屋一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <% if (user) { %>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+          <a href="/logout">ログアウト</a>
+        <% } else { %>
+          <a href="/login">ログイン</a>
+          <a href="/register">新規登録</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="success-card">
+        <div class="success-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <h1 class="success-title">予約が完了しました！</h1>
+        <p class="success-message">
+          ご予約ありがとうございます。<br>
+          確認メールを登録されたメールアドレスに送信しました。
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>予約情報</h2>
+        <div class="info-grid">
+          <div class="info-label">予約番号</div>
+          <div class="info-value">
+            <span class="highlight">#<%= application.id %></span>
+          </div>
+
+          <div class="info-label">イベント名</div>
+          <div class="info-value"><%= application.event_name %></div>
+
+          <div class="info-label">申込者</div>
+          <div class="info-value"><%= application.applicant_representative %></div>
+
+          <div class="info-label">メールアドレス</div>
+          <div class="info-value"><%= application.applicant_email %></div>
+
+          <div class="info-label">電話番号</div>
+          <div class="info-value"><%= application.applicant_phone %></div>
+
+          <div class="info-label">合計金額</div>
+          <div class="info-value">
+            <span style="font-size: 1.25rem; font-weight: 600; color: #2563eb;">
+              ¥<%= application.total_amount.toLocaleString() %>
+            </span>
+          </div>
+
+          <div class="info-label">支払い状況</div>
+          <div class="info-value">
+            <% if (application.payment_status === 'paid') { %>
+              <span style="color: #10b981;">支払い済み</span>
+            <% } else if (application.payment_status === 'unpaid') { %>
+              <span style="color: #f59e0b;">未払い</span>
+            <% } else { %>
+              <%= application.payment_status %>
+            <% } %>
+          </div>
+
+          <div class="info-label">申込日時</div>
+          <div class="info-value">
+            <%= new Date(application.created_at).toLocaleString('ja-JP') %>
+          </div>
+        </div>
+      </div>
+
+      <div class="notice-box">
+        <h3>重要なお知らせ</h3>
+        <p>
+          予約の詳細は「マイページ」の「予約一覧」からご確認いただけます。<br>
+          予約内容に変更がある場合は、お早めにご連絡ください。<br>
+          キャンセルの場合、キャンセル料が発生する場合がございます。
+        </p>
+      </div>
+
+      <div class="btn-group">
+        <a href="/my-reservations/<%= application.id %>" class="btn btn-primary">予約詳細を見る</a>
+        <a href="/my-reservations" class="btn btn-secondary">予約一覧へ</a>
+        <a href="/rooms" class="btn btn-secondary">施設一覧へ戻る</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

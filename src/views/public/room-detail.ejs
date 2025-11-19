@@ -627,8 +627,19 @@
         return;
       }
 
-      // 予約確認ページへ遷移（実装予定）
-      alert('予約機能は開発中です。\n\n選択日: ' + document.getElementById('selectedDate').value + '\n時間帯: ' + slots.join(', '));
+      // 予約確認ページへ遷移
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      const params = new URLSearchParams({
+        roomId: '<%= room.id %>',
+        date: dateStr,
+        slots: slots.join(',')
+      });
+
+      window.location.href = '/booking/confirm?' + params.toString();
     });
     <% } %>
 

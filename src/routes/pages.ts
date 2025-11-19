@@ -24,4 +24,8 @@ router.get('/my-page/edit', authenticate, PageController.editProfile);
 router.get('/my-reservations', authenticate, PageController.myReservations);
 router.get('/my-reservations/:id', authenticate, PageController.reservationDetail);
 
+// 予約確認・完了ページ
+router.get('/booking/confirm', authenticate, PageController.bookingConfirm);
+router.get('/booking/success', authenticate, PageController.bookingSuccess);
+
 export default router;

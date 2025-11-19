@@ -259,6 +259,86 @@ export class PageController {
   }
 
   /**
+   * 予約確認ページ
+   */
+  static async bookingConfirm(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.redirect('/login');
+        return;
+      }
+
+      const { roomId, date, slots } = req.query;
+
+      if (!roomId || !date || !slots) {
+        next(createError('予約情報が不足しています', 400));
+        return;
+      }
+
+      const room = await RoomRepository.findById(parseInt(roomId as string, 10));
+
+      if (!room) {
+        next(createError('施設が見つかりません', 404));
+        return;
+      }
+
+      // スロット情報を解析
+      const selectedSlots = (slots as string).split(',');
+
+      res.render('public/booking-confirm', {
+        title: '予約確認',
+        user: req.user,
+        room,
+        date,
+        selectedSlots,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
+   * 予約完了ページ
+   */
+  static async bookingSuccess(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.redirect('/login');
+        return;
+      }
+
+      const { applicationId } = req.query;
+
+      if (!applicationId) {
+        next(createError('予約IDが指定されていません', 400));
+        return;
+      }
+
+      const result = await ApplicationRepository.findByIdWithDetails(
+        parseInt(applicationId as string, 10)
+      );
+
+      if (!result) {
+        next(createError('予約が見つかりません', 404));
+        return;
+      }
+
+      if (result.application.user_id !== req.user.userId) {
+        next(createError('アクセス権限がありません', 403));
+        return;
+      }
+
+      res.render('public/booking-success', {
+        title: '予約完了',
+        user: req.user,
+        application: result.application,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {
