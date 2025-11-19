@@ -398,6 +398,37 @@
       padding: 3rem 1rem;
       color: #9ca3af;
     }
+    .room-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .favorite-btn {
+      background: none;
+      border: 2px solid #ef4444;
+      color: #ef4444;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+    .favorite-btn:hover {
+      background-color: #fef2f2;
+    }
+    .favorite-btn.active {
+      background-color: #ef4444;
+      color: white;
+    }
+    .favorite-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     footer {
       background-color: #1e40af;
       color: white;
@@ -446,10 +477,20 @@
       </div>
 
       <div class="room-header">
-        <h2><%= room.name %></h2>
-        <% if (room.description) { %>
-          <p style="color: #6b7280; margin-top: 0.5rem;"><%= room.description %></p>
-        <% } %>
+        <div class="room-header-top">
+          <div>
+            <h2><%= room.name %></h2>
+            <% if (room.description) { %>
+              <p style="color: #6b7280; margin-top: 0.5rem;"><%= room.description %></p>
+            <% } %>
+          </div>
+          <% if (user) { %>
+            <button id="favoriteBtn" class="favorite-btn" onclick="toggleFavorite()">
+              <span id="favoriteIcon">❤️</span>
+              <span id="favoriteText">お気に入り</span>
+            </button>
+          <% } %>
+        </div>
 
         <div class="room-info-grid">
           <% if (room.capacity) { %>
@@ -899,8 +940,88 @@
       return div.innerHTML;
     }
 
-    // ページロード時にレビューを取得
+    // お気に入り機能
+    let isFavorite = false;
+    const roomId = <%= room.id %>;
+
+    async function checkFavoriteStatus() {
+      <% if (user) { %>
+      try {
+        const response = await fetch('/api/user/favorites/rooms');
+        const data = await response.json();
+        if (data.rooms) {
+          isFavorite = data.rooms.some(r => r.id === roomId);
+          updateFavoriteButton();
+        }
+      } catch (error) {
+        console.error('Failed to check favorite status:', error);
+      }
+      <% } %>
+    }
+
+    async function toggleFavorite() {
+      const btn = document.getElementById('favoriteBtn');
+      btn.disabled = true;
+
+      try {
+        if (isFavorite) {
+          // 削除
+          const response = await fetch(`/api/user/favorites/rooms/${roomId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            isFavorite = false;
+            updateFavoriteButton();
+          } else {
+            const data = await response.json();
+            alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+          }
+        } else {
+          // 追加
+          const response = await fetch('/api/user/favorites/rooms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ room_id: roomId })
+          });
+
+          if (response.ok) {
+            isFavorite = true;
+            updateFavoriteButton();
+          } else {
+            const data = await response.json();
+            alert('追加に失敗しました: ' + (data.message || '不明なエラー'));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to toggle favorite:', error);
+        alert('エラーが発生しました');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function updateFavoriteButton() {
+      const btn = document.getElementById('favoriteBtn');
+      const icon = document.getElementById('favoriteIcon');
+      const text = document.getElementById('favoriteText');
+
+      if (isFavorite) {
+        btn.classList.add('active');
+        icon.textContent = '❤️';
+        text.textContent = 'お気に入り済み';
+      } else {
+        btn.classList.remove('active');
+        icon.textContent = '🤍';
+        text.textContent = 'お気に入り';
+      }
+    }
+
+    // ページロード時にレビューとお気に入り状態を取得
     loadReviews();
+    checkFavoriteStatus();
   </script>
 </body>
 </html>

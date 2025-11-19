@@ -89,6 +89,7 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       padding: 2rem;
       transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
     }
 
     .room-card:hover {
@@ -96,10 +97,36 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
+    .room-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
     .room-card h3 {
       font-size: 1.5rem;
-      margin-bottom: 1rem;
+      margin: 0;
       color: #1f2937;
+    }
+
+    .favorite-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .favorite-btn:hover {
+      transform: scale(1.2);
+    }
+
+    .favorite-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .room-info {
@@ -233,7 +260,14 @@
         <div class="room-grid">
           <% rooms.forEach(room => { %>
             <div class="room-card">
-              <h3><%= room.name %></h3>
+              <div class="room-card-header">
+                <h3><%= room.name %></h3>
+                <% if (user) { %>
+                  <button class="favorite-btn" data-room-id="<%= room.id %>" onclick="toggleFavorite(<%= room.id %>, this)">
+                    🤍
+                  </button>
+                <% } %>
+              </div>
 
               <div class="room-info">
                 <% if (room.capacity) { %>
@@ -291,5 +325,77 @@
       </p>
     </div>
   </footer>
+
+  <% if (user) { %>
+  <script>
+    // お気に入り機能
+    const favorites = new Set();
+
+    // ページロード時にお気に入り状態を取得
+    async function loadFavorites() {
+      try {
+        const response = await fetch('/api/user/favorites/rooms');
+        const data = await response.json();
+        if (data.rooms) {
+          data.rooms.forEach(room => {
+            favorites.add(room.id);
+            const btn = document.querySelector(`button[data-room-id="${room.id}"]`);
+            if (btn) {
+              btn.textContent = '❤️';
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load favorites:', error);
+      }
+    }
+
+    async function toggleFavorite(roomId, btn) {
+      btn.disabled = true;
+
+      try {
+        if (favorites.has(roomId)) {
+          // 削除
+          const response = await fetch(`/api/user/favorites/rooms/${roomId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            favorites.delete(roomId);
+            btn.textContent = '🤍';
+          } else {
+            const data = await response.json();
+            alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+          }
+        } else {
+          // 追加
+          const response = await fetch('/api/user/favorites/rooms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ room_id: roomId })
+          });
+
+          if (response.ok) {
+            favorites.add(roomId);
+            btn.textContent = '❤️';
+          } else {
+            const data = await response.json();
+            alert('追加に失敗しました: ' + (data.message || '不明なエラー'));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to toggle favorite:', error);
+        alert('エラーが発生しました');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ページロード時に実行
+    loadFavorites();
+  </script>
+  <% } %>
 </body>
 </html>

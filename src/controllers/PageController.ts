@@ -394,6 +394,21 @@ export class PageController {
   }
 
   /**
+   * お気に入り施設一覧ページ
+   */
+  static favorites(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/favorites', {
+      title: 'お気に入り施設',
+      user: req.user,
+    });
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {
