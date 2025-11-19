@@ -1,10 +1,11 @@
 -- Add reviews table for room ratings and feedback
 
-CREATE TABLE IF NOT EXISTS reviews (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  user_id BIGINT NOT NULL,
-  room_id BIGINT NOT NULL,
-  application_id BIGINT NULL,
+DROP TABLE IF EXISTS reviews;
+CREATE TABLE reviews (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  room_id INT UNSIGNED NOT NULL,
+  application_id INT UNSIGNED NULL,
   rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
   title VARCHAR(200) NOT NULL,
   comment TEXT,

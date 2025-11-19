@@ -1,8 +1,9 @@
 -- 009_add_contact_messages.sql
 -- お問い合わせメッセージテーブルの作成
 
-CREATE TABLE IF NOT EXISTS contact_messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS contact_messages;
+CREATE TABLE contact_messages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL COMMENT 'お問い合わせ者氏名',
   email VARCHAR(255) NOT NULL COMMENT 'お問い合わせ者メールアドレス',
   phone VARCHAR(20) COMMENT 'お問い合わせ者電話番号',
@@ -16,6 +17,3 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   INDEX idx_status (status),
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='お問い合わせメッセージ（非会員含む）';
-
--- messagesテーブルにsystemタイプのsender_typeを追加できるようにする
--- （既存のテーブルなので、ALTER TABLEは必要に応じて実施）
