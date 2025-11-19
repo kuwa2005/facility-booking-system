@@ -213,8 +213,8 @@ export class ApplicationController {
         end_time: applicationDto.end_time || null,
         remarks: applicationDto.remarks || null,
         total_amount: totalAmount,
-        payment_status: 'unpaid' as const,
-        payment_provider_id: null,
+        payment_status: (applicationDto.auto_pay ? 'paid' : 'unpaid') as 'paid' | 'unpaid',
+        payment_provider_id: applicationDto.auto_pay ? 'demo_payment' : null,
         cancel_status: 'none' as const,
         cancelled_at: null,
         cancellation_fee: 0,
@@ -228,7 +228,7 @@ export class ApplicationController {
       );
 
       // TODO: Initiate payment if required
-      // For now, we'll mark as unpaid and send confirmation
+      // For now, we'll mark as unpaid (未決済) unless auto_pay is true
 
       // Send confirmation email
       const usageDetails = result.usages

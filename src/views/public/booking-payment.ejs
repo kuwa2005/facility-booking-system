@@ -350,19 +350,19 @@
       const errorMessage = document.getElementById('errorMessage');
 
       // デモシステム：決済画面遷移の確認
-      if (!confirm('ここでクレジットカード決済画面へ遷移します\n\nよろしいですか？')) {
-        return;
-      }
+      const shouldPay = confirm('ここでクレジットカード決済画面へ遷移します\n\n決済を実行しますか？\n\n「OK」= 決済する（支払い済み）\n「キャンセル」= 決済しない（未決済）');
 
       // ボタンを無効化してスピナーを表示
       paymentBtn.disabled = true;
       spinner.style.display = 'inline-block';
-      btnText.textContent = '決済処理中...';
+      btnText.textContent = shouldPay ? '決済処理中...' : '予約処理中...';
       errorMessage.style.display = 'none';
 
       try {
-        // デモシステム：決済処理中を模擬（2秒待機）
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // デモシステム：決済処理中を模擬（決済する場合のみ2秒待機）
+        if (shouldPay) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
 
         // 予約データを送信
         const usages = [{
@@ -380,6 +380,7 @@
         const requestData = {
           ...bookingData.formData,
           use_digital_signboard: false,
+          auto_pay: shouldPay,  // 決済フラグを追加
           usages: usages
         };
 

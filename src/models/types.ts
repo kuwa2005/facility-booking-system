@@ -280,6 +280,7 @@ export interface CreateApplicationDto {
   start_time?: string;
   end_time?: string;
   remarks?: string;
+  auto_pay?: boolean; // デモシステム：自動決済フラグ
   usages: CreateUsageDto[];
 }
 

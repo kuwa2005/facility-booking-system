@@ -16,7 +16,7 @@
   </div>
 
   <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">未払い</h3>
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">未決済</h3>
     <p style="font-size: 2.5rem; font-weight: 600; color: #e74c3c;" id="pendingPayments">-</p>
   </div>
 
@@ -83,7 +83,7 @@
                 <td>¥${app.totalAmount.toLocaleString()}</td>
                 <td>
                   <span class="badge badge-${app.paymentStatus === 'paid' ? 'success' : app.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
-                    ${app.paymentStatus === 'paid' ? '支払済' : app.paymentStatus === 'unpaid' ? '未払い' : '返金済'}
+                    ${app.paymentStatus === 'paid' ? '支払済' : app.paymentStatus === 'unpaid' ? '未決済' : '返金済'}
                   </span>
                 </td>
                 <td>

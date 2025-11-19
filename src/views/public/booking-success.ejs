@@ -240,7 +240,7 @@
             <% if (application.payment_status === 'paid') { %>
               <span style="color: #10b981;">支払い済み</span>
             <% } else if (application.payment_status === 'unpaid') { %>
-              <span style="color: #f59e0b;">未払い</span>
+              <span style="color: #f59e0b;">未決済</span>
             <% } else { %>
               <%= application.payment_status %>
             <% } %>
