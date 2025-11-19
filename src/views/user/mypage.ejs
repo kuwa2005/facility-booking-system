@@ -269,6 +269,13 @@
               <a href="/my-page/change-password" class="btn btn-outline">パスワード変更</a>
             </div>
           </div>
+
+          <div class="card">
+            <h3>⭐ マイレビュー</h3>
+            <div id="myReviews" style="min-height: 100px;">
+              <p style="color: #9ca3af; text-align: center; padding: 2rem;">読み込み中...</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -316,5 +323,114 @@
       <p>&copy; 2025 施設予約システム. All rights reserved.</p>
     </div>
   </footer>
+
+  <script>
+    // レビューを取得・表示
+    async function loadMyReviews() {
+      try {
+        const response = await fetch('/api/user/reviews');
+        const data = await response.json();
+
+        const reviewsEl = document.getElementById('myReviews');
+
+        if (data.reviews && data.reviews.length > 0) {
+          reviewsEl.innerHTML = '';
+
+          // 最新3件のみ表示
+          data.reviews.slice(0, 3).forEach(review => {
+            const reviewDiv = document.createElement('div');
+            reviewDiv.className = 'reservation-item';
+            reviewDiv.style.marginBottom = '1rem';
+
+            const stars = generateStars(review.rating);
+            const createdDate = new Date(review.created_at).toLocaleDateString('ja-JP');
+
+            reviewDiv.innerHTML = `
+              <div class="reservation-header">
+                <div>
+                  <div class="reservation-title" style="color: #fbbf24; font-size: 1rem; margin-bottom: 0.25rem;">${stars}</div>
+                  <div class="reservation-title" style="font-size: 1rem;">${escapeHtml(review.title)}</div>
+                  <div class="reservation-date">${createdDate}</div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button onclick="editReview(${review.id})" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.875rem;">編集</button>
+                  <button onclick="deleteReview(${review.id})" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem; background-color: #ef4444; color: white;">削除</button>
+                </div>
+              </div>
+            `;
+
+            reviewsEl.appendChild(reviewDiv);
+          });
+
+          if (data.reviews.length > 3) {
+            const moreDiv = document.createElement('div');
+            moreDiv.style.marginTop = '1rem';
+            moreDiv.style.textAlign = 'center';
+            moreDiv.innerHTML = `
+              <p style="color: #6b7280; font-size: 0.875rem;">他 ${data.reviews.length - 3} 件のレビュー</p>
+            `;
+            reviewsEl.appendChild(moreDiv);
+          }
+        } else {
+          reviewsEl.innerHTML = `
+            <p style="color: #9ca3af; text-align: center; padding: 2rem; font-size: 0.875rem;">
+              まだレビューを投稿していません
+            </p>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to load reviews:', error);
+        document.getElementById('myReviews').innerHTML = `
+          <p style="color: #ef4444; text-align: center; padding: 2rem; font-size: 0.875rem;">
+            レビューの読み込みに失敗しました
+          </p>
+        `;
+      }
+    }
+
+    function generateStars(rating) {
+      let stars = '';
+      for (let i = 0; i < 5; i++) {
+        stars += i < rating ? '★' : '☆';
+      }
+      return stars;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function editReview(reviewId) {
+      window.location.href = `/my-page/reviews/${reviewId}/edit`;
+    }
+
+    async function deleteReview(reviewId) {
+      if (!confirm('このレビューを削除しますか？')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user/reviews/${reviewId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          alert('レビューを削除しました');
+          loadMyReviews(); // 再読み込み
+        } else {
+          const data = await response.json();
+          alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+        }
+      } catch (error) {
+        console.error('Failed to delete review:', error);
+        alert('削除に失敗しました');
+      }
+    }
+
+    // ページロード時にレビューを取得
+    loadMyReviews();
+  </script>
 </body>
 </html>

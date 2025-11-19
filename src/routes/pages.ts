@@ -24,6 +24,7 @@ router.get('/my-page', authenticate, PageController.myPage);
 router.get('/my-page/edit', authenticate, PageController.editProfile);
 router.get('/my-page/change-password', authenticate, PageController.changePassword);
 router.get('/my-page/create-review', authenticate, PageController.createReview);
+router.get('/my-page/reviews/:id/edit', authenticate, PageController.editReview);
 router.get('/my-reservations', authenticate, PageController.myReservations);
 router.get('/my-reservations/:id', authenticate, PageController.reservationDetail);
 

@@ -379,6 +379,21 @@ export class PageController {
   }
 
   /**
+   * レビュー編集ページ
+   */
+  static editReview(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/edit-review', {
+      title: 'レビューを編集',
+      user: req.user,
+    });
+  }
+
+  /**
    * ログアウト
    */
   static logout(req: Request, res: Response): void {

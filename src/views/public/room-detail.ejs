@@ -275,6 +275,129 @@
       border-radius: 4px;
       border: 1px solid #d1d5db;
     }
+    /* レビューセクション */
+    .reviews-section {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .rating-overview {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .average-rating {
+      text-align: center;
+    }
+    .rating-number {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #2563eb;
+    }
+    .rating-stars {
+      font-size: 1.5rem;
+      color: #fbbf24;
+      margin: 0.5rem 0;
+    }
+    .rating-count {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .rating-distribution {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .rating-bar {
+      display: grid;
+      grid-template-columns: 30px 1fr 60px;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .rating-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .rating-bar-bg {
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .rating-bar-fill {
+      height: 100%;
+      background-color: #fbbf24;
+      transition: width 0.3s;
+    }
+    .rating-bar-count {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-align: right;
+    }
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .review-item {
+      padding: 1.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 0.75rem;
+    }
+    .reviewer-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .reviewer-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #dbeafe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    .reviewer-name {
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .review-rating {
+      color: #fbbf24;
+      font-size: 1rem;
+    }
+    .review-date {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+    .review-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .review-comment {
+      color: #4b5563;
+      line-height: 1.6;
+    }
+    .empty-reviews {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9ca3af;
+    }
     footer {
       background-color: #1e40af;
       color: white;
@@ -444,6 +567,32 @@
             <p style="color: #6b7280; margin-bottom: 1rem;">予約するにはログインが必要です。</p>
             <a href="/login" class="btn btn-book">ログインする</a>
           <% } %>
+        </div>
+      </div>
+
+      <!-- レビューセクション -->
+      <div class="reviews-section">
+        <h3 class="section-title">⭐ レビュー・評価</h3>
+
+        <div class="rating-overview" id="ratingOverview" style="display: none;">
+          <div class="average-rating">
+            <div class="rating-number" id="averageRating">0.0</div>
+            <div class="rating-stars" id="averageStars">★★★★★</div>
+            <div class="rating-count" id="reviewCount">0件のレビュー</div>
+          </div>
+
+          <div class="rating-distribution" id="ratingDistribution">
+            <!-- 評価分布がJavaScriptで動的に生成されます -->
+          </div>
+        </div>
+
+        <div class="review-list" id="reviewList">
+          <!-- レビューがJavaScriptで動的に生成されます -->
+        </div>
+
+        <div class="empty-reviews" id="emptyReviews">
+          <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">まだレビューがありません</p>
+          <p style="font-size: 0.875rem;">この施設を利用した方は、ぜひレビューを投稿してください</p>
         </div>
       </div>
     </div>
@@ -645,6 +794,113 @@
 
     // 初期表示
     generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+
+    // レビューを取得・表示
+    async function loadReviews() {
+      try {
+        const response = await fetch('/api/public/rooms/<%= room.id %>/reviews');
+        const data = await response.json();
+
+        if (data.reviews && data.reviews.length > 0) {
+          displayReviews(data.reviews, data.stats);
+        } else {
+          document.getElementById('emptyReviews').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load reviews:', error);
+        document.getElementById('emptyReviews').style.display = 'block';
+      }
+    }
+
+    function displayReviews(reviews, stats) {
+      document.getElementById('emptyReviews').style.display = 'none';
+      document.getElementById('ratingOverview').style.display = 'grid';
+
+      // 平均評価を表示
+      document.getElementById('averageRating').textContent = stats.average.toFixed(1);
+      document.getElementById('reviewCount').textContent = stats.count + '件のレビュー';
+
+      // 星評価を表示
+      const stars = generateStars(stats.average);
+      document.getElementById('averageStars').innerHTML = stars;
+
+      // 評価分布を表示
+      const distributionEl = document.getElementById('ratingDistribution');
+      distributionEl.innerHTML = '';
+
+      for (let rating = 5; rating >= 1; rating--) {
+        const count = stats.distribution[rating] || 0;
+        const percentage = stats.count > 0 ? (count / stats.count) * 100 : 0;
+
+        const barDiv = document.createElement('div');
+        barDiv.className = 'rating-bar';
+        barDiv.innerHTML = `
+          <div class="rating-label">${rating}★</div>
+          <div class="rating-bar-bg">
+            <div class="rating-bar-fill" style="width: ${percentage}%"></div>
+          </div>
+          <div class="rating-bar-count">${count}件</div>
+        `;
+        distributionEl.appendChild(barDiv);
+      }
+
+      // レビュー一覧を表示
+      const reviewListEl = document.getElementById('reviewList');
+      reviewListEl.innerHTML = '';
+
+      reviews.forEach(review => {
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review-item';
+
+        const displayName = review.user_nickname || review.user_name;
+        const initial = displayName.charAt(0);
+        const createdDate = new Date(review.created_at).toLocaleDateString('ja-JP');
+
+        reviewDiv.innerHTML = `
+          <div class="review-header">
+            <div class="reviewer-info">
+              <div class="reviewer-avatar">${initial}</div>
+              <div>
+                <div class="reviewer-name">${displayName}</div>
+                <div class="review-date">${createdDate}</div>
+              </div>
+            </div>
+            <div class="review-rating">${generateStars(review.rating)}</div>
+          </div>
+          <div class="review-title">${escapeHtml(review.title)}</div>
+          ${review.comment ? `<div class="review-comment">${escapeHtml(review.comment)}</div>` : ''}
+        `;
+
+        reviewListEl.appendChild(reviewDiv);
+      });
+    }
+
+    function generateStars(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 >= 0.5;
+      let stars = '';
+
+      for (let i = 0; i < fullStars; i++) {
+        stars += '★';
+      }
+      if (hasHalfStar) {
+        stars += '☆';
+      }
+      while (stars.length < 5) {
+        stars += '☆';
+      }
+
+      return stars;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ページロード時にレビューを取得
+    loadReviews();
   </script>
 </body>
 </html>
