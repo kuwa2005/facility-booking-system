@@ -301,6 +301,25 @@ export class PageController {
   }
 
   /**
+   * 決済情報確認ページ
+   */
+  static async bookingPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.redirect('/login');
+        return;
+      }
+
+      res.render('public/booking-payment', {
+        title: '決済情報確認',
+        user: req.user,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
    * 予約完了ページ
    */
   static async bookingSuccess(req: Request, res: Response, next: NextFunction): Promise<void> {

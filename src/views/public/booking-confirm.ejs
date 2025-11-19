@@ -206,6 +206,7 @@
       <nav>
         <a href="/rooms">部屋一覧</a>
         <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
         <% if (user) { %>
           <a href="/my-page">マイページ</a>
           <a href="/my-reservations">予約一覧</a>
@@ -330,9 +331,8 @@
 
       <div class="btn-group">
         <a href="/rooms/<%= room.id %>" class="btn btn-secondary">戻る</a>
-        <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitBooking()">
-          <div class="spinner" id="spinner"></div>
-          予約を確定する
+        <button type="button" class="btn btn-primary" id="submitBtn" onclick="proceedToPayment()">
+          次へ（決済情報確認）
         </button>
       </div>
     </div>
@@ -401,6 +401,40 @@
       }
     }
 
+    function proceedToPayment() {
+      const form = document.getElementById('bookingForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // 予約データを収集
+      const bookingData = {
+        room: room,
+        date: date,
+        selectedSlots: selectedSlots,
+        formData: {
+          applicant_representative: document.getElementById('representativeName').value,
+          applicant_phone: document.getElementById('phone').value,
+          applicant_email: document.getElementById('email').value,
+          applicant_group_name: document.getElementById('groupName').value || null,
+          event_name: document.getElementById('eventName').value,
+          expected_attendees: parseInt(document.getElementById('attendees').value) || null,
+          event_description: document.getElementById('description').value || null,
+          entrance_fee_type: document.getElementById('entranceFeeType').value,
+          entrance_fee_amount: parseInt(document.getElementById('entranceFeeAmount').value) || 0,
+          remarks: document.getElementById('remarks').value || null,
+        },
+        totalAmount: document.getElementById('totalPrice').textContent
+      };
+
+      // sessionStorageに保存
+      sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+      // 決済確認ページへ遷移
+      window.location.href = '/booking/payment';
+    }
+
     async function submitBooking() {
       const form = document.getElementById('bookingForm');
       if (!form.checkValidity()) {
@@ -453,7 +487,7 @@
       };
 
       try {
-        const response = await fetch('/api/public/applications', {
+        const response = await fetch('/api/applications', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

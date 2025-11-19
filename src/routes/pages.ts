@@ -34,6 +34,7 @@ router.get('/my-reservations/:id', authenticate, PageController.reservationDetai
 
 // 予約確認・完了ページ
 router.get('/booking/confirm', authenticate, PageController.bookingConfirm);
+router.get('/booking/payment', authenticate, PageController.bookingPayment);
 router.get('/booking/success', authenticate, PageController.bookingSuccess);
 
 export default router;

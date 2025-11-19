@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .info-value {
+      color: #1f2937;
+    }
+    .time-slots {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .time-slot {
+      background-color: #dbeafe;
+      color: #1e40af;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .price-summary {
+      background-color: #f9fafb;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+    }
+    .price-row.total {
+      font-weight: 600;
+      font-size: 1.25rem;
+      border-top: 2px solid #e5e7eb;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      color: #2563eb;
+    }
+    .payment-info {
+      background-color: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .payment-info h3 {
+      color: #92400e;
+      margin-bottom: 0.5rem;
+      font-size: 1.125rem;
+    }
+    .payment-info p {
+      color: #78350f;
+      font-size: 0.875rem;
+    }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-primary:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .error-message {
+      background-color: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">部屋一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+          <a href="/logout">ログアウト</a>
+        <% } else { %>
+          <a href="/login">ログイン</a>
+          <a href="/register">新規登録</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1 style="font-size: 2rem; margin-bottom: 2rem; color: #1f2937;">決済情報確認</h1>
+
+      <div id="errorMessage" class="error-message"></div>
+
+      <div class="card">
+        <h2>予約情報</h2>
+        <div class="info-grid">
+          <div class="info-label">施設名</div>
+          <div class="info-value" id="roomName"></div>
+
+          <div class="info-label">利用日</div>
+          <div class="info-value" id="displayDate"></div>
+
+          <div class="info-label">利用時間帯</div>
+          <div class="info-value">
+            <div class="time-slots" id="timeSlots"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>申込者情報</h2>
+        <div class="info-grid">
+          <div class="info-label">イベント名</div>
+          <div class="info-value" id="eventName"></div>
+
+          <div class="info-label">代表者名</div>
+          <div class="info-value" id="representativeName"></div>
+
+          <div class="info-label">電話番号</div>
+          <div class="info-value" id="phone"></div>
+
+          <div class="info-label">メールアドレス</div>
+          <div class="info-value" id="email"></div>
+
+          <div class="info-label">団体名</div>
+          <div class="info-value" id="groupName"></div>
+
+          <div class="info-label">予定参加人数</div>
+          <div class="info-value" id="attendees"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>料金</h2>
+        <div class="price-summary">
+          <div class="price-row total">
+            <span>合計金額</span>
+            <span id="totalPrice">¥0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="payment-info">
+        <h3>⚠️ デモシステムについて</h3>
+        <p>これはデモシステムです。実際の決済は行われません。「決済する」ボタンを押すと、決済画面への遷移をシミュレートします。</p>
+      </div>
+
+      <div class="btn-group">
+        <button type="button" class="btn btn-secondary" onclick="goBack()">戻る</button>
+        <button type="button" class="btn btn-primary" id="paymentBtn" onclick="processPayment()">
+          <span class="spinner" id="spinner"></span>
+          <span id="btnText">決済する</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    let bookingData = null;
+
+    // ページ読み込み時にsessionStorageからデータを取得
+    window.addEventListener('DOMContentLoaded', () => {
+      const storedData = sessionStorage.getItem('bookingData');
+
+      if (!storedData) {
+        alert('予約データが見つかりません。最初からやり直してください。');
+        window.location.href = '/rooms';
+        return;
+      }
+
+      bookingData = JSON.parse(storedData);
+      displayBookingInfo();
+    });
+
+    function displayBookingInfo() {
+      // 施設情報
+      document.getElementById('roomName').textContent = bookingData.room.name;
+
+      // 日付
+      const dateObj = new Date(bookingData.date);
+      const year = dateObj.getFullYear();
+      const month = dateObj.getMonth() + 1;
+      const day = dateObj.getDate();
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      const dayOfWeek = dayNames[dateObj.getDay()];
+      document.getElementById('displayDate').textContent = `${year}年${month}月${day}日（${dayOfWeek}）`;
+
+      // 時間帯
+      const timeSlotNames = {
+        morning: '午前（9:00-12:00）',
+        afternoon: '午後（13:00-17:00）',
+        evening: '夜間（18:00-21:30）'
+      };
+
+      const timeSlotsContainer = document.getElementById('timeSlots');
+      bookingData.selectedSlots.forEach(slot => {
+        const slotDiv = document.createElement('div');
+        slotDiv.className = 'time-slot';
+        slotDiv.textContent = timeSlotNames[slot];
+        timeSlotsContainer.appendChild(slotDiv);
+      });
+
+      // 申込者情報
+      const formData = bookingData.formData;
+      document.getElementById('eventName').textContent = formData.event_name;
+      document.getElementById('representativeName').textContent = formData.applicant_representative;
+      document.getElementById('phone').textContent = formData.applicant_phone;
+      document.getElementById('email').textContent = formData.applicant_email;
+      document.getElementById('groupName').textContent = formData.applicant_group_name || '-';
+      document.getElementById('attendees').textContent = formData.expected_attendees ? `${formData.expected_attendees}名` : '-';
+
+      // 料金
+      document.getElementById('totalPrice').textContent = bookingData.totalAmount;
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    async function processPayment() {
+      const paymentBtn = document.getElementById('paymentBtn');
+      const btnText = document.getElementById('btnText');
+      const spinner = document.getElementById('spinner');
+      const errorMessage = document.getElementById('errorMessage');
+
+      // デモシステム：決済画面遷移の確認
+      if (!confirm('ここでクレジットカード決済画面へ遷移します\n\nよろしいですか？')) {
+        return;
+      }
+
+      // ボタンを無効化してスピナーを表示
+      paymentBtn.disabled = true;
+      spinner.style.display = 'inline-block';
+      btnText.textContent = '決済処理中...';
+      errorMessage.style.display = 'none';
+
+      try {
+        // デモシステム：決済処理中を模擬（2秒待機）
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // 予約データを送信
+        const usages = [{
+          room_id: bookingData.room.id,
+          date: bookingData.date,
+          use_morning: bookingData.selectedSlots.includes('morning'),
+          use_afternoon: bookingData.selectedSlots.includes('afternoon'),
+          use_evening: bookingData.selectedSlots.includes('evening'),
+          use_midday_extension: false,
+          use_evening_extension: false,
+          ac_requested: false,
+          equipment: []
+        }];
+
+        const requestData = {
+          ...bookingData.formData,
+          use_digital_signboard: false,
+          usages: usages
+        };
+
+        const response = await fetch('/api/applications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || '予約の作成に失敗しました');
+        }
+
+        // sessionStorageをクリア
+        sessionStorage.removeItem('bookingData');
+
+        // デモシステム：決済完了メッセージ
+        alert('決済が完了しました！\n予約が確定しました。');
+
+        // 予約完了ページへ遷移
+        window.location.href = '/booking/success?applicationId=' + result.application.id;
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.style.display = 'block';
+        paymentBtn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = '決済する';
+      }
+    }
+  </script>
+</body>
+</html>
