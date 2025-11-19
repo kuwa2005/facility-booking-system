@@ -254,6 +254,93 @@
       padding-top: 1rem;
       border-top: 1px solid #e5e7eb;
     }
+    .reply-section {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid #e5e7eb;
+    }
+    .reply-form {
+      display: none;
+    }
+    .reply-form.active {
+      display: block;
+    }
+    .reply-form textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      resize: vertical;
+      margin-bottom: 1rem;
+    }
+    .reply-form textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .reply-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+    .btn-reply {
+      background-color: #2563eb;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-reply:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-cancel {
+      background-color: #6b7280;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-cancel:hover {
+      background-color: #4b5563;
+    }
+    .thread-section {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid #e5e7eb;
+    }
+    .thread-section h4 {
+      font-size: 1rem;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+    .thread-message {
+      background-color: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      border-left: 3px solid #2563eb;
+    }
+    .thread-message-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .thread-message-content {
+      color: #1f2937;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
     footer {
       background-color: #1e40af;
       color: white;
@@ -335,6 +422,26 @@
         <p><strong>送信日時:</strong> <span id="modalDate"></span></p>
         <p><strong>送信者:</strong> <span id="modalSender"></span></p>
       </div>
+
+      <!-- スレッド表示セクション -->
+      <div id="threadSection" class="thread-section" style="display: none;">
+        <h4>📝 過去のやり取り</h4>
+        <div id="threadMessages"></div>
+      </div>
+
+      <!-- 返信セクション -->
+      <div class="reply-section">
+        <button class="btn btn-primary" onclick="toggleReplyForm()">💬 返信する</button>
+
+        <div id="replyForm" class="reply-form">
+          <h4 style="margin-bottom: 1rem; color: #374151;">返信内容</h4>
+          <textarea id="replyContent" placeholder="返信内容を入力してください..." required></textarea>
+          <div class="reply-actions">
+            <button type="button" class="btn-cancel" onclick="toggleReplyForm()">キャンセル</button>
+            <button type="button" class="btn-reply" onclick="sendReply()">送信</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -346,6 +453,7 @@
 
   <script>
     let currentMessages = [];
+    let currentMessageId = null;
 
     async function loadMessages() {
       try {
@@ -413,6 +521,9 @@
       const message = currentMessages.find(m => m.id === messageId);
       if (!message) return;
 
+      // 現在のメッセージIDを保存
+      currentMessageId = messageId;
+
       // モーダルに内容を表示
       document.getElementById('modalSubject').textContent = message.subject;
       document.getElementById('modalContent').textContent = message.content;
@@ -429,6 +540,13 @@
       // 送信者情報（職員からのメッセージの場合）
       document.getElementById('modalSender').textContent = '施設管理者';
 
+      // 返信フォームをリセット
+      document.getElementById('replyForm').classList.remove('active');
+      document.getElementById('replyContent').value = '';
+
+      // スレッドを読み込み
+      await loadMessageThread(messageId);
+
       // モーダルを表示
       document.getElementById('messageModal').classList.add('active');
 
@@ -436,6 +554,68 @@
       if (!message.is_read) {
         markAsRead(messageId);
       }
+    }
+
+    async function loadMessageThread(messageId) {
+      try {
+        // parent_message_idを使ってスレッドを取得
+        // この実装では、現在のメッセージに対する返信を表示
+        const threadResponse = await fetch(`/api/user/messages/${messageId}/thread`);
+
+        if (!threadResponse.ok) {
+          // スレッドAPIがエラーの場合は非表示
+          document.getElementById('threadSection').style.display = 'none';
+          return;
+        }
+
+        const threadResult = await threadResponse.json();
+
+        if (threadResult.success && threadResult.data && threadResult.data.length > 0) {
+          displayThread(threadResult.data);
+        } else {
+          document.getElementById('threadSection').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Failed to load thread:', error);
+        document.getElementById('threadSection').style.display = 'none';
+      }
+    }
+
+    function displayThread(messages) {
+      const threadContainer = document.getElementById('threadMessages');
+      threadContainer.innerHTML = '';
+
+      if (!messages || messages.length === 0) {
+        document.getElementById('threadSection').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('threadSection').style.display = 'block';
+
+      messages.forEach(msg => {
+        const threadMsg = document.createElement('div');
+        threadMsg.className = 'thread-message';
+
+        const msgDate = new Date(msg.created_at).toLocaleString('ja-JP', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const sender = msg.sender_type === 'user' ? 'あなた' : '施設管理者';
+
+        threadMsg.innerHTML = `
+          <div class="thread-message-header">
+            <strong>${escapeHtml(sender)}</strong>
+            <span>${msgDate}</span>
+          </div>
+          <div class="thread-message-content">${escapeHtml(msg.content)}</div>
+        `;
+
+        threadContainer.appendChild(threadMsg);
+      });
     }
 
     async function markAsRead(messageId) {
@@ -473,8 +653,71 @@
       }
     }
 
+    function toggleReplyForm() {
+      const replyForm = document.getElementById('replyForm');
+      replyForm.classList.toggle('active');
+
+      if (replyForm.classList.contains('active')) {
+        document.getElementById('replyContent').focus();
+      }
+    }
+
+    async function sendReply() {
+      const content = document.getElementById('replyContent').value.trim();
+
+      if (!content) {
+        alert('返信内容を入力してください');
+        return;
+      }
+
+      if (!currentMessageId) {
+        alert('メッセージが選択されていません');
+        return;
+      }
+
+      // 元のメッセージを取得
+      const originalMessage = currentMessages.find(m => m.id === currentMessageId);
+      if (!originalMessage) {
+        alert('元のメッセージが見つかりません');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipient_id: 1, // 管理者
+            recipient_type: 'staff',
+            subject: `Re: ${originalMessage.subject}`,
+            content: content,
+            parent_message_id: currentMessageId
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('返信を送信しました');
+          document.getElementById('replyContent').value = '';
+          document.getElementById('replyForm').classList.remove('active');
+          closeModal();
+          loadMessages(); // メッセージ一覧を更新
+        } else {
+          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+        }
+      } catch (error) {
+        console.error('Failed to send reply:', error);
+        alert('送信中にエラーが発生しました');
+      }
+    }
+
     function closeModal() {
       document.getElementById('messageModal').classList.remove('active');
+      document.getElementById('replyForm').classList.remove('active');
+      currentMessageId = null;
     }
 
     // モーダル外をクリックで閉じる

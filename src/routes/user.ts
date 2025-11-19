@@ -76,6 +76,10 @@ router.get(
   '/messages/:id',
   messageController.getMessageById.bind(messageController)
 );
+router.get(
+  '/messages/:id/thread',
+  messageController.getUserMessageThread.bind(messageController)
+);
 router.post(
   '/messages/:id/read',
   messageController.markAsRead.bind(messageController)

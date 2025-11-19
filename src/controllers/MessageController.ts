@@ -222,6 +222,47 @@ export class MessageController {
     }
   }
 
+  /**
+   * メッセージスレッド取得（一般利用者）
+   * GET /api/user/messages/:id/thread
+   */
+  async getUserMessageThread(req: Request, res: Response): Promise<void> {
+    try {
+      const messageId = parseInt(req.params.id);
+      const userId = (req as any).user.id;
+
+      if (isNaN(messageId)) {
+        res.status(400).json({
+          success: false,
+          message: '無効なメッセージIDです',
+        });
+        return;
+      }
+
+      const thread = await messageService.getMessageThread(messageId);
+
+      // ユーザーがアクセス権限があるメッセージのみフィルタリング
+      const filteredThread = thread.filter(msg =>
+        (msg.sender_type === 'user' && msg.sender_id === userId) ||
+        (msg.recipient_type === 'user' && msg.recipient_id === userId) ||
+        msg.sender_type === 'staff' ||
+        msg.recipient_type === 'staff'
+      );
+
+      res.json({
+        success: true,
+        data: filteredThread,
+      });
+    } catch (error: any) {
+      console.error('Error fetching message thread:', error);
+      res.status(500).json({
+        success: false,
+        message: 'メッセージスレッドの取得に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
   // ===== 職員向けエンドポイント =====
 
   /**
