@@ -27,8 +27,9 @@ SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE table_na
   'ALTER TABLE users ADD INDEX idx_nickname (nickname)', 'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- プロフィール変更履歴テーブル（オプション、監査用）
-CREATE TABLE IF NOT EXISTS user_profile_changes (
+-- プロフィール変更履歴テーブル（オプション、監査用・既存の場合は削除して再作成）
+DROP TABLE IF EXISTS user_profile_changes;
+CREATE TABLE user_profile_changes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,
     field_name VARCHAR(50) NOT NULL COMMENT '変更されたフィールド名',
@@ -55,11 +56,12 @@ SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name=
   'ALTER TABLE applications ADD COLUMN modification_count INT UNSIGNED DEFAULT 0 COMMENT ''変更回数''', 'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 予約変更履歴テーブル
-CREATE TABLE IF NOT EXISTS application_modifications (
+-- 予約変更履歴テーブル（既存の場合は削除して再作成）
+DROP TABLE IF EXISTS application_modifications;
+CREATE TABLE application_modifications (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     application_id INT UNSIGNED NOT NULL,
-    modified_by INT UNSIGNED NOT NULL COMMENT '変更者のユーザーID',
+    modified_by INT UNSIGNED DEFAULT NULL COMMENT '変更者のユーザーID（ユーザー削除時はNULL）',
     modification_type ENUM('update', 'cancel', 'restore') NOT NULL,
     old_data JSON DEFAULT NULL COMMENT '変更前のデータ',
     new_data JSON DEFAULT NULL COMMENT '変更後のデータ',
@@ -73,8 +75,9 @@ CREATE TABLE IF NOT EXISTS application_modifications (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ユーザーのお気に入り部屋テーブル（オプション機能）
-CREATE TABLE IF NOT EXISTS user_favorite_rooms (
+-- ユーザーのお気に入り部屋テーブル（オプション機能・既存の場合は削除して再作成）
+DROP TABLE IF EXISTS user_favorite_rooms;
+CREATE TABLE user_favorite_rooms (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NOT NULL,
     room_id INT UNSIGNED NOT NULL,
