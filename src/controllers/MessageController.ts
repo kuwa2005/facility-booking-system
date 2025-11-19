@@ -440,4 +440,138 @@ export class MessageController {
       });
     }
   }
+
+  /**
+   * お問い合わせメッセージ送信（ログイン中のユーザー）
+   * POST /api/contact
+   */
+  async sendContactMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user.id;
+      const { name, email, phone, subject, content } = req.body;
+
+      // バリデーション
+      if (!subject || !content) {
+        res.status(400).json({
+          success: false,
+          message: '件名と内容は必須です。',
+        });
+        return;
+      }
+
+      // お問い合わせ内容を整形
+      const formattedContent = `
+【お問い合わせ】
+
+お名前: ${name || '未入力'}
+メールアドレス: ${email || '未入力'}
+電話番号: ${phone || '未入力'}
+
+お問い合わせ内容:
+${content}
+      `.trim();
+
+      // 管理者にメッセージを送信（recipient_id: 1 は管理者を想定）
+      const message = await messageService.sendMessageFromUser(userId, {
+        recipient_id: 1,
+        recipient_type: 'staff',
+        subject: subject,
+        content: formattedContent,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'お問い合わせを送信しました',
+        data: message,
+      });
+    } catch (error: any) {
+      console.error('Error sending contact message:', error);
+      res.status(500).json({
+        success: false,
+        message: 'お問い合わせの送信に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * お問い合わせメッセージ送信（非ログインユーザー）
+   * POST /api/contact/public
+   */
+  async sendPublicContactMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const { name, email, phone, category, message } = req.body;
+
+      // バリデーション
+      if (!name || !email || !category || !message) {
+        res.status(400).json({
+          success: false,
+          message: 'お名前、メールアドレス、お問い合わせ種別、お問い合わせ内容は必須です。',
+        });
+        return;
+      }
+
+      // メールアドレスの簡易バリデーション
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(400).json({
+          success: false,
+          message: '有効なメールアドレスを入力してください。',
+        });
+        return;
+      }
+
+      const categoryLabel = {
+        'reservation': '予約について',
+        'facility': '施設について',
+        'payment': 'お支払いについて',
+        'cancel': 'キャンセルについて',
+        'system': 'システムについて',
+        'other': 'その他'
+      };
+
+      // お問い合わせ内容を整形
+      const formattedContent = `
+【公開お問い合わせ】（未登録ユーザーからのお問い合わせ）
+
+お名前: ${name}
+メールアドレス: ${email}
+電話番号: ${phone || '未入力'}
+お問い合わせ種別: ${categoryLabel[category as keyof typeof categoryLabel] || category}
+
+お問い合わせ内容:
+${message}
+
+※このお問い合わせには、記載されているメールアドレス（${email}）宛に返信してください。
+      `.trim();
+
+      // データベースに保存（contact_messagesテーブルに保存）
+      const pool = (await import('../config/database')).default;
+
+      await pool.query(
+        `INSERT INTO contact_messages (name, email, phone, category, message, created_at)
+         VALUES (?, ?, ?, ?, ?, NOW())`,
+        [name, email, phone, category, message]
+      );
+
+      // 管理者にもメッセージとして通知（システムユーザーとして送信）
+      await pool.query(
+        `INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, subject, content, created_at)
+         VALUES ('system', 0, 'staff', 1, ?, ?, NOW())`,
+        [`【${categoryLabel[category as keyof typeof categoryLabel]}】${name}様からのお問い合わせ`, formattedContent]
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'お問い合わせを受け付けました。担当者から折り返しご連絡いたします。',
+      });
+    } catch (error: any) {
+      console.error('Error sending public contact message:', error);
+      res.status(500).json({
+        success: false,
+        message: 'お問い合わせの送信に失敗しました',
+        error: error.message,
+      });
+    }
+  }
 }

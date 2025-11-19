@@ -85,4 +85,10 @@ router.delete(
   messageController.deleteMessageByUser.bind(messageController)
 );
 
+// お問い合わせ（ログイン中のユーザー）
+router.post(
+  '/contact',
+  messageController.sendContactMessage.bind(messageController)
+);
+
 export default router;

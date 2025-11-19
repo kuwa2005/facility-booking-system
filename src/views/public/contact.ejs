@@ -224,8 +224,34 @@
   </footer>
 
   <script>
-    document.getElementById('contactForm').addEventListener('submit', function(e) {
+    // ページロード時にログイン中の場合はユーザー情報を取得して自動入力
+    <% if (user) { %>
+    async function loadUserProfile() {
+      try {
+        const response = await fetch('/api/user/profile');
+        const result = await response.json();
+
+        if (result.profile) {
+          const profile = result.profile;
+          if (profile.name) document.getElementById('name').value = profile.name;
+          if (profile.email) document.getElementById('email').value = profile.email;
+          if (profile.phone) document.getElementById('phone').value = profile.phone;
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    }
+
+    // ページロード時に実行
+    loadUserProfile();
+    <% } %>
+
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+
+      const submitButton = this.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+      submitButton.textContent = '送信中...';
 
       const formData = {
         name: document.getElementById('name').value,
@@ -235,14 +261,68 @@
         message: document.getElementById('message').value
       };
 
-      // 実際のAPI実装はこちらで行います
-      alert('お問い合わせ送信機能は開発中です。\n\n以下の情報を受け取りました：\n' +
-            'お名前: ' + formData.name + '\n' +
-            'メール: ' + formData.email + '\n' +
-            '種別: ' + formData.category);
+      try {
+        <% if (user) { %>
+        // ログイン中の場合は内部メッセージシステムを使用
+        const categoryLabel = {
+          'reservation': '予約について',
+          'facility': '施設について',
+          'payment': 'お支払いについて',
+          'cancel': 'キャンセルについて',
+          'system': 'システムについて',
+          'other': 'その他'
+        };
 
-      // フォームをリセット
-      this.reset();
+        // 管理者にメッセージを送信（recipient_id: 1 は管理者を想定）
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            subject: `【${categoryLabel[formData.category] || 'お問い合わせ'}】`,
+            content: formData.message
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('お問い合わせを送信しました。\n担当者からの返信をお待ちください。\nマイページのメッセージ欄でご確認いただけます。');
+          this.reset();
+          window.location.href = '/my-page/messages';
+        } else {
+          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+        }
+        <% } else { %>
+        // 非ログイン時の場合は公開お問い合わせAPIを使用
+        const response = await fetch('/api/contact/public', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('お問い合わせを送信しました。\nご記入いただいたメールアドレス宛に受付確認メールをお送りしております。\n担当者からの返信をお待ちください。');
+          this.reset();
+        } else {
+          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+        }
+        <% } %>
+      } catch (error) {
+        console.error('Error sending contact:', error);
+        alert('送信中にエラーが発生しました。\nしばらく時間をおいて再度お試しください。');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = '送信する';
+      }
     });
   </script>
 </body>
