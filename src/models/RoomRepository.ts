@@ -6,7 +6,7 @@ export class RoomRepository {
   /**
    * Convert snake_case database columns to camelCase
    */
-  private toCamelCase(room: any): Room {
+  private toCamelCase(room: any): any {
     return {
       id: room.id,
       name: room.name,
@@ -21,13 +21,13 @@ export class RoomRepository {
       isActive: room.is_active,
       createdAt: room.created_at,
       updatedAt: room.updated_at,
-    } as Room;
+    };
   }
 
   /**
    * Find room by ID
    */
-  async findById(id: number): Promise<Room | null> {
+  async findById(id: number): Promise<any> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms WHERE id = ?',
       [id]
@@ -38,7 +38,7 @@ export class RoomRepository {
   /**
    * Find all active rooms
    */
-  async findAllActive(): Promise<Room[]> {
+  async findAllActive(): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms WHERE is_active = TRUE ORDER BY name ASC'
     );
@@ -48,7 +48,7 @@ export class RoomRepository {
   /**
    * Find all rooms (including inactive)
    */
-  async findAll(): Promise<Room[]> {
+  async findAll(): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms ORDER BY name ASC'
     );
@@ -58,7 +58,7 @@ export class RoomRepository {
   /**
    * Create a new room
    */
-  async create(data: any): Promise<Room> {
+  async create(data: any): Promise<any> {
     const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO rooms (
         name, capacity, base_price_morning, base_price_afternoon, base_price_evening,
@@ -89,7 +89,7 @@ export class RoomRepository {
   /**
    * Update room
    */
-  async update(id: number, data: any): Promise<Room> {
+  async update(id: number, data: any): Promise<any> {
     const fields: string[] = [];
     const values: any[] = [];
 

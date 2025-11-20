@@ -50,7 +50,12 @@ export class SystemSettingsController {
    */
   static async updateBasicSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log('[SystemSettingsController] updateBasicSettings called');
+      console.log('[SystemSettingsController] User:', req.user);
+      console.log('[SystemSettingsController] Body:', req.body);
+
       if (!req.user || req.user.role !== 'admin') {
+        console.log('[SystemSettingsController] Access denied - not admin');
         res.status(403).json({ error: 'Admin access required' });
         return;
       }
@@ -72,10 +77,14 @@ export class SystemSettingsController {
         updates.push({ key: 'maintenance_mode', value: maintenanceMode, type: 'boolean' as const });
       }
 
+      console.log('[SystemSettingsController] Updates:', updates);
+
       await SystemSettingsService.setBulkSettings(updates, staffId);
 
+      console.log('[SystemSettingsController] Settings updated successfully');
       res.json({ message: 'Basic settings updated successfully' });
     } catch (error) {
+      console.error('[SystemSettingsController] Error:', error);
       next(error);
     }
   }

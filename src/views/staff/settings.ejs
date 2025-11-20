@@ -250,7 +250,7 @@ async function loadSettings() {
 }
 
 // 営業時間テーブルを読み込み
-function loadBusinessHours() {
+async function loadBusinessHours() {
   const days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
   const defaultHours = {
     open: true,
@@ -258,23 +258,46 @@ function loadBusinessHours() {
     endTime: '21:00'
   };
 
-  const html = days.map((day, index) => `
-    <tr>
-      <td><strong>${day}</strong></td>
-      <td>
-        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-          <input type="checkbox" id="dayOpen_${index}" ${defaultHours.open ? 'checked' : ''}>
-          <span>営業</span>
-        </label>
-      </td>
-      <td>
-        <input type="time" id="dayStart_${index}" value="${defaultHours.startTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-      </td>
-      <td>
-        <input type="time" id="dayEnd_${index}" value="${defaultHours.endTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-      </td>
-    </tr>
-  `).join('');
+  let businessHoursData = [];
+
+  try {
+    // データベースから営業時間を取得
+    const res = await fetch('/api/staff/settings', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      const settings = await res.json();
+      if (settings.business_hours && settings.business_hours.value) {
+        businessHoursData = settings.business_hours.value;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading business hours:', error);
+  }
+
+  const html = days.map((day, index) => {
+    // データベースから読み込んだ値があればそれを使用、なければデフォルト値
+    const dayData = businessHoursData.find(d => d.day === day) || defaultHours;
+
+    return `
+      <tr>
+        <td><strong>${day}</strong></td>
+        <td>
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="dayOpen_${index}" ${dayData.open ? 'checked' : ''}>
+            <span>営業</span>
+          </label>
+        </td>
+        <td>
+          <input type="time" id="dayStart_${index}" value="${dayData.startTime || defaultHours.startTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </td>
+        <td>
+          <input type="time" id="dayEnd_${index}" value="${dayData.endTime || defaultHours.endTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   document.getElementById('businessHoursTable').innerHTML = html;
 }
@@ -414,7 +437,7 @@ function sendTestEmail() {
 }
 
 // 営業時間を保存
-function saveBusinessHours() {
+async function saveBusinessHours() {
   const days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
   const businessHours = days.map((day, index) => ({
     day,
@@ -423,8 +446,26 @@ function saveBusinessHours() {
     endTime: document.getElementById(`dayEnd_${index}`).value
   }));
 
-  console.log('Saving business hours:', businessHours);
-  alert('営業時間を保存しました（デモモード）');
+  try {
+    const res = await fetch('/api/staff/settings/business-hours', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ businessHours })
+    });
+
+    if (res.ok) {
+      alert('営業時間を保存しました');
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving business hours:', error);
+    alert('保存に失敗しました');
+  }
 }
 
 // バックアップ作成

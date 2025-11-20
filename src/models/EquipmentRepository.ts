@@ -6,7 +6,7 @@ export class EquipmentRepository {
   /**
    * Convert snake_case database columns to camelCase
    */
-  private toCamelCase(equipment: any): Equipment {
+  private toCamelCase(equipment: any): any {
     return {
       id: equipment.id,
       category: equipment.category,
@@ -18,13 +18,13 @@ export class EquipmentRepository {
       remark: equipment.remark,
       createdAt: equipment.created_at,
       updatedAt: equipment.updated_at,
-    } as Equipment;
+    };
   }
 
   /**
    * Find equipment by ID
    */
-  async findById(id: number): Promise<Equipment | null> {
+  async findById(id: number): Promise<any> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment WHERE id = ?',
       [id]
@@ -35,7 +35,7 @@ export class EquipmentRepository {
   /**
    * Find all enabled equipment
    */
-  async findAllEnabled(): Promise<Equipment[]> {
+  async findAllEnabled(): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment WHERE enabled = TRUE ORDER BY category, name ASC'
     );
@@ -45,7 +45,7 @@ export class EquipmentRepository {
   /**
    * Find all equipment (including disabled)
    */
-  async findAll(): Promise<Equipment[]> {
+  async findAll(): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment ORDER BY category, name ASC'
     );
@@ -55,7 +55,7 @@ export class EquipmentRepository {
   /**
    * Find equipment by category
    */
-  async findByCategory(category: 'stage' | 'lighting' | 'sound' | 'other'): Promise<Equipment[]> {
+  async findByCategory(category: 'stage' | 'lighting' | 'sound' | 'other'): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment WHERE category = ? AND enabled = TRUE ORDER BY name ASC',
       [category]
@@ -66,7 +66,7 @@ export class EquipmentRepository {
   /**
    * Find multiple equipment by IDs
    */
-  async findByIds(ids: number[]): Promise<Equipment[]> {
+  async findByIds(ids: number[]): Promise<any[]> {
     if (ids.length === 0) {
       return [];
     }
@@ -82,7 +82,7 @@ export class EquipmentRepository {
   /**
    * Create new equipment
    */
-  async create(data: Omit<Equipment, 'id' | 'created_at' | 'updated_at'>): Promise<Equipment> {
+  async create(data: Omit<Equipment, 'id' | 'created_at' | 'updated_at'>): Promise<any> {
     // Support both camelCase and snake_case input
     const priceType = (data as any).priceType || (data as any).price_type;
     const unitPrice = (data as any).unitPrice || (data as any).unit_price;
@@ -113,7 +113,7 @@ export class EquipmentRepository {
   /**
    * Update equipment
    */
-  async update(id: number, data: Partial<Equipment>): Promise<Equipment> {
+  async update(id: number, data: Partial<Equipment>): Promise<any> {
     const fields: string[] = [];
     const values: any[] = [];
 

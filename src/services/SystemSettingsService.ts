@@ -61,7 +61,12 @@ export class SystemSettingsService {
    */
   async getSettingValue(key: string): Promise<any> {
     const setting = await this.getSetting(key);
-    if (!setting) return null;
+    if (!setting) {
+      console.log(`[SystemSettings] Setting not found: ${key}`);
+      return null;
+    }
+
+    console.log(`[SystemSettings] Reading ${key} = ${setting.settingValue} (type: ${setting.settingType})`);
 
     switch (setting.settingType) {
       case 'number':
@@ -105,6 +110,8 @@ export class SystemSettingsService {
         valueStr = String(value);
     }
 
+    console.log(`[SystemSettings] Setting ${key} = ${valueStr} (type: ${type}, staffId: ${staffId})`);
+
     const [existing] = await pool.query<RowDataPacket[]>(
       'SELECT id FROM system_settings WHERE setting_key = ?',
       [key]
@@ -112,25 +119,34 @@ export class SystemSettingsService {
 
     if (existing.length > 0) {
       // 更新
-      await pool.query(
+      console.log(`[SystemSettings] Updating existing setting ${key} (id: ${existing[0].id})`);
+      const [result] = await pool.query(
         'UPDATE system_settings SET setting_value = ?, updated_by = ? WHERE setting_key = ?',
         [valueStr, staffId || null, key]
       );
+      console.log(`[SystemSettings] Update result:`, result);
     } else {
       // 新規作成
-      await pool.query(
+      console.log(`[SystemSettings] Creating new setting ${key}`);
+      const [result] = await pool.query(
         'INSERT INTO system_settings (setting_key, setting_value, setting_type, description, updated_by) VALUES (?, ?, ?, ?, ?)',
         [key, valueStr, type, description || null, staffId || null]
       );
+      console.log(`[SystemSettings] Insert result:`, result);
     }
 
     // アクティビティログを記録
     if (staffId) {
-      await pool.query(
-        `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
-         VALUES (?, ?, ?, ?, ?)`,
-        [staffId, 'update', 'system_setting', existing[0]?.id || 0, `Setting updated: ${key} = ${valueStr}`]
-      );
+      try {
+        await pool.query(
+          `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
+           VALUES (?, ?, ?, ?, ?)`,
+          [staffId, 'update', 'system_setting', existing[0]?.id || 0, `Setting updated: ${key} = ${valueStr}`]
+        );
+      } catch (error) {
+        console.error(`[SystemSettings] Failed to log activity:`, error);
+        // Don't throw - activity log failure shouldn't prevent settings update
+      }
     }
   }
 
