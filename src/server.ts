@@ -24,6 +24,8 @@ import staffPageRoutes from './routes/staff-pages';
 
 // ミドルウェアのインポート
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { loadSystemSettings } from './middleware/systemSettings';
+import { checkMaintenanceMode } from './middleware/maintenanceMode';
 
 const app: Application = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -66,6 +68,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// システム設定ミドルウェア（すべてのビューで利用可能にする）
+app.use(loadSystemSettings);
+
 // ヘルスチェックエンドポイント
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -80,7 +85,8 @@ app.use('/api/staff', staffRoutes);
 
 // ページルート
 app.use('/staff', staffPageRoutes);
-app.use('/', pageRoutes);
+// 一般利用者ページルート（メンテナンスモードチェック付き）
+app.use('/', checkMaintenanceMode, pageRoutes);
 
 // 404ハンドラー
 app.use(notFoundHandler);
