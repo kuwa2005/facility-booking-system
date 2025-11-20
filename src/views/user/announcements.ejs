@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 施設予約システム</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      transition: color 0.3s;
+    }
+    .back-button:hover {
+      color: #1d4ed8;
+    }
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-header h2 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      color: #6b7280;
+    }
+    .announcements-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .announcement-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 4px solid #2563eb;
+      transition: all 0.3s;
+    }
+    .announcement-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+    .announcement-card.important {
+      border-left-color: #ef4444;
+      background-color: #fef2f2;
+    }
+    .announcement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 0.75rem;
+    }
+    .announcement-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.25rem;
+    }
+    .announcement-date {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .announcement-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-important {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+    .badge-normal {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+    .announcement-content {
+      color: #4b5563;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #6b7280;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    .empty-state h3 {
+      font-size: 1.5rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+      color: #6b7280;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .announcement-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .announcement-badge {
+        margin-top: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <a href="/my-page">マイページ</a>
+        <a href="/my-reservations">予約一覧</a>
+        <a href="/logout">ログアウト</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <a href="/my-page" class="back-button">← マイページに戻る</a>
+      <div class="page-header">
+        <h2>📢 お知らせ</h2>
+        <p>施設からの重要なお知らせをご確認ください</p>
+      </div>
+
+      <div id="loading" class="loading">
+        読み込み中...
+      </div>
+
+      <div id="announcementsList" class="announcements-list" style="display: none;">
+        <!-- お知らせがJavaScriptで動的に生成されます -->
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">📭</div>
+        <h3>お知らせがありません</h3>
+        <p>現在、表示できるお知らせはありません</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    async function loadAnnouncements() {
+      try {
+        const response = await fetch('/api/user/announcements');
+        const result = await response.json();
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (result.success && result.data && result.data.length > 0) {
+          displayAnnouncements(result.data);
+        } else {
+          document.getElementById('emptyState').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load announcements:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+      }
+    }
+
+    function displayAnnouncements(announcements) {
+      const list = document.getElementById('announcementsList');
+      list.style.display = 'flex';
+      list.innerHTML = '';
+
+      announcements.forEach(announcement => {
+        const card = document.createElement('div');
+        const isImportant = announcement.priority === 'high';
+        card.className = 'announcement-card' + (isImportant ? ' important' : '');
+
+        const createdDate = new Date(announcement.created_at).toLocaleDateString('ja-JP', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        card.innerHTML = `
+          <div class="announcement-header">
+            <div>
+              <h3 class="announcement-title">${escapeHtml(announcement.title)}</h3>
+              <p class="announcement-date">${createdDate}</p>
+            </div>
+            <span class="announcement-badge ${isImportant ? 'badge-important' : 'badge-normal'}">
+              ${isImportant ? '重要' : '通常'}
+            </span>
+          </div>
+          <div class="announcement-content">${escapeHtml(announcement.content)}</div>
+        `;
+
+        list.appendChild(card);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ページロード時にお知らせを取得
+    loadAnnouncements();
+  </script>
+</body>
+</html>

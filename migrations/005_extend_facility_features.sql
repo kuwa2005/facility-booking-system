@@ -2,9 +2,11 @@
 -- 時間帯管理、物販、部屋別休館日などの機能を追加
 -- 実行日: 2025-11-17
 
--- 時間帯マスターテーブル
-CREATE TABLE IF NOT EXISTS time_slots (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+-- 時間帯マスターテーブル（既存の場合は削除して再作成）
+DROP TABLE IF EXISTS room_time_slot_prices;
+DROP TABLE IF EXISTS time_slots;
+CREATE TABLE time_slots (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL COMMENT '時間帯名（例：午前、午後、夜間、シャワー30分）',
     code VARCHAR(50) NOT NULL UNIQUE COMMENT '時間帯コード（システム内部用）',
     start_time TIME NOT NULL COMMENT '開始時刻',
@@ -30,10 +32,10 @@ INSERT INTO time_slots (name, code, start_time, end_time, duration_minutes, slot
 ('夜間', 'evening', '18:00:00', '21:30:00', 210, 'regular', 5);
 
 -- 部屋ごとの時間帯別料金テーブル
-CREATE TABLE IF NOT EXISTS room_time_slot_prices (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    room_id INT NOT NULL COMMENT '部屋ID',
-    time_slot_id INT NOT NULL COMMENT '時間帯ID',
+CREATE TABLE room_time_slot_prices (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    room_id INT UNSIGNED NOT NULL COMMENT '部屋ID',
+    time_slot_id INT UNSIGNED NOT NULL COMMENT '時間帯ID',
     base_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT '基本料金',
     ac_price_per_hour DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT '1時間あたりの空調料金',
     is_available BOOLEAN NOT NULL DEFAULT TRUE COMMENT '利用可能フラグ',
@@ -46,11 +48,12 @@ CREATE TABLE IF NOT EXISTS room_time_slot_prices (
     INDEX idx_time_slot_id (time_slot_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部屋ごとの時間帯別料金';
 
--- 部屋と設備の関連テーブル（多対多）
-CREATE TABLE IF NOT EXISTS room_equipment (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    room_id INT NOT NULL COMMENT '部屋ID',
-    equipment_id INT NOT NULL COMMENT '設備ID',
+-- 部屋と設備の関連テーブル（多対多・既存の場合は削除して再作成）
+DROP TABLE IF EXISTS room_equipment;
+CREATE TABLE room_equipment (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    room_id INT UNSIGNED NOT NULL COMMENT '部屋ID',
+    equipment_id INT UNSIGNED NOT NULL COMMENT '設備ID',
     is_available BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'この部屋でこの設備が利用可能か',
     notes TEXT COMMENT '備考',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -62,9 +65,11 @@ CREATE TABLE IF NOT EXISTS room_equipment (
     INDEX idx_equipment_id (equipment_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部屋と設備の関連';
 
--- 物販商品テーブル
-CREATE TABLE IF NOT EXISTS products (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+-- 物販商品テーブル（既存の場合は削除して再作成）
+DROP TABLE IF EXISTS sales;
+DROP TABLE IF EXISTS products;
+CREATE TABLE products (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(200) NOT NULL COMMENT '商品名',
     category VARCHAR(100) NOT NULL COMMENT 'カテゴリ（parking_ticket, towel, etc.）',
     price DECIMAL(10, 2) NOT NULL COMMENT '販売価格',
@@ -84,14 +89,14 @@ INSERT INTO products (name, category, price, stock_quantity, description, displa
 ('駐車券', 'parking_ticket', 100.00, NULL, '1枚100円の駐車券', 1);
 
 -- 販売記録テーブル
-CREATE TABLE IF NOT EXISTS sales (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    application_id INT DEFAULT NULL COMMENT '予約ID（予約に紐づく場合）',
-    product_id INT NOT NULL COMMENT '商品ID',
+CREATE TABLE sales (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    application_id INT UNSIGNED DEFAULT NULL COMMENT '予約ID（予約に紐づく場合）',
+    product_id INT UNSIGNED NOT NULL COMMENT '商品ID',
     quantity INT NOT NULL DEFAULT 1 COMMENT '数量',
     unit_price DECIMAL(10, 2) NOT NULL COMMENT '単価（販売時の価格）',
     total_price DECIMAL(10, 2) NOT NULL COMMENT '合計金額',
-    sold_by INT NOT NULL COMMENT '販売した職員ID',
+    sold_by INT UNSIGNED NOT NULL COMMENT '販売した職員ID',
     sold_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '販売日時',
     customer_name VARCHAR(200) DEFAULT NULL COMMENT '購入者名',
     notes TEXT COMMENT '備考',
@@ -105,14 +110,15 @@ CREATE TABLE IF NOT EXISTS sales (
     INDEX idx_sold_at (sold_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='販売記録';
 
--- 部屋別休館日テーブル
-CREATE TABLE IF NOT EXISTS room_closed_dates (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    room_id INT NOT NULL COMMENT '部屋ID',
+-- 部屋別休館日テーブル（既存の場合は削除して再作成）
+DROP TABLE IF EXISTS room_closed_dates;
+CREATE TABLE room_closed_dates (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    room_id INT UNSIGNED NOT NULL COMMENT '部屋ID',
     date DATE NOT NULL COMMENT '休館日',
     reason VARCHAR(500) NOT NULL COMMENT '理由',
     closed_time_slots JSON DEFAULT NULL COMMENT '休止する時間帯ID配列（NULLの場合は終日休館）',
-    created_by INT NOT NULL COMMENT '登録した職員ID',
+    created_by INT UNSIGNED NOT NULL COMMENT '登録した職員ID',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
@@ -122,12 +128,13 @@ CREATE TABLE IF NOT EXISTS room_closed_dates (
     INDEX idx_date (date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部屋別休館日';
 
--- 予約代行記録テーブル
-CREATE TABLE IF NOT EXISTS application_proxies (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    application_id INT NOT NULL COMMENT '申請ID',
-    created_by_staff INT NOT NULL COMMENT '予約を代行した職員ID',
-    user_id INT DEFAULT NULL COMMENT '対象ユーザーID（会員の場合）',
+-- 予約代行記録テーブル（既存の場合は削除して再作成）
+DROP TABLE IF EXISTS application_proxies;
+CREATE TABLE application_proxies (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    application_id INT UNSIGNED NOT NULL COMMENT '申請ID',
+    created_by_staff INT UNSIGNED NOT NULL COMMENT '予約を代行した職員ID',
+    user_id INT UNSIGNED DEFAULT NULL COMMENT '対象ユーザーID（会員の場合）',
     proxy_type ENUM('for_member', 'for_guest') NOT NULL COMMENT '代行種別（会員/ゲスト）',
     notes TEXT COMMENT '代行時のメモ',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -139,22 +146,38 @@ CREATE TABLE IF NOT EXISTS application_proxies (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='予約代行記録';
 
--- 既存のusagesテーブルに時間帯IDカラムを追加（将来的な移行のため）
-ALTER TABLE usages
-ADD COLUMN time_slot_ids JSON DEFAULT NULL COMMENT '使用した時間帯ID配列' AFTER use_evening_extension;
+-- 既存のusagesテーブルに時間帯IDカラムを追加（既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='usages' AND column_name='time_slot_ids' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE usages ADD COLUMN time_slot_ids JSON DEFAULT NULL COMMENT ''使用した時間帯ID配列'' AFTER use_evening_extension', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- applicationsテーブルに物販合計額カラムを追加
-ALTER TABLE applications
-ADD COLUMN product_sales_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT '物販販売額' AFTER total_amount;
+-- applicationsテーブルに物販合計額カラムを追加（既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='applications' AND column_name='product_sales_amount' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE applications ADD COLUMN product_sales_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT ''物販販売額'' AFTER total_amount', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- rooms テーブルにイレギュラー対応フラグを追加
-ALTER TABLE rooms
-ADD COLUMN is_flexible_time BOOLEAN NOT NULL DEFAULT FALSE COMMENT '自由時間制かどうか（シャワー室など）' AFTER is_active,
-ADD COLUMN min_duration_minutes INT DEFAULT NULL COMMENT '最小利用時間（分）',
-ADD COLUMN time_unit_minutes INT DEFAULT NULL COMMENT '時間単位（分）',
-ADD COLUMN price_per_unit DECIMAL(10, 2) DEFAULT NULL COMMENT '単位あたりの料金';
+-- rooms テーブルにイレギュラー対応フラグを追加（既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='rooms' AND column_name='is_flexible_time' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE rooms ADD COLUMN is_flexible_time BOOLEAN NOT NULL DEFAULT FALSE COMMENT ''自由時間制かどうか（シャワー室など）'' AFTER is_active', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 休館日種別を追加
-ALTER TABLE closed_dates
-ADD COLUMN closure_type ENUM('full', 'partial', 'year_end') NOT NULL DEFAULT 'full' COMMENT '休館種別（full: 全館, partial: 一部, year_end: 年末年始）' AFTER reason,
-ADD COLUMN affected_rooms JSON DEFAULT NULL COMMENT '影響を受ける部屋ID配列（partial の場合）';
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='rooms' AND column_name='min_duration_minutes' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE rooms ADD COLUMN min_duration_minutes INT DEFAULT NULL COMMENT ''最小利用時間（分）''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='rooms' AND column_name='time_unit_minutes' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE rooms ADD COLUMN time_unit_minutes INT DEFAULT NULL COMMENT ''時間単位（分）''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='rooms' AND column_name='price_per_unit' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE rooms ADD COLUMN price_per_unit DECIMAL(10, 2) DEFAULT NULL COMMENT ''単位あたりの料金''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 休館日種別を追加（既に存在する場合はスキップ）
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='closed_dates' AND column_name='closure_type' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE closed_dates ADD COLUMN closure_type ENUM(''full'', ''partial'', ''year_end'') NOT NULL DEFAULT ''full'' COMMENT ''休館種別（full: 全館, partial: 一部, year_end: 年末年始）'' AFTER reason', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='closed_dates' AND column_name='affected_rooms' AND table_schema=DATABASE()) = 0,
+  'ALTER TABLE closed_dates ADD COLUMN affected_rooms JSON DEFAULT NULL COMMENT ''影響を受ける部屋ID配列（partial の場合）''', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

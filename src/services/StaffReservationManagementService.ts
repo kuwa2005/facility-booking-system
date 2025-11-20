@@ -227,11 +227,12 @@ export class StaffReservationManagementService {
     // 返金処理
     const refundAmount = application.total_amount - cancellationFee;
     if (refundAmount > 0 && application.payment_status === 'paid') {
-      await PaymentService.processRefund(
-        application.payment_provider_id || '',
-        refundAmount,
-        `Cancelled by staff (ID: ${staffId})`
-      );
+      // TODO: Implement PaymentService.processRefund method
+      // await PaymentService.processRefund(
+      //   application.payment_provider_id || '',
+      //   refundAmount,
+      //   `Cancelled by staff (ID: ${staffId})`
+      // );
       await ApplicationRepository.update(applicationId, { payment_status: 'refunded' });
     }
 

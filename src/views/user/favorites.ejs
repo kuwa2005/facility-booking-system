@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - 施設予約システム</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      transition: color 0.3s;
+    }
+    .back-button:hover {
+      color: #1d4ed8;
+    }
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-header h2 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      color: #6b7280;
+    }
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    .room-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      position: relative;
+    }
+    .room-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      transform: translateY(-4px);
+    }
+    .room-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: white;
+    }
+    .room-content {
+      padding: 1.5rem;
+    }
+    .room-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .room-description {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .room-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .info-tag {
+      background-color: #f3f4f6;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      color: #4b5563;
+    }
+    .room-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-outline {
+      background-color: white;
+      color: #ef4444;
+      border: 1px solid #ef4444;
+    }
+    .btn-outline:hover {
+      background-color: #fef2f2;
+    }
+    .favorite-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background-color: #ef4444;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    .empty-state h3 {
+      font-size: 1.5rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #6b7280;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .rooms-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <a href="/my-page">マイページ</a>
+        <a href="/my-reservations">予約一覧</a>
+        <a href="/logout">ログアウト</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <a href="/my-page" class="back-button">← マイページに戻る</a>
+      <div class="page-header">
+        <h2>❤️ お気に入り施設</h2>
+        <p>お気に入りに登録した施設一覧です</p>
+      </div>
+
+      <div id="loading" class="loading">
+        読み込み中...
+      </div>
+
+      <div id="roomsGrid" class="rooms-grid" style="display: none;">
+        <!-- 施設カードがJavaScriptで動的に生成されます -->
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">💙</div>
+        <h3>お気に入りの施設がありません</h3>
+        <p>お気に入りの施設を登録して、簡単にアクセスできるようにしましょう</p>
+        <a href="/rooms" class="btn btn-primary" style="display: inline-block;">施設一覧を見る</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    async function loadFavorites() {
+      try {
+        const response = await fetch('/api/user/favorites/rooms');
+        const data = await response.json();
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (data.rooms && data.rooms.length > 0) {
+          displayRooms(data.rooms);
+        } else {
+          document.getElementById('emptyState').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load favorites:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+      }
+    }
+
+    function displayRooms(rooms) {
+      const grid = document.getElementById('roomsGrid');
+      grid.style.display = 'grid';
+      grid.innerHTML = '';
+
+      rooms.forEach(room => {
+        const card = document.createElement('div');
+        card.className = 'room-card';
+
+        card.innerHTML = `
+          <div class="favorite-badge">❤️</div>
+          <div class="room-image">🏢</div>
+          <div class="room-content">
+            <h3 class="room-name">${escapeHtml(room.name)}</h3>
+            ${room.description ? `<p class="room-description">${escapeHtml(room.description)}</p>` : ''}
+            <div class="room-info">
+              ${room.capacity ? `<span class="info-tag">定員: ${room.capacity}名</span>` : ''}
+              <span class="info-tag">午前: ¥${(room.base_price_morning || 0).toLocaleString()}</span>
+              <span class="info-tag">午後: ¥${(room.base_price_afternoon || 0).toLocaleString()}</span>
+            </div>
+            <div class="room-actions">
+              <a href="/rooms/${room.id}" class="btn btn-primary">詳細を見る</a>
+              <button onclick="removeFavorite(${room.id})" class="btn btn-outline">削除</button>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    async function removeFavorite(roomId) {
+      if (!confirm('お気に入りから削除しますか？')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user/favorites/rooms/${roomId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          loadFavorites(); // 再読み込み
+        } else {
+          const data = await response.json();
+          alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+        }
+      } catch (error) {
+        console.error('Failed to remove favorite:', error);
+        alert('削除に失敗しました');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ページロード時にお気に入りを取得
+    loadFavorites();
+  </script>
+</body>
+</html>

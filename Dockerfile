@@ -18,6 +18,9 @@ COPY . .
 # Build TypeScript code
 RUN npm run build
 
+# Copy views (EJS templates) to dist directory
+RUN cp -r src/views dist/views
+
 # Production stage
 FROM node:20-alpine
 

@@ -3,7 +3,7 @@ import ApplicationRepository from '../models/ApplicationRepository';
 import { createError } from '../middleware/errorHandler';
 import { calculateCancellationFee } from '../utils/pricing';
 import PaymentService from '../services/PaymentService';
-import EmailService from '../services/EmailService';
+import { emailService } from '../services/EmailService';
 
 export class UserReservationController {
   /**
@@ -199,7 +199,7 @@ export class UserReservationController {
       }
 
       // キャンセル通知メールを送信
-      await EmailService.sendCancellationNotification(
+      await emailService.sendCancellationNotification(
         result.application.applicant_email,
         result.application.applicant_representative,
         result.application.id,

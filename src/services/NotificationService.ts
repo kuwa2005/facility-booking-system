@@ -259,7 +259,7 @@ export class NotificationService {
 
   private async getApplicationVariables(applicationId: number): Promise<Record<string, any>> {
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT a.*, u.name as user_name, r.name as room_name, u.date as usage_date
+      `SELECT a.*, us.name as user_name, r.name as room_name, u.date as usage_date
        FROM applications a
        LEFT JOIN users us ON a.user_id = us.id
        LEFT JOIN usages u ON a.id = u.application_id

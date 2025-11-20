@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .info-value {
+      color: #1f2937;
+    }
+    .time-slots {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .time-slot {
+      background-color: #dbeafe;
+      color: #1e40af;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    .form-group label .required {
+      color: #dc2626;
+      margin-left: 0.25rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .price-summary {
+      background-color: #f9fafb;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+    }
+    .price-row.total {
+      font-weight: 600;
+      font-size: 1.25rem;
+      border-top: 2px solid #e5e7eb;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      color: #2563eb;
+    }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .btn {
+      flex: 1;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-primary:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .error-message {
+      background-color: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+          <a href="/logout">ログアウト</a>
+        <% } else { %>
+          <a href="/login">ログイン</a>
+          <a href="/register">新規登録</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1 style="font-size: 2rem; margin-bottom: 2rem; color: #1f2937;">予約内容の確認</h1>
+
+      <div id="errorMessage" class="error-message"></div>
+
+      <div class="card">
+        <h2>予約情報</h2>
+        <div class="info-grid">
+          <div class="info-label">施設名</div>
+          <div class="info-value"><%= room.name %></div>
+
+          <div class="info-label">利用日</div>
+          <div class="info-value" id="displayDate"></div>
+
+          <div class="info-label">利用時間帯</div>
+          <div class="info-value">
+            <div class="time-slots" id="timeSlots"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>申込者情報</h2>
+        <form id="bookingForm">
+          <div class="form-group">
+            <label>
+              イベント名<span class="required">*</span>
+            </label>
+            <input type="text" id="eventName" name="eventName" required placeholder="例: ○○イベント">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>
+                申込者代表者名<span class="required">*</span>
+              </label>
+              <input type="text" id="representativeName" name="representativeName" required placeholder="山田 太郎" value="<%= user.name || '' %>">
+            </div>
+
+            <div class="form-group">
+              <label>
+                電話番号<span class="required">*</span>
+              </label>
+              <input type="tel" id="phone" name="phone" required placeholder="090-1234-5678" value="<%= user.phone || '' %>">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              メールアドレス<span class="required">*</span>
+            </label>
+            <input type="email" id="email" name="email" required placeholder="example@example.com" value="<%= user.email || '' %>">
+          </div>
+
+          <div class="form-group">
+            <label>団体名</label>
+            <input type="text" id="groupName" name="groupName" placeholder="任意" value="<%= user.organization_name || '' %>">
+          </div>
+
+          <div class="form-group">
+            <label>予定参加人数</label>
+            <input type="number" id="attendees" name="attendees" min="1" placeholder="例: 50">
+          </div>
+
+          <div class="form-group">
+            <label>イベント内容</label>
+            <textarea id="description" name="description" placeholder="イベントの内容を簡単にご記入ください"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>入場料の有無<span class="required">*</span></label>
+              <select id="entranceFeeType" name="entranceFeeType" required onchange="toggleEntranceFeeAmount()">
+                <option value="free">無料</option>
+                <option value="paid">有料</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="entranceFeeAmountGroup" style="display: none;">
+              <label>入場料金額（円）</label>
+              <input type="number" id="entranceFeeAmount" name="entranceFeeAmount" min="0" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>備考</label>
+            <textarea id="remarks" name="remarks" placeholder="その他ご要望がありましたらご記入ください"></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>料金</h2>
+        <div class="price-summary">
+          <div class="price-row">
+            <span>基本料金</span>
+            <span id="basePrice">¥0</span>
+          </div>
+          <div class="price-row total">
+            <span>合計金額</span>
+            <span id="totalPrice">¥0</span>
+          </div>
+        </div>
+        <p style="color: #6b7280; font-size: 0.875rem;">
+          ※ 入場料が有料の場合、料金が変更される場合があります。<br>
+          ※ エアコンや備品の使用料は別途計算されます。
+        </p>
+      </div>
+
+      <div class="btn-group">
+        <a href="/rooms/<%= room.id %>" class="btn btn-secondary">戻る</a>
+        <button type="button" class="btn btn-primary" id="submitBtn" onclick="proceedToPayment()">
+          次へ（決済情報確認）
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const room = <%- JSON.stringify(room) %>;
+    const date = '<%= date %>';
+    const selectedSlots = <%- JSON.stringify(selectedSlots) %>;
+
+    // 日付を表示用にフォーマット
+    const dateObj = new Date(date);
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth() + 1;
+    const day = dateObj.getDate();
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayOfWeek = dayNames[dateObj.getDay()];
+    document.getElementById('displayDate').textContent = `${year}年${month}月${day}日（${dayOfWeek}）`;
+
+    // 時間帯を表示
+    const timeSlotNames = {
+      morning: '午前（9:00-12:00）',
+      afternoon: '午後（13:00-17:00）',
+      evening: '夜間（18:00-21:30）'
+    };
+
+    const timeSlotsContainer = document.getElementById('timeSlots');
+    selectedSlots.forEach(slot => {
+      const slotDiv = document.createElement('div');
+      slotDiv.className = 'time-slot';
+      slotDiv.textContent = timeSlotNames[slot];
+      timeSlotsContainer.appendChild(slotDiv);
+    });
+
+    // 料金を計算
+    function calculatePrice() {
+      let total = 0;
+
+      selectedSlots.forEach(slot => {
+        if (slot === 'morning') total += room.base_price_morning || 0;
+        if (slot === 'afternoon') total += room.base_price_afternoon || 0;
+        if (slot === 'evening') total += room.base_price_evening || 0;
+      });
+
+      document.getElementById('basePrice').textContent = '¥' + total.toLocaleString();
+      document.getElementById('totalPrice').textContent = '¥' + total.toLocaleString();
+    }
+
+    function toggleEntranceFeeAmount() {
+      const feeType = document.getElementById('entranceFeeType').value;
+      const feeAmountGroup = document.getElementById('entranceFeeAmountGroup');
+
+      if (feeType === 'paid') {
+        feeAmountGroup.style.display = 'block';
+        document.getElementById('entranceFeeAmount').required = true;
+      } else {
+        feeAmountGroup.style.display = 'none';
+        document.getElementById('entranceFeeAmount').required = false;
+        document.getElementById('entranceFeeAmount').value = '0';
+      }
+    }
+
+    function proceedToPayment() {
+      const form = document.getElementById('bookingForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // 予約データを収集
+      const bookingData = {
+        room: room,
+        date: date,
+        selectedSlots: selectedSlots,
+        formData: {
+          applicant_representative: document.getElementById('representativeName').value,
+          applicant_phone: document.getElementById('phone').value,
+          applicant_email: document.getElementById('email').value,
+          applicant_group_name: document.getElementById('groupName').value || null,
+          event_name: document.getElementById('eventName').value,
+          expected_attendees: parseInt(document.getElementById('attendees').value) || null,
+          event_description: document.getElementById('description').value || null,
+          entrance_fee_type: document.getElementById('entranceFeeType').value,
+          entrance_fee_amount: parseInt(document.getElementById('entranceFeeAmount').value) || 0,
+          remarks: document.getElementById('remarks').value || null,
+        },
+        totalAmount: document.getElementById('totalPrice').textContent
+      };
+
+      // sessionStorageに保存
+      sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+      // 決済確認ページへ遷移
+      window.location.href = '/booking/payment';
+    }
+
+    async function submitBooking() {
+      const form = document.getElementById('bookingForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // デモシステム：決済確認モーダルを表示
+      const totalAmount = document.getElementById('totalPrice').textContent;
+      if (!confirm(`クレジットカード決済を実行します。\n\n請求金額: ${totalAmount}\n\nよろしいですか？`)) {
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const spinner = document.getElementById('spinner');
+      const errorMessage = document.getElementById('errorMessage');
+
+      submitBtn.disabled = true;
+      spinner.style.display = 'inline-block';
+      errorMessage.style.display = 'none';
+
+      // デモシステム：決済処理中を模擬（2秒待機）
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const usages = [{
+        room_id: room.id,
+        date: date,
+        use_morning: selectedSlots.includes('morning'),
+        use_afternoon: selectedSlots.includes('afternoon'),
+        use_evening: selectedSlots.includes('evening'),
+        use_midday_extension: false,
+        use_evening_extension: false,
+        ac_requested: false,
+        equipment: []
+      }];
+
+      const requestData = {
+        applicant_representative: document.getElementById('representativeName').value,
+        applicant_phone: document.getElementById('phone').value,
+        applicant_email: document.getElementById('email').value,
+        applicant_group_name: document.getElementById('groupName').value || null,
+        event_name: document.getElementById('eventName').value,
+        expected_attendees: parseInt(document.getElementById('attendees').value) || null,
+        event_description: document.getElementById('description').value || null,
+        entrance_fee_type: document.getElementById('entranceFeeType').value,
+        entrance_fee_amount: parseInt(document.getElementById('entranceFeeAmount').value) || 0,
+        use_digital_signboard: false,
+        remarks: document.getElementById('remarks').value || null,
+        usages: usages
+      };
+
+      try {
+        const response = await fetch('/api/applications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || '予約の作成に失敗しました');
+        }
+
+        // デモシステム：決済完了メッセージ
+        alert('決済が完了しました！\n予約が確定しました。');
+
+        // 予約完了ページへ遷移
+        window.location.href = '/booking/success?applicationId=' + result.application.id;
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.style.display = 'block';
+        submitBtn.disabled = false;
+        spinner.style.display = 'none';
+      }
+    }
+
+    // 初期表示
+    calculatePrice();
+  </script>
+</body>
+</html>

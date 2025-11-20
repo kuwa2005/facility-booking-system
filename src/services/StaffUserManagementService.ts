@@ -273,10 +273,10 @@ export class StaffUserManagementService {
       password_hash,
       name: data.name,
       phone: data.phone,
-      organization_name: data.organization_name || null,
-      address: data.address || null,
+      organization_name: data.organization_name || undefined,
+      address: data.address || undefined,
       is_admin: false,
-    });
+    } as any);
 
     // 職員が登録した場合は自動的にメール認証済みにする
     await UserRepository.update(user.id, {

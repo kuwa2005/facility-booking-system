@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-header h2 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .filter-tab {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .filter-tab.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+    .filter-tab:hover {
+      color: #2563eb;
+    }
+    .reservations-list {
+      display: grid;
+      gap: 1.5rem;
+    }
+    .reservation-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      border-left: 4px solid #e5e7eb;
+    }
+    .reservation-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+    .reservation-card.upcoming {
+      border-left-color: #3b82f6;
+    }
+    .reservation-card.cancelled {
+      border-left-color: #ef4444;
+      opacity: 0.8;
+    }
+    .reservation-card.past {
+      border-left-color: #9ca3af;
+    }
+    .reservation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+    }
+    .reservation-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .reservation-id {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .status-badge.upcoming {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+    .status-badge.cancelled {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+    .status-badge.past {
+      background-color: #f3f4f6;
+      color: #4b5563;
+    }
+    .status-badge.paid {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .status-badge.unpaid {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .reservation-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .detail-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+    .detail-value {
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .reservation-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-block;
+      text-align: center;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .empty-state {
+      background: white;
+      border-radius: 8px;
+      padding: 3rem;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      color: #d1d5db;
+      margin-bottom: 1rem;
+    }
+    .empty-state h3 {
+      font-size: 1.25rem;
+      color: #6b7280;
+      margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+      color: #9ca3af;
+      margin-bottom: 1.5rem;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .reservation-header {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .reservation-details {
+        grid-template-columns: 1fr;
+      }
+      .reservation-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <a href="/my-page">マイページ</a>
+        <a href="/my-reservations">予約一覧</a>
+        <a href="/logout">ログアウト</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="page-header">
+        <h2>予約一覧</h2>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterReservations('all')">すべて</button>
+        <button class="filter-tab" onclick="filterReservations('upcoming')">予定</button>
+        <button class="filter-tab" onclick="filterReservations('past')">過去</button>
+        <button class="filter-tab" onclick="filterReservations('cancelled')">キャンセル済み</button>
+      </div>
+
+      <div class="reservations-list" id="reservationsList">
+        <% if (reservations && reservations.length > 0) { %>
+          <% reservations.forEach(function(reservation) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const firstDate = reservation.first_date ? new Date(reservation.first_date) : null;
+            const isCancelled = reservation.cancel_status === 'cancelled';
+            const isPast = firstDate && firstDate < today && !isCancelled;
+            const isUpcoming = firstDate && firstDate >= today && !isCancelled;
+
+            let statusClass = 'upcoming';
+            let statusText = '予定';
+            if (isCancelled) {
+              statusClass = 'cancelled';
+              statusText = 'キャンセル済み';
+            } else if (isPast) {
+              statusClass = 'past';
+              statusText = '過去';
+            }
+
+            let paymentStatusClass = 'unpaid';
+            let paymentStatusText = '未決済';
+            if (reservation.payment_status === 'paid') {
+              paymentStatusClass = 'paid';
+              paymentStatusText = '支払い済み';
+            } else if (reservation.payment_status === 'refunded') {
+              paymentStatusClass = 'cancelled';
+              paymentStatusText = '返金済み';
+            }
+          %>
+          <div class="reservation-card <%= statusClass %>" data-status="<%= statusClass %>">
+            <div class="reservation-header">
+              <div>
+                <div class="reservation-title"><%= reservation.event_name %></div>
+                <div class="reservation-id">予約番号: #<%= reservation.id %></div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                <span class="status-badge <%= statusClass %>"><%= statusText %></span>
+                <span class="status-badge <%= paymentStatusClass %>"><%= paymentStatusText %></span>
+              </div>
+            </div>
+
+            <div class="reservation-details">
+              <div class="detail-item">
+                <span class="detail-label">施設</span>
+                <span class="detail-value"><%= reservation.room_names || '-' %></span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">申込者</span>
+                <span class="detail-value"><%= reservation.applicant_representative %></span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">利用日</span>
+                <span class="detail-value">
+                  <% if (reservation.first_date) { %>
+                    <%= new Date(reservation.first_date).toLocaleDateString('ja-JP') %>
+                    <% if (reservation.first_date !== reservation.last_date) { %>
+                      ～ <%= new Date(reservation.last_date).toLocaleDateString('ja-JP') %>
+                    <% } %>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">利用回数</span>
+                <span class="detail-value"><%= reservation.usage_count || 0 %>回</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">合計金額</span>
+                <span class="detail-value" style="color: #2563eb; font-size: 1.125rem;">
+                  ¥<%= (reservation.total_amount || 0).toLocaleString() %>
+                </span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">申込日時</span>
+                <span class="detail-value">
+                  <%= new Date(reservation.created_at).toLocaleDateString('ja-JP') %>
+                </span>
+              </div>
+            </div>
+
+            <div class="reservation-actions">
+              <a href="/my-reservations/<%= reservation.id %>" class="btn btn-primary">詳細を見る</a>
+              <% if (isUpcoming) { %>
+                <button class="btn btn-danger" onclick="confirmCancel(<%= reservation.id %>)">
+                  キャンセル
+                </button>
+              <% } %>
+            </div>
+          </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <h3>予約がありません</h3>
+            <p>まだ予約を作成していません。</p>
+            <a href="/rooms" class="btn btn-primary">施設を予約する</a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    function filterReservations(status) {
+      // タブのアクティブ状態を更新
+      const tabs = document.querySelectorAll('.filter-tab');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // 予約カードをフィルタリング
+      const cards = document.querySelectorAll('.reservation-card');
+      cards.forEach(card => {
+        if (status === 'all') {
+          card.style.display = 'block';
+        } else {
+          card.style.display = card.dataset.status === status ? 'block' : 'none';
+        }
+      });
+    }
+
+    function confirmCancel(reservationId) {
+      if (confirm('この予約をキャンセルしますか？\n\nキャンセル料が発生する場合があります。')) {
+        cancelReservation(reservationId);
+      }
+    }
+
+    async function cancelReservation(reservationId) {
+      try {
+        const response = await fetch(`/api/user/reservations/${reservationId}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reason: 'ユーザーによるキャンセル'
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'キャンセルに失敗しました');
+        }
+
+        alert('予約をキャンセルしました。\n\nキャンセル料: ¥' + (result.cancellation_fee || 0).toLocaleString() + '\n返金額: ¥' + (result.refund_amount || 0).toLocaleString());
+        location.reload();
+      } catch (error) {
+        alert('エラー: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>

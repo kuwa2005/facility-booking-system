@@ -280,6 +280,7 @@ export interface CreateApplicationDto {
   start_time?: string;
   end_time?: string;
   remarks?: string;
+  auto_pay?: boolean; // デモシステム：自動決済フラグ
   usages: CreateUsageDto[];
 }
 
@@ -528,4 +529,33 @@ export interface ScheduleNotificationDto {
   notification_data?: any;
   related_entity_type?: string;
   related_entity_id?: number;
+}
+
+// Review model
+export interface Review {
+  id: number;
+  user_id: number;
+  room_id: number;
+  application_id: number | null;
+  rating: number;
+  title: string;
+  comment: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// DTO for creating review
+export interface CreateReviewDto {
+  room_id: number;
+  application_id?: number;
+  rating: number;
+  title: string;
+  comment?: string;
+}
+
+// DTO for updating review
+export interface UpdateReviewDto {
+  rating?: number;
+  title?: string;
+  comment?: string;
 }

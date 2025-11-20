@@ -23,7 +23,7 @@ export class PageController {
   /**
    * 会員登録ページ
    */
-  static register(req: Request, res: Response): Promise<void> {
+  static register(req: Request, res: Response): void {
     res.render('auth/register', {
       title: '新規会員登録',
       user: req.user,
@@ -33,7 +33,7 @@ export class PageController {
   /**
    * ログインページ
    */
-  static login(req: Request, res: Response): Promise<void> {
+  static login(req: Request, res: Response): void {
     res.render('auth/login', {
       title: 'ログイン',
       user: req.user,
@@ -122,7 +122,11 @@ export class PageController {
         `SELECT a.*,
                 (SELECT COUNT(*) FROM usages WHERE application_id = a.id) as usage_count,
                 (SELECT MIN(date) FROM usages WHERE application_id = a.id) as first_date,
-                (SELECT MAX(date) FROM usages WHERE application_id = a.id) as last_date
+                (SELECT MAX(date) FROM usages WHERE application_id = a.id) as last_date,
+                (SELECT GROUP_CONCAT(DISTINCT r.name SEPARATOR '、')
+                 FROM usages u
+                 INNER JOIN rooms r ON u.room_id = r.id
+                 WHERE u.application_id = a.id) as room_names
          FROM applications a
          WHERE a.user_id = ?
          ORDER BY a.created_at DESC`,
@@ -202,6 +206,276 @@ export class PageController {
       title: '部屋一覧',
       user: req.user,
       rooms,
+    });
+  }
+
+  /**
+   * 施設詳細ページ
+   */
+  static async roomDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const room = await RoomRepository.findById(parseInt(id, 10));
+
+      if (!room) {
+        next(createError('施設が見つかりません', 404));
+        return;
+      }
+
+      res.render('public/room-detail', {
+        title: room.name,
+        user: req.user,
+        room,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
+   * 利用規約ページ
+   */
+  static terms(req: Request, res: Response): void {
+    res.render('public/terms', {
+      title: '利用規約',
+      user: req.user,
+    });
+  }
+
+  /**
+   * プライバシーポリシーページ
+   */
+  static privacy(req: Request, res: Response): void {
+    res.render('public/privacy', {
+      title: 'プライバシーポリシー',
+      user: req.user,
+    });
+  }
+
+  /**
+   * お問い合わせページ
+   */
+  static contact(req: Request, res: Response): void {
+    res.render('public/contact', {
+      title: 'お問い合わせ',
+      user: req.user,
+    });
+  }
+
+  /**
+   * 予約確認ページ
+   */
+  static async bookingConfirm(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.redirect('/login');
+        return;
+      }
+
+      const { roomId, date, slots } = req.query;
+
+      if (!roomId || !date || !slots) {
+        next(createError('予約情報が不足しています', 400));
+        return;
+      }
+
+      const room = await RoomRepository.findById(parseInt(roomId as string, 10));
+
+      if (!room) {
+        next(createError('施設が見つかりません', 404));
+        return;
+      }
+
+      // プロフィール情報を取得
+      const profile = await UserProfileService.getProfile(req.user.userId);
+
+      // スロット情報を解析
+      const selectedSlots = (slots as string).split(',');
+
+      res.render('public/booking-confirm', {
+        title: '予約確認',
+        user: profile || req.user, // プロフィール情報があればそれを使用
+        room,
+        date,
+        selectedSlots,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
+   * 決済情報確認ページ
+   */
+  static async bookingPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.redirect('/login');
+        return;
+      }
+
+      res.render('public/booking-payment', {
+        title: '決済情報確認',
+        user: req.user,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
+   * 予約完了ページ
+   */
+  static async bookingSuccess(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.redirect('/login');
+        return;
+      }
+
+      const { applicationId } = req.query;
+
+      if (!applicationId) {
+        next(createError('予約IDが指定されていません', 400));
+        return;
+      }
+
+      const result = await ApplicationRepository.findByIdWithDetails(
+        parseInt(applicationId as string, 10)
+      );
+
+      if (!result) {
+        next(createError('予約が見つかりません', 404));
+        return;
+      }
+
+      if (result.application.user_id !== req.user.userId) {
+        next(createError('アクセス権限がありません', 403));
+        return;
+      }
+
+      res.render('public/booking-success', {
+        title: '予約完了',
+        user: req.user,
+        application: result.application,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 500));
+    }
+  }
+
+  /**
+   * パスワードリマインダーページ
+   */
+  static forgotPassword(req: Request, res: Response): void {
+    res.render('auth/forgot-password', {
+      title: 'パスワードリマインダー',
+      user: req.user,
+    });
+  }
+
+  /**
+   * パスワード変更ページ
+   */
+  static changePassword(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/change-password', {
+      title: 'パスワード変更',
+      user: req.user,
+    });
+  }
+
+  /**
+   * レビュー作成ページ
+   */
+  static createReview(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/create-review', {
+      title: 'レビューを投稿',
+      user: req.user,
+    });
+  }
+
+  /**
+   * レビュー編集ページ
+   */
+  static editReview(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/edit-review', {
+      title: 'レビューを編集',
+      user: req.user,
+    });
+  }
+
+  /**
+   * お気に入り施設一覧ページ
+   */
+  static favorites(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/favorites', {
+      title: 'お気に入り施設',
+      user: req.user,
+    });
+  }
+
+  /**
+   * お知らせ一覧ページ
+   */
+  static announcements(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/announcements', {
+      title: 'お知らせ',
+      user: req.user,
+    });
+  }
+
+  /**
+   * メッセージ一覧ページ
+   */
+  static messages(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/messages', {
+      title: 'メッセージ',
+      user: req.user,
+    });
+  }
+
+  /**
+   * メッセージ送信ページ
+   */
+  static composeMessage(req: Request, res: Response): void {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+
+    res.render('user/compose-message', {
+      title: 'メッセージ送信',
+      user: req.user,
     });
   }
 

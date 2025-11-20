@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .breadcrumb {
+      margin-bottom: 2rem;
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .breadcrumb a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    .page-header {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .page-header h2 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .reservation-id {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    .status-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .status-badge.active {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+    .status-badge.cancelled {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+    .status-badge.past {
+      background-color: #f3f4f6;
+      color: #4b5563;
+    }
+    .status-badge.paid {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .status-badge.unpaid {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .info-value {
+      color: #1f2937;
+    }
+    .usage-list {
+      display: grid;
+      gap: 1rem;
+    }
+    .usage-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1.5rem;
+      background-color: #f9fafb;
+    }
+    .usage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .usage-date {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .usage-room {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .time-slots {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 0.5rem 0;
+    }
+    .time-slot {
+      background-color: #dbeafe;
+      color: #1e40af;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+    .price-summary {
+      background-color: #f9fafb;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-top: 2rem;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      font-size: 1rem;
+    }
+    .price-row.total {
+      font-weight: 600;
+      font-size: 1.5rem;
+      border-top: 2px solid #e5e7eb;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      color: #2563eb;
+    }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .alert-warning {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      color: #78350f;
+    }
+    .alert-info {
+      background-color: #dbeafe;
+      border-left: 4px solid #3b82f6;
+      color: #1e40af;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+      .usage-header {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <a href="/my-page">マイページ</a>
+        <a href="/my-reservations">予約一覧</a>
+        <a href="/logout">ログアウト</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="/">ホーム</a> / <a href="/my-reservations">予約一覧</a> / 予約詳細
+      </div>
+
+      <div class="page-header">
+        <h2><%= application.event_name %></h2>
+        <div class="reservation-id">予約番号: #<%= application.id %></div>
+        <div class="status-badges">
+          <%
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isCancelled = application.cancel_status === 'cancelled';
+
+            let statusClass = 'active';
+            let statusText = '予定';
+            if (isCancelled) {
+              statusClass = 'cancelled';
+              statusText = 'キャンセル済み';
+            } else if (usages && usages.length > 0) {
+              const lastUsage = usages.reduce((latest, usage) => {
+                return new Date(usage.date) > new Date(latest.date) ? usage : latest;
+              });
+              if (new Date(lastUsage.date) < today) {
+                statusClass = 'past';
+                statusText = '過去';
+              }
+            }
+
+            let paymentStatusClass = 'unpaid';
+            let paymentStatusText = '未決済';
+            if (application.payment_status === 'paid') {
+              paymentStatusClass = 'paid';
+              paymentStatusText = '支払い済み';
+            } else if (application.payment_status === 'refunded') {
+              paymentStatusClass = 'cancelled';
+              paymentStatusText = '返金済み';
+            }
+          %>
+          <span class="status-badge <%= statusClass %>"><%= statusText %></span>
+          <span class="status-badge <%= paymentStatusClass %>"><%= paymentStatusText %></span>
+        </div>
+      </div>
+
+      <% if (application.cancel_status === 'cancelled') { %>
+        <div class="alert alert-warning">
+          この予約はキャンセルされました。
+          <% if (application.cancelled_at) { %>
+            （キャンセル日時: <%= new Date(application.cancelled_at).toLocaleString('ja-JP') %>）
+          <% } %>
+          <% if (application.cancellation_fee > 0) { %>
+            <br>キャンセル料: ¥<%= application.cancellation_fee.toLocaleString() %>
+          <% } %>
+        </div>
+      <% } %>
+
+      <div class="card">
+        <h3>申込者情報</h3>
+        <div class="info-grid">
+          <div class="info-label">代表者名</div>
+          <div class="info-value"><%= application.applicant_representative %></div>
+
+          <% if (application.applicant_group_name) { %>
+            <div class="info-label">団体名</div>
+            <div class="info-value"><%= application.applicant_group_name %></div>
+          <% } %>
+
+          <div class="info-label">電話番号</div>
+          <div class="info-value"><%= application.applicant_phone %></div>
+
+          <div class="info-label">メールアドレス</div>
+          <div class="info-value"><%= application.applicant_email %></div>
+
+          <% if (application.applicant_address) { %>
+            <div class="info-label">住所</div>
+            <div class="info-value"><%= application.applicant_address %></div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>イベント情報</h3>
+        <div class="info-grid">
+          <div class="info-label">イベント名</div>
+          <div class="info-value"><%= application.event_name %></div>
+
+          <% if (application.expected_attendees) { %>
+            <div class="info-label">予定参加人数</div>
+            <div class="info-value"><%= application.expected_attendees %>名</div>
+          <% } %>
+
+          <div class="info-label">入場料</div>
+          <div class="info-value">
+            <%= application.entrance_fee_type === 'free' ? '無料' : '有料（¥' + (application.entrance_fee_amount || 0).toLocaleString() + '）' %>
+          </div>
+
+          <% if (application.event_description) { %>
+            <div class="info-label">イベント内容</div>
+            <div class="info-value"><%= application.event_description %></div>
+          <% } %>
+
+          <% if (application.remarks) { %>
+            <div class="info-label">備考</div>
+            <div class="info-value"><%= application.remarks %></div>
+          <% } %>
+
+          <div class="info-label">申込日時</div>
+          <div class="info-value"><%= new Date(application.created_at).toLocaleString('ja-JP') %></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>利用施設・日程</h3>
+        <div class="usage-list">
+          <% if (usages && usages.length > 0) { %>
+            <% usages.forEach(function(usage, index) { %>
+              <div class="usage-item">
+                <div class="usage-header">
+                  <div>
+                    <div class="usage-date">
+                      <%= new Date(usage.date).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'long'
+                      }) %>
+                    </div>
+                    <% if (usage.room) { %>
+                      <div class="usage-room"><%= usage.room.name %></div>
+                    <% } %>
+                  </div>
+                  <div style="text-align: right; font-weight: 600; color: #2563eb; font-size: 1.125rem;">
+                    ¥<%= (usage.subtotal_amount || 0).toLocaleString() %>
+                  </div>
+                </div>
+
+                <div class="info-label" style="margin-bottom: 0.5rem;">利用時間帯</div>
+                <div class="time-slots">
+                  <% if (usage.use_morning) { %>
+                    <span class="time-slot">午前（9:00-12:00）</span>
+                  <% } %>
+                  <% if (usage.use_afternoon) { %>
+                    <span class="time-slot">午後（13:00-17:00）</span>
+                  <% } %>
+                  <% if (usage.use_evening) { %>
+                    <span class="time-slot">夜間（18:00-21:30）</span>
+                  <% } %>
+                </div>
+
+                <% if (usage.use_midday_extension || usage.use_evening_extension) { %>
+                  <div style="margin-top: 0.5rem;">
+                    <div class="info-label">延長</div>
+                    <% if (usage.use_midday_extension) { %>
+                      <span class="time-slot">正午延長</span>
+                    <% } %>
+                    <% if (usage.use_evening_extension) { %>
+                      <span class="time-slot">夜間延長</span>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <% if (usage.ac_requested) { %>
+                  <div style="margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">
+                    ※ エアコン使用あり
+                    <% if (usage.ac_hours) { %>
+                      （<%= usage.ac_hours %>時間）
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                  <div class="info-grid" style="grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.875rem;">
+                    <div>
+                      <span class="info-label">基本料金</span>:
+                      ¥<%= (usage.room_charge_after_multiplier || 0).toLocaleString() %>
+                    </div>
+                    <% if (usage.equipment_charge > 0) { %>
+                      <div>
+                        <span class="info-label">備品料金</span>:
+                        ¥<%= (usage.equipment_charge || 0).toLocaleString() %>
+                      </div>
+                    <% } %>
+                    <% if (usage.ac_charge > 0) { %>
+                      <div>
+                        <span class="info-label">エアコン料金</span>:
+                        ¥<%= (usage.ac_charge || 0).toLocaleString() %>
+                      </div>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <p style="color: #6b7280; text-align: center; padding: 2rem;">利用情報がありません</p>
+          <% } %>
+        </div>
+
+        <div class="price-summary">
+          <div class="price-row">
+            <span>利用料金合計</span>
+            <span>¥<%= (application.total_amount || 0).toLocaleString() %></span>
+          </div>
+          <% if (application.cancel_status === 'cancelled' && application.cancellation_fee > 0) { %>
+            <div class="price-row">
+              <span>キャンセル料</span>
+              <span style="color: #ef4444;">¥<%= application.cancellation_fee.toLocaleString() %></span>
+            </div>
+          <% } %>
+          <div class="price-row total">
+            <span>請求金額</span>
+            <span>¥<%= ((application.total_amount || 0) - (application.cancellation_fee || 0)).toLocaleString() %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <a href="/my-reservations" class="btn btn-secondary">予約一覧に戻る</a>
+        <% if (application.cancel_status === 'none') { %>
+          <%
+            const canCancel = usages && usages.length > 0 && usages.every(usage => {
+              const usageDate = new Date(usage.date);
+              usageDate.setHours(0, 0, 0, 0);
+              return usageDate >= today;
+            });
+
+            const isCompleted = usages && usages.length > 0 && usages.every(usage => {
+              const usageDate = new Date(usage.date);
+              usageDate.setHours(0, 0, 0, 0);
+              return usageDate < today;
+            });
+
+            const firstUsage = usages && usages.length > 0 ? usages[0] : null;
+          %>
+          <% if (canCancel) { %>
+            <button class="btn btn-danger" onclick="confirmCancel()">予約をキャンセル</button>
+          <% } else if (isCompleted && firstUsage && firstUsage.room) { %>
+            <a
+              href="/my-page/create-review?applicationId=<%= application.id %>&roomId=<%= firstUsage.room_id %>&roomName=<%= encodeURIComponent(firstUsage.room.name) %>&eventName=<%= encodeURIComponent(application.event_name) %>"
+              class="btn btn-primary"
+              id="reviewBtn"
+            >
+              レビューを投稿
+            </a>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    function confirmCancel() {
+      if (confirm('この予約をキャンセルしますか？\n\nキャンセル料が発生する場合があります。')) {
+        cancelReservation();
+      }
+    }
+
+    async function cancelReservation() {
+      try {
+        const response = await fetch('/api/user/reservations/<%= application.id %>/cancel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reason: 'ユーザーによるキャンセル'
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'キャンセルに失敗しました');
+        }
+
+        alert('予約をキャンセルしました。\n\nキャンセル料: ¥' + (result.cancellation_fee || 0).toLocaleString() + '\n返金額: ¥' + (result.refund_amount || 0).toLocaleString());
+        location.reload();
+      } catch (error) {
+        alert('エラー: ' + error.message);
+      }
+    }
+
+    // レビュー済みかどうかをチェック
+    async function checkReviewStatus() {
+      const reviewBtn = document.getElementById('reviewBtn');
+      if (!reviewBtn) return;
+
+      try {
+        const response = await fetch('/api/user/applications/<%= application.id %>/can-review');
+        const result = await response.json();
+
+        if (!result.canReview) {
+          if (result.reason === 'Already reviewed') {
+            reviewBtn.textContent = 'レビュー済み';
+            reviewBtn.classList.remove('btn-primary');
+            reviewBtn.classList.add('btn-secondary');
+            reviewBtn.style.pointerEvents = 'none';
+          } else {
+            reviewBtn.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('Error checking review status:', error);
+      }
+    }
+
+    // ページロード時にレビュー状態をチェック
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkReviewStatus);
+    } else {
+      checkReviewStatus();
+    }
+  </script>
+</body>
+</html>

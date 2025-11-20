@@ -1,93 +1,488 @@
-<h2 style="margin-bottom: 2rem;">マイページ</h2>
-
-<div class="grid grid-2">
-  <!-- プロフィール -->
-  <div class="card">
-    <h3 class="card-title">プロフィール</h3>
-
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-      <% if (profile.profile_image_path) { %>
-        <img src="/<%= profile.profile_image_path %>" alt="プロフィール画像"
-             style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb;">
-      <% } else { %>
-        <div style="width: 120px; height: 120px; border-radius: 50%; background-color: #e5e7eb;
-                    display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 3rem; color: #6b7280;">
-          👤
-        </div>
-      <% } %>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-header h2 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      color: #6b7280;
+    }
+    .grid {
+      display: grid;
+      gap: 2rem;
+      grid-template-columns: 1fr 1fr;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+    .card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .profile-image {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .profile-image img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #2563eb;
+    }
+    .profile-placeholder {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      font-size: 3rem;
+    }
+    dl {
+      margin: 1rem 0;
+    }
+    dt {
+      font-weight: 600;
+      margin-top: 1rem;
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    dd {
+      margin-left: 0;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e5e7eb;
+      color: #1f2937;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-outline {
+      background-color: white;
+      color: #2563eb;
+      border: 1px solid #2563eb;
+    }
+    .btn-outline:hover {
+      background-color: #eff6ff;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .btn-block {
+      display: block;
+      width: 100%;
+    }
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .reservation-item {
+      padding: 1rem;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid #2563eb;
+      margin-bottom: 1rem;
+    }
+    .reservation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+    }
+    .reservation-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+    .reservation-date {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9ca3af;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <a href="/my-page">マイページ</a>
+        <a href="/my-reservations">予約一覧</a>
+        <a href="/logout">ログアウト</a>
+      </nav>
     </div>
+  </header>
 
-    <dl style="margin: 1rem 0;">
-      <dt style="font-weight: 600; margin-top: 1rem;">氏名</dt>
-      <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.name %></dd>
-
-      <% if (profile.nickname) { %>
-        <dt style="font-weight: 600; margin-top: 1rem;">ニックネーム</dt>
-        <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.nickname %></dd>
-      <% } %>
-
-      <dt style="font-weight: 600; margin-top: 1rem;">メールアドレス</dt>
-      <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.email %></dd>
-
-      <dt style="font-weight: 600; margin-top: 1rem;">電話番号</dt>
-      <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.phone %></dd>
-
-      <% if (profile.organization_name) { %>
-        <dt style="font-weight: 600; margin-top: 1rem;">組織・団体名</dt>
-        <dd style="margin-left: 0; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb;"><%= profile.organization_name %></dd>
-      <% } %>
-    </dl>
-
-    <div style="margin-top: 1.5rem;">
-      <a href="/my-page/edit" class="btn btn-primary btn-block">プロフィール編集</a>
-    </div>
-  </div>
-
-  <!-- クイックアクション -->
-  <div>
-    <div class="card">
-      <h3 class="card-title">予約管理</h3>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <a href="/my-reservations" class="btn btn-outline">予約一覧</a>
-        <a href="/availability" class="btn btn-primary">新規予約</a>
+  <main>
+    <div class="container">
+      <div class="page-header">
+        <h2>マイページ</h2>
+        <p>ようこそ、<%= profile.name %> さん</p>
       </div>
-    </div>
 
-    <div class="card">
-      <h3 class="card-title">お気に入り</h3>
-      <a href="/my-page/favorites" class="btn btn-outline btn-block">お気に入りの部屋</a>
-    </div>
+      <div class="grid">
+        <!-- プロフィール -->
+        <div>
+          <div class="card">
+            <h3>プロフィール</h3>
 
-    <div class="card">
-      <h3 class="card-title">アカウント設定</h3>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <a href="/my-page/change-password" class="btn btn-outline">パスワード変更</a>
-        <a href="/my-page/delete-account" class="btn btn-danger" onclick="return confirm('本当に退会しますか？この操作は取り消せません。')">退会</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<% if (upcomingReservations && upcomingReservations.length > 0) { %>
-  <div class="card" style="margin-top: 2rem;">
-    <h3 class="card-title">直近の予約</h3>
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <% upcomingReservations.slice(0, 3).forEach(function(reservation) { %>
-        <div style="padding: 1rem; background-color: #f9fafb; border-radius: 4px; border-left: 4px solid #2563eb;">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-              <h4 style="font-weight: 600; margin-bottom: 0.5rem;"><%= reservation.event_name %></h4>
-              <p style="color: #6b7280; font-size: 0.875rem;">
-                <%= reservation.first_date %> 〜 <%= reservation.last_date %>
-              </p>
+            <div class="profile-image">
+              <% if (profile.profile_image_path) { %>
+                <img src="/<%= profile.profile_image_path %>" alt="プロフィール画像">
+              <% } else { %>
+                <div class="profile-placeholder">👤</div>
+              <% } %>
             </div>
-            <a href="/my-reservations/<%= reservation.id %>" class="btn btn-outline" style="padding: 0.5rem 1rem;">詳細</a>
+
+            <dl>
+              <dt>氏名</dt>
+              <dd><%= profile.name %></dd>
+
+              <% if (profile.nickname) { %>
+                <dt>ニックネーム</dt>
+                <dd><%= profile.nickname %></dd>
+              <% } %>
+
+              <dt>メールアドレス</dt>
+              <dd><%= profile.email %></dd>
+
+              <dt>電話番号</dt>
+              <dd><%= profile.phone %></dd>
+
+              <% if (profile.organization_name) { %>
+                <dt>組織・団体名</dt>
+                <dd><%= profile.organization_name %></dd>
+              <% } %>
+            </dl>
+
+            <div style="margin-top: 1.5rem;">
+              <a href="/my-page/edit" class="btn btn-primary btn-block">プロフィール編集</a>
+            </div>
           </div>
         </div>
-      <% }); %>
+
+        <!-- クイックアクション -->
+        <div>
+          <div class="card">
+            <h3>予約管理</h3>
+            <div class="action-buttons">
+              <a href="/my-reservations" class="btn btn-outline">予約一覧を見る</a>
+              <a href="/availability" class="btn btn-primary">新規予約</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>アカウント設定</h3>
+            <div class="action-buttons">
+              <a href="/my-page/change-password" class="btn btn-outline">パスワード変更</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>⭐ マイレビュー</h3>
+            <div id="myReviews" style="min-height: 100px;">
+              <p style="color: #9ca3af; text-align: center; padding: 2rem;">読み込み中...</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>❤️ お気に入り施設</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+              お気に入りに登録した施設を管理できます
+            </p>
+            <a href="/my-page/favorites" class="btn btn-outline btn-block">
+              お気に入り一覧を見る
+            </a>
+          </div>
+
+          <div class="card">
+            <h3>📢 お知らせ</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+              施設からの重要なお知らせを確認できます
+            </p>
+            <a href="/my-page/announcements" class="btn btn-outline btn-block">
+              お知らせを見る
+            </a>
+          </div>
+
+          <div class="card">
+            <h3>✉️ メッセージ</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+              施設管理者とのメッセージのやり取りができます
+            </p>
+            <div id="unreadBadge" style="display: none; background-color: #ef4444; color: white; padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; font-weight: 600;">
+              未読メッセージがあります
+            </div>
+            <a href="/my-page/messages" class="btn btn-outline btn-block">
+              メッセージを見る
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 直近の予約 -->
+      <% if (upcomingReservations && upcomingReservations.length > 0) { %>
+        <div class="card">
+          <h3>直近の予約</h3>
+          <% upcomingReservations.slice(0, 3).forEach(function(reservation) { %>
+            <div class="reservation-item">
+              <div class="reservation-header">
+                <div>
+                  <div class="reservation-title"><%= reservation.event_name %></div>
+                  <div class="reservation-date">
+                    <% if (reservation.first_date) { %>
+                      <%= new Date(reservation.first_date).toLocaleDateString('ja-JP') %>
+                      <% if (reservation.first_date !== reservation.last_date) { %>
+                        ～ <%= new Date(reservation.last_date).toLocaleDateString('ja-JP') %>
+                      <% } %>
+                    <% } %>
+                  </div>
+                </div>
+                <a href="/my-reservations/<%= reservation.id %>" class="btn btn-outline" style="padding: 0.5rem 1rem;">詳細</a>
+              </div>
+            </div>
+          <% }); %>
+          <div style="margin-top: 1rem; text-align: center;">
+            <a href="/my-reservations" style="color: #2563eb; text-decoration: none; font-weight: 500;">すべての予約を見る →</a>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="card">
+          <h3>予約</h3>
+          <div class="empty-state">
+            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">予約がありません</p>
+            <p style="font-size: 0.875rem;">施設を予約してみましょう</p>
+            <a href="/availability" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">施設を予約する</a>
+          </div>
+        </div>
+      <% } %>
     </div>
-    <div style="margin-top: 1rem; text-align: center;">
-      <a href="/my-reservations" style="color: #2563eb;">すべての予約を見る</a>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
     </div>
-  </div>
-<% } %>
+  </footer>
+
+  <script>
+    // レビューを取得・表示
+    async function loadMyReviews() {
+      try {
+        const response = await fetch('/api/user/reviews');
+        const data = await response.json();
+
+        const reviewsEl = document.getElementById('myReviews');
+
+        if (data.reviews && data.reviews.length > 0) {
+          reviewsEl.innerHTML = '';
+
+          // 最新3件のみ表示
+          data.reviews.slice(0, 3).forEach(review => {
+            const reviewDiv = document.createElement('div');
+            reviewDiv.className = 'reservation-item';
+            reviewDiv.style.marginBottom = '1rem';
+
+            const stars = generateStars(review.rating);
+            const createdDate = new Date(review.created_at).toLocaleDateString('ja-JP');
+
+            reviewDiv.innerHTML = `
+              <div class="reservation-header">
+                <div>
+                  <div class="reservation-title" style="color: #fbbf24; font-size: 1rem; margin-bottom: 0.25rem;">${stars}</div>
+                  <div class="reservation-title" style="font-size: 1rem;">${escapeHtml(review.title)}</div>
+                  <div class="reservation-date">${createdDate}</div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button onclick="editReview(${review.id})" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.875rem;">編集</button>
+                  <button onclick="deleteReview(${review.id})" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem; background-color: #ef4444; color: white;">削除</button>
+                </div>
+              </div>
+            `;
+
+            reviewsEl.appendChild(reviewDiv);
+          });
+
+          if (data.reviews.length > 3) {
+            const moreDiv = document.createElement('div');
+            moreDiv.style.marginTop = '1rem';
+            moreDiv.style.textAlign = 'center';
+            moreDiv.innerHTML = `
+              <p style="color: #6b7280; font-size: 0.875rem;">他 ${data.reviews.length - 3} 件のレビュー</p>
+            `;
+            reviewsEl.appendChild(moreDiv);
+          }
+        } else {
+          reviewsEl.innerHTML = `
+            <p style="color: #9ca3af; text-align: center; padding: 2rem; font-size: 0.875rem;">
+              まだレビューを投稿していません
+            </p>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to load reviews:', error);
+        document.getElementById('myReviews').innerHTML = `
+          <p style="color: #ef4444; text-align: center; padding: 2rem; font-size: 0.875rem;">
+            レビューの読み込みに失敗しました
+          </p>
+        `;
+      }
+    }
+
+    function generateStars(rating) {
+      let stars = '';
+      for (let i = 0; i < 5; i++) {
+        stars += i < rating ? '★' : '☆';
+      }
+      return stars;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function editReview(reviewId) {
+      window.location.href = `/my-page/reviews/${reviewId}/edit`;
+    }
+
+    async function deleteReview(reviewId) {
+      if (!confirm('このレビューを削除しますか？')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user/reviews/${reviewId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          alert('レビューを削除しました');
+          loadMyReviews(); // 再読み込み
+        } else {
+          const data = await response.json();
+          alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+        }
+      } catch (error) {
+        console.error('Failed to delete review:', error);
+        alert('削除に失敗しました');
+      }
+    }
+
+    // 未読メッセージ数を取得・表示
+    async function loadUnreadCount() {
+      try {
+        const response = await fetch('/api/user/messages/unread/count');
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.count > 0) {
+          const badge = document.getElementById('unreadBadge');
+          badge.textContent = `未読メッセージが${result.data.count}件あります`;
+          badge.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load unread count:', error);
+      }
+    }
+
+    // ページロード時にレビューと未読メッセージ数を取得
+    loadMyReviews();
+    loadUnreadCount();
+  </script>
+</body>
+</html>

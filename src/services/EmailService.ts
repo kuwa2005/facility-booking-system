@@ -14,37 +14,30 @@ export class EmailService {
 
   /**
    * メール送信設定を初期化
+   * デモ環境では外部メール送信を無効化し、ログのみ出力
    */
   private initializeTransporter(): void {
     try {
-      const emailConfig = {
-        host: process.env.SMTP_HOST || 'localhost',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-        auth: {
-          user: process.env.SMTP_USER || '',
-          pass: process.env.SMTP_PASS || '',
-        },
-      };
+      // デモ環境では外部メール送信を無効化
+      console.warn(
+        '==============================================',
+      );
+      console.warn(
+        'Email service running in DEMO MODE',
+      );
+      console.warn(
+        'External email sending is DISABLED',
+      );
+      console.warn(
+        'Emails will be logged to console only',
+      );
+      console.warn(
+        '==============================================',
+      );
 
-      // 設定が不完全な場合は開発モードとして動作
-      if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-        console.warn(
-          'Email configuration is incomplete. Running in development mode.',
-        );
-        console.warn(
-          'To enable email sending, set SMTP_HOST, SMTP_USER, and SMTP_PASS in environment variables.',
-        );
-
-        // 開発環境ではetherealmailのテストアカウントを使用
-        this.createTestAccount();
-        return;
-      }
-
-      this.transporter = nodemailer.createTransporter(emailConfig);
+      // transporterは作成しないが、設定済みとしてマーク
+      this.transporter = null;
       this.isConfigured = true;
-
-      console.log('Email service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize email service:', error);
       this.isConfigured = false;
@@ -52,34 +45,7 @@ export class EmailService {
   }
 
   /**
-   * 開発用テストアカウントを作成
-   */
-  private async createTestAccount(): Promise<void> {
-    try {
-      const testAccount = await nodemailer.createTestAccount();
-
-      this.transporter = nodemailer.createTransporter({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-
-      this.isConfigured = true;
-      console.log('Test email account created:');
-      console.log('  User:', testAccount.user);
-      console.log('  Pass:', testAccount.pass);
-    } catch (error) {
-      console.error('Failed to create test account:', error);
-      this.isConfigured = false;
-    }
-  }
-
-  /**
-   * メールを送信
+   * メールを送信（デモモード：ログ出力のみ）
    */
   async sendEmail(options: {
     to: string;
@@ -88,7 +54,7 @@ export class EmailService {
     html?: string;
     from?: string;
   }): Promise<{ success: boolean; messageId?: string; previewUrl?: string; error?: string }> {
-    if (!this.isConfigured || !this.transporter) {
+    if (!this.isConfigured) {
       console.error('Email service is not configured');
       return {
         success: false,
@@ -100,36 +66,24 @@ export class EmailService {
       const from =
         options.from || process.env.SMTP_FROM || 'no-reply@facility.local';
 
-      const mailOptions = {
-        from,
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html || options.text,
-      };
+      // デモモード：メール内容をログ出力のみ（外部送信なし）
+      console.log('=== [DEMO] Email (Not Sent Externally) ===');
+      console.log('From:', from);
+      console.log('To:', options.to);
+      console.log('Subject:', options.subject);
+      console.log('Text:', options.text || '(none)');
+      console.log('HTML:', options.html ? '(HTML content present)' : '(none)');
+      console.log('==========================================');
 
-      const info = await this.transporter.sendMail(mailOptions);
-
-      console.log('Email sent successfully:', info.messageId);
-
-      // 開発環境の場合、プレビューURLを取得
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-
-      if (previewUrl) {
-        console.log('Preview URL:', previewUrl);
-        return {
-          success: true,
-          messageId: info.messageId,
-          previewUrl: previewUrl as string,
-        };
-      }
+      // 疑似的なメッセージIDを生成
+      const messageId = `demo-${Date.now()}@facility.local`;
 
       return {
         success: true,
-        messageId: info.messageId,
+        messageId: messageId,
       };
     } catch (error: any) {
-      console.error('Failed to send email:', error);
+      console.error('Failed to log email:', error);
       return {
         success: false,
         error: error.message,
@@ -182,21 +136,16 @@ export class EmailService {
   }
 
   /**
-   * メールサービスの状態を確認
+   * メールサービスの状態を確認（デモモード：常に成功）
    */
   async verifyConnection(): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter) {
+    if (!this.isConfigured) {
       return false;
     }
 
-    try {
-      await this.transporter.verify();
-      console.log('Email server connection verified');
-      return true;
-    } catch (error) {
-      console.error('Email server connection failed:', error);
-      return false;
-    }
+    // デモモードでは常に接続成功として扱う
+    console.log('[DEMO] Email service is ready (no external connection)');
+    return true;
   }
 
   /**
@@ -211,6 +160,64 @@ export class EmailService {
    */
   isReady(): boolean {
     return this.isConfigured;
+  }
+
+  /**
+   * 予約確認メールを送信
+   */
+  async sendReservationConfirmation(...args: any[]): Promise<any> {
+    const [to] = args;
+    return this.sendEmail({
+      to,
+      subject: '予約確認',
+      html: `予約が確認されました。詳細: ${JSON.stringify(args)}`,
+    });
+  }
+
+  /**
+   * キャンセル通知メールを送信
+   */
+  async sendCancellationNotification(...args: any[]): Promise<any> {
+    const [to] = args;
+    return this.sendEmail({
+      to,
+      subject: '予約キャンセル通知',
+      html: `予約がキャンセルされました。詳細: ${JSON.stringify(args)}`,
+    });
+  }
+
+  /**
+   * 管理者通知メールを送信
+   */
+  async sendAdminNotification(...args: any[]): Promise<any> {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@facility.local';
+    return this.sendEmail({
+      to: adminEmail,
+      subject: '新規予約通知',
+      html: `通知: ${JSON.stringify(args)}`,
+    });
+  }
+
+  /**
+   * 確認メール送信
+   */
+  async sendVerificationEmail(to: string, name: string, code: string): Promise<any> {
+    return this.sendEmail({
+      to,
+      subject: 'メールアドレス確認',
+      html: `${name}様、確認コード: ${code}`,
+    });
+  }
+
+  /**
+   * パスワードリセットメール送信
+   */
+  async sendPasswordResetEmail(to: string, name: string, token: string): Promise<any> {
+    return this.sendEmail({
+      to,
+      subject: 'パスワードリセット',
+      html: `${name}様、リセットトークン: ${token}`,
+    });
   }
 }
 

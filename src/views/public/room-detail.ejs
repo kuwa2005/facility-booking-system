@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    header nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
+    .btn-primary {
+      background-color: white;
+      color: #2563eb;
+      font-weight: 500;
+    }
+    main { padding: 3rem 0; min-height: calc(100vh - 200px); }
+    .breadcrumb {
+      margin-bottom: 2rem;
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .breadcrumb a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    .room-header {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .room-header h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+    .room-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .info-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+    .info-value {
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+    }
+    .calendar-section, .booking-section {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+    }
+    /* カレンダースタイル */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .calendar-nav {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .calendar-nav button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .calendar-nav button:hover {
+      background: #1d4ed8;
+    }
+    .calendar-month {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6b7280;
+      padding: 0.5rem;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 0.25rem;
+    }
+    .calendar-day:hover {
+      background-color: #f3f4f6;
+    }
+    .calendar-day.other-month {
+      color: #d1d5db;
+    }
+    .calendar-day.today {
+      background-color: #dbeafe;
+      border-color: #2563eb;
+    }
+    .calendar-day.selected {
+      background-color: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    .calendar-day.available {
+      background-color: #d1fae5;
+    }
+    .calendar-day.partially-available {
+      background-color: #fef3c7;
+    }
+    .calendar-day.unavailable {
+      background-color: #fee2e2;
+      cursor: not-allowed;
+    }
+    .day-number {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .day-status {
+      font-size: 0.625rem;
+      margin-top: 0.25rem;
+    }
+    /* 予約フォーム */
+    .booking-form {
+      margin-top: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    .form-group select,
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: normal;
+    }
+    .price-summary {
+      background-color: #f9fafb;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+    }
+    .price-row.total {
+      font-weight: 600;
+      font-size: 1.125rem;
+      border-top: 2px solid #e5e7eb;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-book {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-book:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-book:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+    }
+    /* レビューセクション */
+    .reviews-section {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .rating-overview {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .average-rating {
+      text-align: center;
+    }
+    .rating-number {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #2563eb;
+    }
+    .rating-stars {
+      font-size: 1.5rem;
+      color: #fbbf24;
+      margin: 0.5rem 0;
+    }
+    .rating-count {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    .rating-distribution {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .rating-bar {
+      display: grid;
+      grid-template-columns: 30px 1fr 60px;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .rating-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .rating-bar-bg {
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .rating-bar-fill {
+      height: 100%;
+      background-color: #fbbf24;
+      transition: width 0.3s;
+    }
+    .rating-bar-count {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-align: right;
+    }
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .review-item {
+      padding: 1.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 0.75rem;
+    }
+    .reviewer-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .reviewer-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #dbeafe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    .reviewer-name {
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .review-rating {
+      color: #fbbf24;
+      font-size: 1rem;
+    }
+    .review-date {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+    .review-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .review-comment {
+      color: #4b5563;
+      line-height: 1.6;
+    }
+    .empty-reviews {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #9ca3af;
+    }
+    .room-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .favorite-btn {
+      background: none;
+      border: 2px solid #ef4444;
+      color: #ef4444;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+    .favorite-btn:hover {
+      background-color: #fef2f2;
+    }
+    .favorite-btn.active {
+      background-color: #ef4444;
+      color: white;
+    }
+    .favorite-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    footer {
+      background-color: #1e40af;
+      color: white;
+      padding: 2rem 0;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      .calendar-grid {
+        gap: 0.25rem;
+      }
+      .day-status {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/rooms">施設一覧</a>
+        <a href="/availability">空き状況確認</a>
+        <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+          <a href="/logout">ログアウト</a>
+        <% } else { %>
+          <a href="/login">ログイン</a>
+          <a href="/register" class="btn-primary">新規登録</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="/">ホーム</a> / <a href="/rooms">施設一覧</a> / <%= room.name %>
+      </div>
+
+      <div class="room-header">
+        <div class="room-header-top">
+          <div>
+            <h2><%= room.name %></h2>
+            <% if (room.description) { %>
+              <p style="color: #6b7280; margin-top: 0.5rem;"><%= room.description %></p>
+            <% } %>
+          </div>
+          <% if (user) { %>
+            <button id="favoriteBtn" class="favorite-btn" onclick="toggleFavorite()">
+              <span id="favoriteIcon">❤️</span>
+              <span id="favoriteText">お気に入り</span>
+            </button>
+          <% } %>
+        </div>
+
+        <div class="room-info-grid">
+          <% if (room.capacity) { %>
+            <div class="info-item">
+              <span class="info-label">定員</span>
+              <span class="info-value"><%= room.capacity %>名</span>
+            </div>
+          <% } %>
+          <div class="info-item">
+            <span class="info-label">午前料金（9:00-12:00）</span>
+            <span class="info-value">¥<%= room.base_price_morning?.toLocaleString() || '0' %></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">午後料金（13:00-17:00）</span>
+            <span class="info-value">¥<%= room.base_price_afternoon?.toLocaleString() || '0' %></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">夜間料金（18:00-21:30）</span>
+            <span class="info-value">¥<%= room.base_price_evening?.toLocaleString() || '0' %></span>
+          </div>
+          <% if (room.ac_price_per_hour > 0) { %>
+            <div class="info-item">
+              <span class="info-label">エアコン</span>
+              <span class="info-value">¥<%= room.ac_price_per_hour %>/時間</span>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="calendar-section">
+          <h3 class="section-title">空き状況カレンダー</h3>
+
+          <div class="calendar-header">
+            <button onclick="previousMonth()" class="calendar-nav">◀ 前月</button>
+            <span class="calendar-month" id="currentMonth"></span>
+            <button onclick="nextMonth()" class="calendar-nav">次月 ▶</button>
+          </div>
+
+          <div class="calendar-grid" id="calendar"></div>
+
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #d1fae5;"></div>
+              <span>予約可能</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #fef3c7;"></div>
+              <span>一部空きあり</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #fee2e2;"></div>
+              <span>予約不可</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #dbeafe;"></div>
+              <span>本日</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="booking-section">
+          <h3 class="section-title">予約する</h3>
+
+          <% if (user) { %>
+            <form id="bookingForm" class="booking-form">
+              <div class="form-group">
+                <label>選択日</label>
+                <input type="text" id="selectedDate" readonly value="日付を選択してください">
+              </div>
+
+              <div class="form-group">
+                <label>利用時間帯</label>
+                <div class="checkbox-group">
+                  <label>
+                    <input type="checkbox" name="slot" value="morning" onchange="calculatePrice()">
+                    午前（9:00-12:00） - ¥<%= room.base_price_morning?.toLocaleString() || '0' %>
+                  </label>
+                  <label>
+                    <input type="checkbox" name="slot" value="afternoon" onchange="calculatePrice()">
+                    午後（13:00-17:00） - ¥<%= room.base_price_afternoon?.toLocaleString() || '0' %>
+                  </label>
+                  <label>
+                    <input type="checkbox" name="slot" value="evening" onchange="calculatePrice()">
+                    夜間（18:00-21:30） - ¥<%= room.base_price_evening?.toLocaleString() || '0' %>
+                  </label>
+                </div>
+              </div>
+
+              <% if (room.ac_price_per_hour > 0) { %>
+                <div class="form-group">
+                  <label>
+                    <input type="checkbox" name="ac" onchange="calculatePrice()">
+                    エアコンを使用する（¥<%= room.ac_price_per_hour %>/時間）
+                  </label>
+                </div>
+              <% } %>
+
+              <div class="price-summary">
+                <div class="price-row">
+                  <span>基本料金</span>
+                  <span id="basePrice">¥0</span>
+                </div>
+                <div class="price-row total">
+                  <span>合計</span>
+                  <span id="totalPrice">¥0</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-book" id="submitBtn" disabled>
+                予約内容を確認
+              </button>
+            </form>
+          <% } else { %>
+            <p style="color: #6b7280; margin-bottom: 1rem;">予約するにはログインが必要です。</p>
+            <a href="/login" class="btn btn-book">ログインする</a>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- レビューセクション -->
+      <div class="reviews-section">
+        <h3 class="section-title">⭐ レビュー・評価</h3>
+
+        <div class="rating-overview" id="ratingOverview" style="display: none;">
+          <div class="average-rating">
+            <div class="rating-number" id="averageRating">0.0</div>
+            <div class="rating-stars" id="averageStars">★★★★★</div>
+            <div class="rating-count" id="reviewCount">0件のレビュー</div>
+          </div>
+
+          <div class="rating-distribution" id="ratingDistribution">
+            <!-- 評価分布がJavaScriptで動的に生成されます -->
+          </div>
+        </div>
+
+        <div class="review-list" id="reviewList">
+          <!-- レビューがJavaScriptで動的に生成されます -->
+        </div>
+
+        <div class="empty-reviews" id="emptyReviews">
+          <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">まだレビューがありません</p>
+          <p style="font-size: 0.875rem;">この施設を利用した方は、ぜひレビューを投稿してください</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const room = <%- JSON.stringify(room) %>;
+    let currentDate = new Date();
+    let selectedDate = null;
+
+    // カレンダー生成
+    function generateCalendar(year, month) {
+      const calendar = document.getElementById('calendar');
+      const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+      document.getElementById('currentMonth').textContent = year + '年 ' + monthNames[month];
+
+      calendar.innerHTML = '';
+
+      // 曜日ヘッダー
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      dayNames.forEach(day => {
+        const header = document.createElement('div');
+        header.className = 'calendar-day-header';
+        header.textContent = day;
+        calendar.appendChild(header);
+      });
+
+      // 月の最初の日と最後の日
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // 前月の日付で埋める
+      const startDay = firstDay.getDay();
+      for (let i = startDay - 1; i >= 0; i--) {
+        const date = new Date(year, month, -i);
+        createDayElement(date, true);
+      }
+
+      // 当月の日付
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(year, month, day);
+        createDayElement(date, false);
+      }
+
+      // 次月の日付で埋める
+      const remainingDays = 7 - (calendar.children.length % 7);
+      if (remainingDays < 7) {
+        for (let i = 1; i <= remainingDays; i++) {
+          const date = new Date(year, month + 1, i);
+          createDayElement(date, true);
+        }
+      }
+    }
+
+    function createDayElement(date, isOtherMonth) {
+      const day = document.createElement('div');
+      day.className = 'calendar-day';
+
+      if (isOtherMonth) {
+        day.classList.add('other-month');
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (date.getTime() === today.getTime()) {
+        day.classList.add('today');
+      }
+
+      // 過去の日付は予約不可
+      if (date < today) {
+        day.classList.add('unavailable');
+      } else {
+        // ランダムに空き状況を表示（実際はAPIから取得）
+        const rand = Math.random();
+        if (rand > 0.7) {
+          day.classList.add('available');
+        } else if (rand > 0.4) {
+          day.classList.add('partially-available');
+        } else {
+          day.classList.add('unavailable');
+        }
+      }
+
+      const dayNumber = document.createElement('div');
+      dayNumber.className = 'day-number';
+      dayNumber.textContent = date.getDate();
+
+      const dayStatus = document.createElement('div');
+      dayStatus.className = 'day-status';
+      if (day.classList.contains('available')) {
+        dayStatus.textContent = '◯';
+      } else if (day.classList.contains('partially-available')) {
+        dayStatus.textContent = '△';
+      } else if (day.classList.contains('unavailable')) {
+        dayStatus.textContent = '×';
+      }
+
+      day.appendChild(dayNumber);
+      day.appendChild(dayStatus);
+
+      if (!day.classList.contains('unavailable') && !isOtherMonth) {
+        day.onclick = () => selectDate(date, day);
+      }
+
+      document.getElementById('calendar').appendChild(day);
+    }
+
+    function selectDate(date, element) {
+      // 以前の選択を解除
+      document.querySelectorAll('.calendar-day.selected').forEach(el => {
+        el.classList.remove('selected');
+      });
+
+      element.classList.add('selected');
+      selectedDate = date;
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      document.getElementById('selectedDate').value = `${year}年${month}月${day}日`;
+
+      updateSubmitButton();
+    }
+
+    function previousMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+    }
+
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+    }
+
+    function calculatePrice() {
+      const slots = document.querySelectorAll('input[name="slot"]:checked');
+      let total = 0;
+
+      slots.forEach(slot => {
+        if (slot.value === 'morning') total += <%= room.base_price_morning || 0 %>;
+        if (slot.value === 'afternoon') total += <%= room.base_price_afternoon || 0 %>;
+        if (slot.value === 'evening') total += <%= room.base_price_evening || 0 %>;
+      });
+
+      document.getElementById('basePrice').textContent = '¥' + total.toLocaleString();
+      document.getElementById('totalPrice').textContent = '¥' + total.toLocaleString();
+
+      updateSubmitButton();
+    }
+
+    function updateSubmitButton() {
+      const slots = document.querySelectorAll('input[name="slot"]:checked');
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (selectedDate && slots.length > 0) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+
+    <% if (user) { %>
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const slots = Array.from(document.querySelectorAll('input[name="slot"]:checked'))
+        .map(s => s.value);
+
+      if (!selectedDate || slots.length === 0) {
+        alert('日付と時間帯を選択してください');
+        return;
+      }
+
+      // 予約確認ページへ遷移
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      const params = new URLSearchParams({
+        roomId: '<%= room.id %>',
+        date: dateStr,
+        slots: slots.join(',')
+      });
+
+      window.location.href = '/booking/confirm?' + params.toString();
+    });
+    <% } %>
+
+    // 初期表示
+    generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
+
+    // レビューを取得・表示
+    async function loadReviews() {
+      try {
+        const response = await fetch('/api/rooms/<%= room.id %>/reviews');
+        const data = await response.json();
+
+        if (data.reviews && data.reviews.length > 0) {
+          displayReviews(data.reviews, data.stats);
+        } else {
+          document.getElementById('emptyReviews').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Failed to load reviews:', error);
+        document.getElementById('emptyReviews').style.display = 'block';
+      }
+    }
+
+    function displayReviews(reviews, stats) {
+      document.getElementById('emptyReviews').style.display = 'none';
+      document.getElementById('ratingOverview').style.display = 'grid';
+
+      // 平均評価を表示
+      document.getElementById('averageRating').textContent = stats.average.toFixed(1);
+      document.getElementById('reviewCount').textContent = stats.count + '件のレビュー';
+
+      // 星評価を表示
+      const stars = generateStars(stats.average);
+      document.getElementById('averageStars').innerHTML = stars;
+
+      // 評価分布を表示
+      const distributionEl = document.getElementById('ratingDistribution');
+      distributionEl.innerHTML = '';
+
+      for (let rating = 5; rating >= 1; rating--) {
+        const count = stats.distribution[rating] || 0;
+        const percentage = stats.count > 0 ? (count / stats.count) * 100 : 0;
+
+        const barDiv = document.createElement('div');
+        barDiv.className = 'rating-bar';
+        barDiv.innerHTML = `
+          <div class="rating-label">${rating}★</div>
+          <div class="rating-bar-bg">
+            <div class="rating-bar-fill" style="width: ${percentage}%"></div>
+          </div>
+          <div class="rating-bar-count">${count}件</div>
+        `;
+        distributionEl.appendChild(barDiv);
+      }
+
+      // レビュー一覧を表示
+      const reviewListEl = document.getElementById('reviewList');
+      reviewListEl.innerHTML = '';
+
+      reviews.forEach(review => {
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review-item';
+
+        const displayName = review.user_nickname || review.user_name;
+        const initial = displayName.charAt(0);
+        const createdDate = new Date(review.created_at).toLocaleDateString('ja-JP');
+
+        reviewDiv.innerHTML = `
+          <div class="review-header">
+            <div class="reviewer-info">
+              <div class="reviewer-avatar">${initial}</div>
+              <div>
+                <div class="reviewer-name">${displayName}</div>
+                <div class="review-date">${createdDate}</div>
+              </div>
+            </div>
+            <div class="review-rating">${generateStars(review.rating)}</div>
+          </div>
+          <div class="review-title">${escapeHtml(review.title)}</div>
+          ${review.comment ? `<div class="review-comment">${escapeHtml(review.comment)}</div>` : ''}
+        `;
+
+        reviewListEl.appendChild(reviewDiv);
+      });
+    }
+
+    function generateStars(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 >= 0.5;
+      let stars = '';
+
+      for (let i = 0; i < fullStars; i++) {
+        stars += '★';
+      }
+      if (hasHalfStar) {
+        stars += '☆';
+      }
+      while (stars.length < 5) {
+        stars += '☆';
+      }
+
+      return stars;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // お気に入り機能
+    let isFavorite = false;
+    const roomId = <%= room.id %>;
+
+    async function checkFavoriteStatus() {
+      <% if (user) { %>
+      try {
+        const response = await fetch('/api/user/favorites/rooms');
+        const data = await response.json();
+        if (data.rooms) {
+          isFavorite = data.rooms.some(r => r.id === roomId);
+          updateFavoriteButton();
+        }
+      } catch (error) {
+        console.error('Failed to check favorite status:', error);
+      }
+      <% } %>
+    }
+
+    async function toggleFavorite() {
+      const btn = document.getElementById('favoriteBtn');
+      btn.disabled = true;
+
+      try {
+        if (isFavorite) {
+          // 削除
+          const response = await fetch(`/api/user/favorites/rooms/${roomId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            isFavorite = false;
+            updateFavoriteButton();
+          } else {
+            const data = await response.json();
+            alert('削除に失敗しました: ' + (data.message || '不明なエラー'));
+          }
+        } else {
+          // 追加
+          const response = await fetch('/api/user/favorites/rooms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ room_id: roomId })
+          });
+
+          if (response.ok) {
+            isFavorite = true;
+            updateFavoriteButton();
+          } else {
+            const data = await response.json();
+            alert('追加に失敗しました: ' + (data.message || '不明なエラー'));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to toggle favorite:', error);
+        alert('エラーが発生しました');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function updateFavoriteButton() {
+      const btn = document.getElementById('favoriteBtn');
+      const icon = document.getElementById('favoriteIcon');
+      const text = document.getElementById('favoriteText');
+
+      if (isFavorite) {
+        btn.classList.add('active');
+        icon.textContent = '❤️';
+        text.textContent = 'お気に入り済み';
+      } else {
+        btn.classList.remove('active');
+        icon.textContent = '🤍';
+        text.textContent = 'お気に入り';
+      }
+    }
+
+    // ページロード時にレビューとお気に入り状態を取得
+    loadReviews();
+    checkFavoriteStatus();
+  </script>
+</body>
+</html>

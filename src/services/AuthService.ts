@@ -3,11 +3,11 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import UserRepository from '../models/UserRepository';
 import { User, CreateUserDto } from '../models/types';
-import EmailService from './EmailService';
+import { emailService } from './EmailService';
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
 
 export interface AuthToken {
   token: string;
@@ -41,8 +41,8 @@ export class AuthService {
     const token = jwt.sign(
       { userId, email, isAdmin, role },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+      { expiresIn: JWT_EXPIRES_IN } as any
+    ) as string;
 
     return {
       token,
@@ -113,7 +113,7 @@ export class AuthService {
     await UserRepository.setVerificationCode(user.id, verificationCode, 15); // 15 minutes expiry
 
     // Send verification email
-    await EmailService.sendVerificationEmail(user.email, user.name, verificationCode);
+    await emailService.sendVerificationEmail(user.email, user.name, verificationCode);
 
     return {
       user: this.sanitizeUser(user),
@@ -188,7 +188,7 @@ export class AuthService {
     await UserRepository.setPasswordResetToken(user.id, resetToken, 60); // 60 minutes expiry
 
     // Send password reset email
-    await EmailService.sendPasswordResetEmail(user.email, user.name, resetToken);
+    await emailService.sendPasswordResetEmail(user.email, user.name, resetToken);
 
     return { resetToken }; // In production, don't return this in the response
   }
@@ -247,7 +247,7 @@ export class AuthService {
     const verificationCode = this.generateVerificationCode();
     await UserRepository.setVerificationCode(user.id, verificationCode, 15);
 
-    await EmailService.sendVerificationEmail(user.email, user.name, verificationCode);
+    await emailService.sendVerificationEmail(user.email, user.name, verificationCode);
 
     return { verificationCode }; // In production, don't return this in the response
   }

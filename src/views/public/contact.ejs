@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background-color: #2563eb;
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 3rem;
+    }
+    header .container {
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      font-size: 1.5rem;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+    main {
+      background: white;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 3rem;
+    }
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+    .info-section {
+      background-color: #f9fafb;
+      padding: 1.5rem;
+      border-radius: 4px;
+      margin-bottom: 2rem;
+    }
+    .info-section h3 {
+      font-size: 1.125rem;
+      margin-bottom: 1rem;
+      color: #374151;
+    }
+    .info-item {
+      margin-bottom: 1rem;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 0.25rem;
+    }
+    .info-value {
+      color: #1f2937;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .form-group textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      margin-left: 1rem;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+      </h1>
+      <nav>
+        <a href="/">ホーム</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h2>お問い合わせ</h2>
+      <p class="subtitle">ご不明な点がございましたら、以下のフォームよりお気軽にお問い合わせください。</p>
+
+      <div class="info-section">
+        <h3>📍 施設情報</h3>
+        <div class="info-item">
+          <div class="info-label">所在地</div>
+          <div class="info-value">〒000-0000 東京都〇〇区〇〇 1-2-3</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">電話番号</div>
+          <div class="info-value">03-0000-0000</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">受付時間</div>
+          <div class="info-value">平日 9:00〜17:00（土日祝日を除く）</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">メールアドレス</div>
+          <div class="info-value">info@facility.local</div>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 1.5rem; color: #374151;">お問い合わせフォーム</h3>
+
+      <form id="contactForm">
+        <div class="form-group">
+          <label for="name">お名前 <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="name" name="name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">メールアドレス <span style="color: #ef4444;">*</span></label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">電話番号</label>
+          <input type="tel" id="phone" name="phone">
+        </div>
+
+        <div class="form-group">
+          <label for="category">お問い合わせ種別 <span style="color: #ef4444;">*</span></label>
+          <select id="category" name="category" required>
+            <option value="">選択してください</option>
+            <option value="reservation">予約について</option>
+            <option value="facility">施設について</option>
+            <option value="payment">お支払いについて</option>
+            <option value="cancel">キャンセルについて</option>
+            <option value="system">システムについて</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="message">お問い合わせ内容 <span style="color: #ef4444;">*</span></label>
+          <textarea id="message" name="message" required></textarea>
+        </div>
+
+        <div style="margin-top: 2rem;">
+          <button type="submit" class="btn">送信する</button>
+          <a href="/" class="btn btn-secondary">キャンセル</a>
+        </div>
+      </form>
+
+      <div style="margin-top: 3rem; padding: 1.5rem; background-color: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0;">
+          <strong>ℹ️ ご注意</strong><br>
+          お問い合わせへの回答には、通常2〜3営業日いただいております。お急ぎの場合は、お電話にてお問い合わせください。
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // ページロード時にログイン中の場合はユーザー情報を取得して自動入力
+    <% if (user) { %>
+    async function loadUserProfile() {
+      try {
+        const response = await fetch('/api/user/profile');
+        const result = await response.json();
+
+        if (result.profile) {
+          const profile = result.profile;
+          if (profile.name) document.getElementById('name').value = profile.name;
+          if (profile.email) document.getElementById('email').value = profile.email;
+          if (profile.phone) document.getElementById('phone').value = profile.phone;
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    }
+
+    // ページロード時に実行
+    loadUserProfile();
+    <% } %>
+
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitButton = this.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+      submitButton.textContent = '送信中...';
+
+      const formData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        category: document.getElementById('category').value,
+        message: document.getElementById('message').value
+      };
+
+      try {
+        <% if (user) { %>
+        // ログイン中の場合は内部メッセージシステムを使用
+        const categoryLabel = {
+          'reservation': '予約について',
+          'facility': '施設について',
+          'payment': 'お支払いについて',
+          'cancel': 'キャンセルについて',
+          'system': 'システムについて',
+          'other': 'その他'
+        };
+
+        // 管理者にメッセージを送信（recipient_id: 1 は管理者を想定）
+        const response = await fetch('/api/user/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            subject: `【${categoryLabel[formData.category] || 'お問い合わせ'}】`,
+            content: formData.message
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('お問い合わせを送信しました。\n担当者からの返信をお待ちください。\nマイページのメッセージ欄でご確認いただけます。');
+          this.reset();
+          window.location.href = '/my-page/messages';
+        } else {
+          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+        }
+        <% } else { %>
+        // 非ログイン時の場合は公開お問い合わせAPIを使用
+        const response = await fetch('/api/contact/public', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert('お問い合わせを送信しました。\nご記入いただいたメールアドレス宛に受付確認メールをお送りしております。\n担当者からの返信をお待ちください。');
+          this.reset();
+        } else {
+          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+        }
+        <% } %>
+      } catch (error) {
+        console.error('Error sending contact:', error);
+        alert('送信中にエラーが発生しました。\nしばらく時間をおいて再度お試しください。');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = '送信する';
+      }
+    });
+  </script>
+</body>
+</html>

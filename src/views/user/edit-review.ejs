@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>レビューを編集 - 施設予約システム</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .required {
+      color: #ef4444;
+      margin-left: 4px;
+    }
+
+    .rating-input {
+      display: flex;
+      gap: 10px;
+      font-size: 40px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .star {
+      transition: color 0.2s;
+      color: #d1d5db;
+    }
+
+    .star.active,
+    .star:hover {
+      color: #fbbf24;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      resize: vertical;
+      min-height: 120px;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .rating-input {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⭐ レビューを編集</h1>
+    <p class="subtitle">レビュー内容を編集してください</p>
+
+    <div id="successMessage" class="message success"></div>
+    <div id="errorMessage" class="message error"></div>
+
+    <div id="loadingMessage" class="loading">
+      レビューを読み込み中...
+    </div>
+
+    <form id="reviewForm" style="display: none;">
+      <div class="form-group">
+        <label>評価 <span class="required">*</span></label>
+        <div class="rating-input" id="ratingInput">
+          <span class="star" data-rating="1">★</span>
+          <span class="star" data-rating="2">★</span>
+          <span class="star" data-rating="3">★</span>
+          <span class="star" data-rating="4">★</span>
+          <span class="star" data-rating="5">★</span>
+        </div>
+        <input type="hidden" id="rating" name="rating" value="0">
+        <p class="help-text">星をクリックして評価してください</p>
+      </div>
+
+      <div class="form-group">
+        <label for="title">レビュータイトル <span class="required">*</span></label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          required
+          maxlength="200"
+          placeholder="例: とても快適に利用できました"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="comment">レビュー内容</label>
+        <textarea
+          id="comment"
+          name="comment"
+          maxlength="5000"
+          placeholder="施設の良かった点や改善してほしい点などをお聞かせください（任意）"
+        ></textarea>
+        <p class="help-text">最大5000文字</p>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn btn-secondary" onclick="history.back()">
+          キャンセル
+        </button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          更新する
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // URLから review ID を取得
+    const pathParts = window.location.pathname.split('/');
+    const reviewId = pathParts[pathParts.length - 2]; // /my-page/reviews/:id/edit
+
+    const stars = document.querySelectorAll('.star');
+    const ratingInput = document.getElementById('rating');
+    let selectedRating = 0;
+
+    // 星評価の処理
+    stars.forEach((star) => {
+      star.addEventListener('click', function () {
+        selectedRating = parseInt(this.getAttribute('data-rating'));
+        ratingInput.value = selectedRating;
+        updateStars();
+      });
+
+      star.addEventListener('mouseenter', function () {
+        const hoverRating = parseInt(this.getAttribute('data-rating'));
+        stars.forEach((s, index) => {
+          if (index < hoverRating) {
+            s.classList.add('active');
+          } else {
+            s.classList.remove('active');
+          }
+        });
+      });
+    });
+
+    document.getElementById('ratingInput').addEventListener('mouseleave', updateStars);
+
+    function updateStars() {
+      stars.forEach((star, index) => {
+        if (index < selectedRating) {
+          star.classList.add('active');
+        } else {
+          star.classList.remove('active');
+        }
+      });
+    }
+
+    // レビューを読み込み
+    async function loadReview() {
+      try {
+        const response = await fetch(`/api/user/reviews`);
+        const data = await response.json();
+
+        const review = data.reviews.find(r => r.id == reviewId);
+
+        if (!review) {
+          document.getElementById('errorMessage').textContent = 'レビューが見つかりません';
+          document.getElementById('errorMessage').classList.add('show');
+          document.getElementById('loadingMessage').style.display = 'none';
+          return;
+        }
+
+        // フォームに値を設定
+        selectedRating = review.rating;
+        ratingInput.value = review.rating;
+        updateStars();
+
+        document.getElementById('title').value = review.title;
+        document.getElementById('comment').value = review.comment || '';
+
+        document.getElementById('loadingMessage').style.display = 'none';
+        document.getElementById('reviewForm').style.display = 'block';
+      } catch (error) {
+        console.error('Failed to load review:', error);
+        document.getElementById('errorMessage').textContent = 'レビューの読み込みに失敗しました';
+        document.getElementById('errorMessage').classList.add('show');
+        document.getElementById('loadingMessage').style.display = 'none';
+      }
+    }
+
+    // フォーム送信
+    const form = document.getElementById('reviewForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // メッセージをクリア
+      successMessage.classList.remove('show');
+      errorMessage.classList.remove('show');
+
+      // 評価チェック
+      if (selectedRating === 0) {
+        errorMessage.textContent = '評価を選択してください';
+        errorMessage.classList.add('show');
+        return;
+      }
+
+      const formData = new FormData(form);
+      const data = {
+        rating: selectedRating,
+        title: formData.get('title'),
+        comment: formData.get('comment') || undefined
+      };
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '更新中...';
+
+        const response = await fetch(`/api/user/reviews/${reviewId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successMessage.textContent = 'レビューを更新しました。マイページに戻ります...';
+          successMessage.classList.add('show');
+
+          setTimeout(() => {
+            window.location.href = '/my-page';
+          }, 2000);
+        } else {
+          errorMessage.textContent = result.message || 'レビューの更新に失敗しました';
+          errorMessage.classList.add('show');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '更新する';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        errorMessage.textContent = 'エラーが発生しました。もう一度お試しください。';
+        errorMessage.classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '更新する';
+      }
+    });
+
+    // ページロード時にレビューを読み込み
+    loadReview();
+  </script>
+</body>
+</html>

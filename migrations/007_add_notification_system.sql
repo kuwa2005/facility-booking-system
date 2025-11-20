@@ -5,7 +5,7 @@
 -- 通知テンプレートテーブル
 -- =====================================================
 CREATE TABLE IF NOT EXISTS notification_templates (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     template_code VARCHAR(50) NOT NULL UNIQUE COMMENT 'テンプレート識別コード',
     template_name VARCHAR(200) NOT NULL COMMENT 'テンプレート名',
     description TEXT COMMENT 'テンプレートの説明',
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS notification_templates (
     available_variables JSON COMMENT '利用可能な変数のリスト',
     is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '有効フラグ',
     is_system BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'システムテンプレート（削除不可）',
-    created_by INT DEFAULT NULL COMMENT '作成した職員ID',
+    created_by INT UNSIGNED DEFAULT NULL COMMENT '作成した職員ID',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME DEFAULT NULL COMMENT '論理削除日時',
@@ -24,25 +24,25 @@ CREATE TABLE IF NOT EXISTS notification_templates (
     INDEX idx_is_active (is_active),
     INDEX idx_deleted_at (deleted_at),
 
-    FOREIGN KEY (created_by) REFERENCES staff(id) ON DELETE SET NULL
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知テンプレートテーブル';
 
 -- =====================================================
 -- 通知ログテーブル
 -- =====================================================
 CREATE TABLE IF NOT EXISTS notification_logs (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     template_code VARCHAR(50) NOT NULL COMMENT '使用したテンプレートコード',
     notification_type ENUM('email', 'sms', 'push') NOT NULL DEFAULT 'email' COMMENT '通知タイプ',
     recipient_type ENUM('user', 'staff') NOT NULL COMMENT '受信者タイプ',
-    recipient_id INT NOT NULL COMMENT '受信者ID',
+    recipient_id INT UNSIGNED NOT NULL COMMENT '受信者ID',
     recipient_email VARCHAR(255) NOT NULL COMMENT '送信先メールアドレス',
     subject VARCHAR(500) NOT NULL COMMENT '実際に送信した件名',
     body_text TEXT COMMENT '実際に送信した本文',
     status ENUM('pending', 'sent', 'failed', 'bounced') NOT NULL DEFAULT 'pending' COMMENT '送信ステータス',
     error_message TEXT COMMENT 'エラーメッセージ（失敗時）',
     related_entity_type VARCHAR(50) COMMENT '関連エンティティタイプ（application等）',
-    related_entity_id INT COMMENT '関連エンティティID',
+    related_entity_id INT UNSIGNED COMMENT '関連エンティティID',
     sent_at DATETIME COMMENT '送信日時',
     opened_at DATETIME COMMENT '開封日時（トラッキング有効時）',
     clicked_at DATETIME COMMENT 'リンククリック日時（トラッキング有効時）',
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS notification_logs (
 -- 通知設定テーブル
 -- =====================================================
 CREATE TABLE IF NOT EXISTS notification_settings (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     setting_key VARCHAR(100) NOT NULL UNIQUE COMMENT '設定キー',
     setting_name VARCHAR(200) NOT NULL COMMENT '設定名',
     description TEXT COMMENT '設定の説明',
@@ -68,25 +68,25 @@ CREATE TABLE IF NOT EXISTS notification_settings (
     template_code VARCHAR(50) COMMENT '使用するテンプレートコード',
     send_timing VARCHAR(50) COMMENT '送信タイミング（immediate, scheduled等）',
     schedule_config JSON COMMENT 'スケジュール設定（リマインダー用）',
-    updated_by INT COMMENT '最終更新者',
+    updated_by INT UNSIGNED COMMENT '最終更新者',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     INDEX idx_setting_key (setting_key),
     INDEX idx_is_enabled (is_enabled),
 
-    FOREIGN KEY (updated_by) REFERENCES staff(id) ON DELETE SET NULL
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知設定テーブル';
 
 -- =====================================================
 -- スケジュール通知テーブル
 -- =====================================================
 CREATE TABLE IF NOT EXISTS scheduled_notifications (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     template_code VARCHAR(50) NOT NULL COMMENT 'テンプレートコード',
     recipient_type ENUM('user', 'staff') NOT NULL COMMENT '受信者タイプ',
-    recipient_id INT NOT NULL COMMENT '受信者ID',
+    recipient_id INT UNSIGNED NOT NULL COMMENT '受信者ID',
     related_entity_type VARCHAR(50) COMMENT '関連エンティティタイプ',
-    related_entity_id INT COMMENT '関連エンティティID',
+    related_entity_id INT UNSIGNED COMMENT '関連エンティティID',
     scheduled_at DATETIME NOT NULL COMMENT '送信予定日時',
     status ENUM('pending', 'sent', 'cancelled', 'failed') NOT NULL DEFAULT 'pending' COMMENT 'ステータス',
     notification_data JSON COMMENT '通知に必要なデータ',

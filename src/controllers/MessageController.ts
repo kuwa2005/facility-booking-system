@@ -14,7 +14,7 @@ export class MessageController {
    */
   async sendMessageFromUser(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const data: CreateMessageDto = req.body;
 
       // バリデーション
@@ -54,7 +54,7 @@ export class MessageController {
    */
   async getUserMessages(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const includeDeleted = req.query.includeDeleted === 'true';
 
       const messages = await messageService.getUserMessages(
@@ -83,7 +83,7 @@ export class MessageController {
   async getMessageById(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const userRole = (req as any).user.role;
 
       if (isNaN(messageId)) {
@@ -140,7 +140,7 @@ export class MessageController {
   async markAsRead(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -173,7 +173,7 @@ export class MessageController {
   async deleteMessageByUser(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -205,7 +205,7 @@ export class MessageController {
    */
   async getUnreadCount(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user.id;
+      const userId = (req as any).user.userId;
       const count = await messageService.getUnreadCount(userId, 'user');
 
       res.json({
@@ -222,6 +222,47 @@ export class MessageController {
     }
   }
 
+  /**
+   * メッセージスレッド取得（一般利用者）
+   * GET /api/user/messages/:id/thread
+   */
+  async getUserMessageThread(req: Request, res: Response): Promise<void> {
+    try {
+      const messageId = parseInt(req.params.id);
+      const userId = (req as any).user.userId;
+
+      if (isNaN(messageId)) {
+        res.status(400).json({
+          success: false,
+          message: '無効なメッセージIDです',
+        });
+        return;
+      }
+
+      const thread = await messageService.getMessageThread(messageId);
+
+      // ユーザーがアクセス権限があるメッセージのみフィルタリング
+      const filteredThread = thread.filter(msg =>
+        (msg.sender_type === 'user' && msg.sender_id === userId) ||
+        (msg.recipient_type === 'user' && msg.recipient_id === userId) ||
+        msg.sender_type === 'staff' ||
+        msg.recipient_type === 'staff'
+      );
+
+      res.json({
+        success: true,
+        data: filteredThread,
+      });
+    } catch (error: any) {
+      console.error('Error fetching message thread:', error);
+      res.status(500).json({
+        success: false,
+        message: 'メッセージスレッドの取得に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
   // ===== 職員向けエンドポイント =====
 
   /**
@@ -230,7 +271,7 @@ export class MessageController {
    */
   async sendMessageFromStaff(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const data: CreateMessageDto = req.body;
 
       // バリデーション
@@ -270,7 +311,7 @@ export class MessageController {
    */
   async getStaffMessages(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const showAll = req.query.showAll === 'true';
 
       // 管理者の場合は全メッセージを表示可能
@@ -299,7 +340,7 @@ export class MessageController {
   async getMessagesByUser(req: Request, res: Response): Promise<void> {
     try {
       const userId = parseInt(req.params.userId);
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
 
       if (isNaN(userId)) {
         res.status(400).json({
@@ -364,7 +405,7 @@ export class MessageController {
   async deleteMessageByStaff(req: Request, res: Response): Promise<void> {
     try {
       const messageId = parseInt(req.params.id);
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -396,7 +437,7 @@ export class MessageController {
    */
   async getMessageStats(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const showAll = req.query.showAll === 'true';
 
       const stats = await messageService.getMessageStats(
@@ -436,6 +477,141 @@ export class MessageController {
       res.status(500).json({
         success: false,
         message: '期限切れメッセージの削除に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * お問い合わせメッセージ送信（ログイン中のユーザー）
+   * POST /api/contact
+   */
+  async sendContactMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user.userId;
+      const { name, email, phone, subject, content } = req.body;
+
+      // バリデーション
+      if (!subject || !content) {
+        res.status(400).json({
+          success: false,
+          message: '件名と内容は必須です。',
+        });
+        return;
+      }
+
+      // お問い合わせ内容を整形
+      const formattedContent = `
+【お問い合わせ】
+
+お名前: ${name || '未入力'}
+メールアドレス: ${email || '未入力'}
+電話番号: ${phone || '未入力'}
+
+お問い合わせ内容:
+${content}
+      `.trim();
+
+      // 管理者にメッセージを送信（recipient_id: 1 は管理者を想定）
+      const message = await messageService.sendMessageFromUser(userId, {
+        recipient_id: 1,
+        recipient_type: 'staff',
+        subject: subject,
+        content: formattedContent,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'お問い合わせを送信しました',
+        data: message,
+      });
+    } catch (error: any) {
+      console.error('Error sending contact message:', error);
+      res.status(500).json({
+        success: false,
+        message: 'お問い合わせの送信に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * お問い合わせメッセージ送信（非ログインユーザー）
+   * POST /api/contact/public
+   */
+  async sendPublicContactMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const { name, email, phone, category, message } = req.body;
+
+      // バリデーション
+      if (!name || !email || !category || !message) {
+        res.status(400).json({
+          success: false,
+          message: 'お名前、メールアドレス、お問い合わせ種別、お問い合わせ内容は必須です。',
+        });
+        return;
+      }
+
+      // デモモード：メールアドレスの形式チェックを無効化
+      // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // if (!emailRegex.test(email)) {
+      //   res.status(400).json({
+      //     success: false,
+      //     message: '有効なメールアドレスを入力してください。',
+      //   });
+      //   return;
+      // }
+
+      const categoryLabel = {
+        'reservation': '予約について',
+        'facility': '施設について',
+        'payment': 'お支払いについて',
+        'cancel': 'キャンセルについて',
+        'system': 'システムについて',
+        'other': 'その他'
+      };
+
+      // お問い合わせ内容を整形
+      const formattedContent = `
+【公開お問い合わせ】（未登録ユーザーからのお問い合わせ）
+
+お名前: ${name}
+メールアドレス: ${email}
+電話番号: ${phone || '未入力'}
+お問い合わせ種別: ${categoryLabel[category as keyof typeof categoryLabel] || category}
+
+お問い合わせ内容:
+${message}
+
+※このお問い合わせには、記載されているメールアドレス（${email}）宛に返信してください。
+      `.trim();
+
+      // データベースに保存（contact_messagesテーブルに保存）
+      const pool = (await import('../config/database')).default;
+
+      await pool.query(
+        `INSERT INTO contact_messages (name, email, phone, category, message, created_at)
+         VALUES (?, ?, ?, ?, ?, NOW())`,
+        [name, email, phone, category, message]
+      );
+
+      // 管理者にもメッセージとして通知（システムメッセージとして記録）
+      // sender_typeは'staff'、sender_id=1（管理者）として記録し、recipient_id=1（管理者宛）として記録
+      await pool.query(
+        `INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, subject, content, created_at)
+         VALUES ('staff', 1, 'staff', 1, ?, ?, NOW())`,
+        [`【${categoryLabel[category as keyof typeof categoryLabel]}】${name}様からのお問い合わせ`, formattedContent]
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'お問い合わせを受け付けました。担当者から折り返しご連絡いたします。',
+      });
+    } catch (error: any) {
+      console.error('Error sending public contact message:', error);
+      res.status(500).json({
+        success: false,
+        message: 'お問い合わせの送信に失敗しました',
         error: error.message,
       });
     }

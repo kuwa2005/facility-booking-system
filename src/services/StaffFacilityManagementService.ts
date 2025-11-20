@@ -45,14 +45,14 @@ export class StaffFacilityManagementService {
     if (includeInactive) {
       return RoomRepository.findAll();
     }
-    return RoomRepository.findActive();
+    return RoomRepository.findAllActive();
   }
 
   /**
    * 部屋を作成
    */
   async createRoom(staffId: number, data: CreateRoomDto): Promise<Room> {
-    const room = await RoomRepository.create(data);
+    const room = await RoomRepository.create(data as any);
 
     await this.logActivity(
       staffId,
@@ -176,7 +176,7 @@ export class StaffFacilityManagementService {
     if (includeDisabled) {
       return EquipmentRepository.findAll();
     }
-    return EquipmentRepository.findEnabled();
+    return EquipmentRepository.findAllEnabled();
   }
 
   /**

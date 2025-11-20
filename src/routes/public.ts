@@ -1,11 +1,14 @@
 import express from 'express';
 import { RoomController } from '../controllers/RoomController';
 import { ApplicationController } from '../controllers/ApplicationController';
+import { ReviewController } from '../controllers/ReviewController';
 import { AnnouncementController } from '../controllers/AnnouncementController';
+import { MessageController } from '../controllers/MessageController';
 import { authenticate, optionalAuth } from '../middleware/auth';
 
 const router = express.Router();
 const announcementController = new AnnouncementController();
+const messageController = new MessageController();
 
 // Announcement routes (public - no authentication required)
 router.get(
@@ -21,6 +24,10 @@ router.get('/rooms/:id/availability', RoomController.getRoomAvailability);
 // Equipment routes
 router.get('/equipment', RoomController.getEquipment);
 
+// Review routes (public)
+router.get('/rooms/:roomId/reviews', ReviewController.getRoomReviews);
+router.get('/reviews/recent', ReviewController.getRecentReviews);
+
 // Application routes
 router.post(
   '/applications',
@@ -30,5 +37,11 @@ router.post(
 );
 router.get('/applications/:id', optionalAuth, ApplicationController.getApplication);
 router.get('/my-applications', authenticate, ApplicationController.getUserApplications);
+
+// Contact routes (public)
+router.post(
+  '/contact/public',
+  messageController.sendPublicContactMessage.bind(messageController)
+);
 
 export default router;

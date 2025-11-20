@@ -77,7 +77,7 @@ export class StaffDashboardService {
   }
 
   /**
-   * 未払い件数
+   * 未決済件数
    */
   private async getPendingPaymentsCount(): Promise<number> {
     const [rows] = await pool.query<RowDataPacket[]>(
