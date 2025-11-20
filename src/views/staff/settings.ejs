@@ -165,8 +165,154 @@
 </div>
 
 <script>
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+  loadBusinessHours();
 
+  // フォーム送信イベント
+  document.getElementById('basicSettingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveBasicSettings();
+  });
+
+  document.getElementById('reservationSettingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveReservationSettings();
+  });
+
+  document.getElementById('emailSettingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveEmailSettings();
+  });
+});
+
+// 設定を読み込み
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/staff/settings', {
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      console.error('Failed to load settings:', res.status);
+      if (res.status === 401 || res.status === 403) {
+        alert('ログインセッションが切れています。再度ログインしてください。');
+        window.location.href = '/staff/login';
+      }
+      return;
+    }
+
+    const settings = await res.json();
+
+    // 基本設定
+    if (settings.site_name) {
+      document.getElementById('siteName').value = settings.site_name.value;
+    }
+    if (settings.admin_email) {
+      document.getElementById('adminEmail').value = settings.admin_email.value;
+    }
+    if (settings.contact_phone) {
+      document.getElementById('contactPhone').value = settings.contact_phone.value;
+    }
+    if (settings.maintenance_mode) {
+      document.getElementById('maintenanceMode').checked = settings.maintenance_mode.value;
+    }
+
+    // 予約設定
+    if (settings.reservation_advance_days) {
+      document.getElementById('maxReservationDays').value = settings.reservation_advance_days.value;
+    }
+    if (settings.reservation_deadline_days) {
+      document.getElementById('reservationDeadlineDays').value = settings.reservation_deadline_days.value;
+    }
+    if (settings.cancellation_fee_days) {
+      document.getElementById('cancellationFeeDays').value = settings.cancellation_fee_days.value;
+    }
+    if (settings.cancellation_fee_rate) {
+      document.getElementById('cancellationFeeRate').value = settings.cancellation_fee_rate.value;
+    }
+    if (settings.require_approval) {
+      document.getElementById('requireApproval').checked = settings.require_approval.value;
+    }
+
+    // メール設定
+    if (settings.smtp_host) {
+      document.getElementById('smtpHost').value = settings.smtp_host.value;
+    }
+    if (settings.smtp_port) {
+      document.getElementById('smtpPort').value = settings.smtp_port.value;
+    }
+    if (settings.email_from_name) {
+      document.getElementById('emailFromName').value = settings.email_from_name.value;
+    }
+    if (settings.email_from_address) {
+      document.getElementById('emailFromAddress').value = settings.email_from_address.value;
+    }
+    if (settings.email_enabled) {
+      document.getElementById('emailEnabled').checked = settings.email_enabled.value;
+    }
+  } catch (error) {
+    console.error('Error loading settings:', error);
   }
+}
+
+// 営業時間テーブルを読み込み
+async function loadBusinessHours() {
+  const days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+  const defaultHours = {
+    open: true,
+    startTime: '09:00',
+    endTime: '21:00'
+  };
+
+  let businessHoursData = [];
+
+  try {
+    // データベースから営業時間を取得
+    const res = await fetch('/api/staff/settings', {
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      const settings = await res.json();
+      if (settings.business_hours && settings.business_hours.value) {
+        businessHoursData = settings.business_hours.value;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading business hours:', error);
+  }
+
+  const html = days.map((day, index) => {
+    // データベースから読み込んだ値があればそれを使用、なければデフォルト値
+    const dayData = businessHoursData.find(d => d.day === day) || defaultHours;
+
+    return `
+      <tr>
+        <td><strong>${day}</strong></td>
+        <td>
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="dayOpen_${index}" ${dayData.open ? 'checked' : ''}>
+            <span>営業</span>
+          </label>
+        </td>
+        <td>
+          <input type="time" id="dayStart_${index}" value="${dayData.startTime || defaultHours.startTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </td>
+        <td>
+          <input type="time" id="dayEnd_${index}" value="${dayData.endTime || defaultHours.endTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('businessHoursTable').innerHTML = html;
+}
+
+// 基本設定を保存
+async function saveBasicSettings() {
+  console.log('[Settings] saveBasicSettings called');
 
   const settings = {
     siteName: document.getElementById('siteName').value,
