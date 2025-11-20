@@ -87,7 +87,10 @@
           <span>メール通知を有効にする</span>
         </label>
       </div>
-      <button type="submit" class="btn btn-primary">メール設定を保存</button>
+      <div style="display: flex; gap: 1rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">メール設定を保存</button>
+        <button type="button" onclick="sendTestEmail()" class="btn" style="flex: 1; background-color: #27ae60; color: white;">📧 テストメール送信</button>
+      </div>
     </form>
   </div>
 </div>
@@ -254,6 +257,45 @@ function saveEmailSettings() {
 
   console.log('Saving email settings:', settings);
   alert('メール設定を保存しました（デモモード）');
+}
+
+// テストメールを送信
+function sendTestEmail() {
+  const smtpHost = document.getElementById('smtpHost').value;
+  const smtpPort = document.getElementById('smtpPort').value;
+  const emailFromName = document.getElementById('emailFromName').value;
+  const emailFromAddress = document.getElementById('emailFromAddress').value;
+  const emailEnabled = document.getElementById('emailEnabled').checked;
+
+  // 入力チェック
+  if (!smtpHost || !smtpPort || !emailFromAddress) {
+    alert('❌ エラー\n\nSMTPサーバー、ポート、送信者アドレスを入力してください。');
+    return;
+  }
+
+  if (!emailEnabled) {
+    if (!confirm('メール通知が無効になっています。\nそれでもテストメールを送信しますか？')) {
+      return;
+    }
+  }
+
+  // テストメール送信のシミュレーション
+  console.log('Test email configuration:', {
+    smtpHost,
+    smtpPort,
+    emailFromName,
+    emailFromAddress,
+    to: 'test@example.com',
+    subject: 'テストメール - 施設予約システム',
+    body: 'これはメール設定のテストメールです。'
+  });
+
+  // 成功メッセージ
+  alert('✅ テストメールを送信しました\n\n' +
+        '送信先: test@example.com\n' +
+        '件名: テストメール - 施設予約システム\n\n' +
+        '※ デモサイトのため、実際にはメールは送信されていません。\n' +
+        '本番環境では、設定したSMTPサーバーを通じてメールが送信されます。');
 }
 
 // 営業時間を保存
