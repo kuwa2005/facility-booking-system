@@ -43,4 +43,10 @@ router.get('/reports', StaffPageController.reports);
 // 職員管理（管理者のみ）
 router.get('/management', requireAdmin, StaffPageController.staffManagement);
 
+// システム設定（管理者のみ）
+router.get('/settings', requireAdmin, StaffPageController.settings);
+
+// アクティビティログ（管理者のみ）
+router.get('/activity-log', requireAdmin, StaffPageController.activityLog);
+
 export default router;

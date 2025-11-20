@@ -239,4 +239,40 @@ export class StaffPageController {
       next(error);
     }
   }
+
+  /**
+   * システム設定ページ（管理者のみ）
+   */
+  static async settings(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        res.status(403).send('管理者権限が必要です');
+        return;
+      }
+
+      this.renderWithLayout('settings.ejs', {
+        title: 'システム設定',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * アクティビティログページ（管理者のみ）
+   */
+  static async activityLog(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        res.status(403).send('管理者権限が必要です');
+        return;
+      }
+
+      this.renderWithLayout('activity-log.ejs', {
+        title: 'アクティビティログ',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

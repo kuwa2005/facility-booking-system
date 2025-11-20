@@ -1,0 +1,369 @@
+<div class="page-header">
+  <h1 class="page-title">アクティビティログ</h1>
+  <p class="page-description">システムの操作履歴と監査ログ</p>
+</div>
+
+<!-- 統計カード -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今日のアクティビティ</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="todayActivities">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今週</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="weekActivities">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今月</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #f39c12;" id="monthActivities">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">総ログ数</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #9b59b6;" id="totalActivities">-</p>
+  </div>
+</div>
+
+<!-- フィルター -->
+<div class="card">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">開始日時</label>
+      <input type="datetime-local" id="startDateTime" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">終了日時</label>
+      <input type="datetime-local" id="endDateTime" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">アクション種別</label>
+      <select id="actionType" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">すべて</option>
+        <option value="login">ログイン</option>
+        <option value="logout">ログアウト</option>
+        <option value="reservation_create">予約作成</option>
+        <option value="reservation_update">予約更新</option>
+        <option value="reservation_cancel">予約キャンセル</option>
+        <option value="user_create">ユーザー作成</option>
+        <option value="user_update">ユーザー更新</option>
+        <option value="user_delete">ユーザー削除</option>
+        <option value="staff_create">職員作成</option>
+        <option value="staff_update">職員更新</option>
+        <option value="settings_update">設定変更</option>
+      </select>
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">実行者</label>
+      <input type="text" id="actorSearch" placeholder="職員名で検索..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+  </div>
+  <div style="display: flex; gap: 1rem;">
+    <button onclick="loadActivityLog()" class="btn btn-primary">検索</button>
+    <button onclick="resetFilters()" class="btn" style="background-color: #95a5a6; color: white;">リセット</button>
+    <button onclick="loadToday()" class="btn" style="background-color: #27ae60; color: white;">今日</button>
+    <button onclick="loadWeek()" class="btn" style="background-color: #f39c12; color: white;">今週</button>
+  </div>
+</div>
+
+<!-- アクティビティログ一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">アクティビティログ</h2>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div id="totalCount" style="color: #7f8c8d;"></div>
+      <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
+    </div>
+  </div>
+  <div id="logContainer">
+    <p style="text-align: center; color: #7f8c8d;">検索ボタンを押してログを表示してください</p>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div id="detailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 800px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">ログ詳細</h2>
+      <button onclick="closeDetailModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+let currentLogs = [];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  setDefaultDateRange();
+});
+
+// デフォルトの日時範囲を設定（今日）
+function setDefaultDateRange() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const startInput = document.getElementById('startDateTime');
+  const endInput = document.getElementById('endDateTime');
+
+  startInput.value = formatDateTimeLocal(today);
+  endInput.value = formatDateTimeLocal(now);
+}
+
+// datetime-local形式にフォーマット
+function formatDateTimeLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// 統計情報を読み込み（デモデータ）
+function loadStats() {
+  document.getElementById('todayActivities').textContent = '42';
+  document.getElementById('weekActivities').textContent = '267';
+  document.getElementById('monthActivities').textContent = '1,234';
+  document.getElementById('totalActivities').textContent = '15,678';
+}
+
+// アクティビティログを読み込み（デモデータ）
+function loadActivityLog() {
+  const startDateTime = document.getElementById('startDateTime').value;
+  const endDateTime = document.getElementById('endDateTime').value;
+  const actionType = document.getElementById('actionType').value;
+  const actorSearch = document.getElementById('actorSearch').value;
+
+  // デモデータ
+  const demoLogs = generateDemoLogs();
+
+  // フィルタリング
+  let filteredLogs = demoLogs;
+  if (actionType) {
+    filteredLogs = filteredLogs.filter(log => log.action === actionType);
+  }
+  if (actorSearch) {
+    filteredLogs = filteredLogs.filter(log => log.actor.includes(actorSearch));
+  }
+
+  currentLogs = filteredLogs;
+  displayLogs(filteredLogs);
+}
+
+// デモログデータを生成
+function generateDemoLogs() {
+  const actions = [
+    { action: 'login', label: 'ログイン', icon: '🔐', color: '#3498db' },
+    { action: 'logout', label: 'ログアウト', icon: '🚪', color: '#95a5a6' },
+    { action: 'reservation_create', label: '予約作成', icon: '➕', color: '#27ae60' },
+    { action: 'reservation_update', label: '予約更新', icon: '✏️', color: '#f39c12' },
+    { action: 'reservation_cancel', label: '予約キャンセル', icon: '❌', color: '#e74c3c' },
+    { action: 'user_update', label: 'ユーザー更新', icon: '👤', color: '#9b59b6' },
+    { action: 'settings_update', label: '設定変更', icon: '⚙️', color: '#16a085' },
+  ];
+
+  const actors = ['管理者 太郎', '職員 花子', '職員 次郎', 'システム'];
+  const logs = [];
+
+  for (let i = 0; i < 50; i++) {
+    const actionData = actions[Math.floor(Math.random() * actions.length)];
+    const timestamp = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+
+    logs.push({
+      id: i + 1,
+      action: actionData.action,
+      label: actionData.label,
+      icon: actionData.icon,
+      color: actionData.color,
+      actor: actors[Math.floor(Math.random() * actors.length)],
+      timestamp: timestamp.toISOString(),
+      ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
+      details: `詳細情報: ${actionData.label}の操作を実行しました`,
+      targetType: 'reservation',
+      targetId: Math.floor(Math.random() * 1000)
+    });
+  }
+
+  return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+// ログを表示
+function displayLogs(logs) {
+  if (logs && logs.length > 0) {
+    document.getElementById('totalCount').textContent = `全 ${logs.length} 件`;
+
+    const html = `
+      <div style="overflow-x: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th>アクション</th>
+              <th>実行者</th>
+              <th>IPアドレス</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.map(log => `
+              <tr>
+                <td>${new Date(log.timestamp).toLocaleString('ja-JP')}</td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.25rem;">${log.icon}</span>
+                    <span class="badge" style="background-color: ${log.color};">${log.label}</span>
+                  </div>
+                </td>
+                <td>${log.actor}</td>
+                <td style="font-family: monospace; font-size: 0.875rem;">${log.ipAddress}</td>
+                <td>
+                  <button onclick="showDetail(${log.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">詳細</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('logContainer').innerHTML = html;
+  } else {
+    document.getElementById('totalCount').textContent = '';
+    document.getElementById('logContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">ログがありません</p>';
+  }
+}
+
+// ログ詳細を表示
+function showDetail(id) {
+  const log = currentLogs.find(l => l.id === id);
+  if (!log) return;
+
+  const html = `
+    <div style="display: grid; gap: 1.5rem;">
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本情報</h3>
+        <div style="display: grid; gap: 0.75rem;">
+          <div><strong>ログID:</strong> ${log.id}</div>
+          <div><strong>日時:</strong> ${new Date(log.timestamp).toLocaleString('ja-JP')}</div>
+          <div><strong>アクション:</strong> ${log.icon} ${log.label}</div>
+          <div><strong>実行者:</strong> ${log.actor}</div>
+          <div><strong>IPアドレス:</strong> ${log.ipAddress}</div>
+        </div>
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; color: #2c3e50;">対象情報</h3>
+        <div style="display: grid; gap: 0.75rem;">
+          <div><strong>対象種別:</strong> ${log.targetType}</div>
+          <div><strong>対象ID:</strong> ${log.targetId}</div>
+        </div>
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; color: #2c3e50;">詳細</h3>
+        <div>${log.details}</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button onclick="closeDetailModal()" class="btn" style="background-color: #95a5a6; color: white;">閉じる</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailModal').style.display = 'block';
+}
+
+// 詳細モーダルを閉じる
+function closeDetailModal() {
+  document.getElementById('detailModal').style.display = 'none';
+}
+
+// フィルターリセット
+function resetFilters() {
+  setDefaultDateRange();
+  document.getElementById('actionType').value = '';
+  document.getElementById('actorSearch').value = '';
+}
+
+// 今日のログを表示
+function loadToday() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  document.getElementById('startDateTime').value = formatDateTimeLocal(today);
+  document.getElementById('endDateTime').value = formatDateTimeLocal(now);
+  document.getElementById('actionType').value = '';
+  document.getElementById('actorSearch').value = '';
+
+  loadActivityLog();
+}
+
+// 今週のログを表示
+function loadWeek() {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  document.getElementById('startDateTime').value = formatDateTimeLocal(weekAgo);
+  document.getElementById('endDateTime').value = formatDateTimeLocal(now);
+  document.getElementById('actionType').value = '';
+  document.getElementById('actorSearch').value = '';
+
+  loadActivityLog();
+}
+
+// CSVエクスポート
+function exportToCSV() {
+  if (!currentLogs || currentLogs.length === 0) {
+    alert('エクスポートするデータがありません');
+    return;
+  }
+
+  const headers = ['ID', '日時', 'アクション', '実行者', 'IPアドレス', '対象種別', '対象ID', '詳細'];
+
+  const rows = currentLogs.map(log => [
+    log.id,
+    new Date(log.timestamp).toLocaleString('ja-JP'),
+    log.label,
+    log.actor,
+    log.ipAddress,
+    log.targetType,
+    log.targetId,
+    log.details
+  ]);
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      const cellStr = String(cell);
+      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+        return '"' + cellStr.replace(/"/g, '""') + '"';
+      }
+      return cellStr;
+    }).join(','))
+  ].join('\n');
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const filename = `activity_log_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target.id === 'detailModal') {
+    closeDetailModal();
+  }
+});
+</script>

@@ -1,0 +1,317 @@
+<div class="page-header">
+  <h1 class="page-title">システム設定</h1>
+  <p class="page-description">システム全体の設定と構成管理</p>
+</div>
+
+<!-- 設定カテゴリ -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- 基本設定 -->
+  <div class="card">
+    <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本設定</h3>
+    <form id="basicSettingsForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">サイト名</label>
+        <input type="text" id="siteName" value="施設予約システム" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">管理者メールアドレス</label>
+        <input type="email" id="adminEmail" value="admin@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">お問い合わせ電話番号</label>
+        <input type="tel" id="contactPhone" value="03-1234-5678" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="maintenanceMode">
+          <span>メンテナンスモード（利用者のアクセスを制限）</span>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">基本設定を保存</button>
+    </form>
+  </div>
+
+  <!-- 予約設定 -->
+  <div class="card">
+    <h3 style="margin-bottom: 1rem; color: #2c3e50;">予約設定</h3>
+    <form id="reservationSettingsForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">最大予約可能日数（日後まで）</label>
+        <input type="number" id="maxReservationDays" value="90" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">予約申請の締切（日前まで）</label>
+        <input type="number" id="reservationDeadlineDays" value="7" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">キャンセル料金発生日数（日前から）</label>
+        <input type="number" id="cancellationFeeDays" value="14" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">キャンセル料率（%）</label>
+        <input type="number" id="cancellationFeeRate" value="50" min="0" max="100" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="requireApproval" checked>
+          <span>予約に職員の承認を必要とする</span>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">予約設定を保存</button>
+    </form>
+  </div>
+
+  <!-- メール設定 -->
+  <div class="card">
+    <h3 style="margin-bottom: 1rem; color: #2c3e50;">メール設定</h3>
+    <form id="emailSettingsForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">SMTPサーバー</label>
+        <input type="text" id="smtpHost" value="smtp.example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">SMTPポート</label>
+        <input type="number" id="smtpPort" value="587" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">送信者名</label>
+        <input type="text" id="emailFromName" value="施設予約システム" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">送信者アドレス</label>
+        <input type="email" id="emailFromAddress" value="noreply@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="emailEnabled" checked>
+          <span>メール通知を有効にする</span>
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">メール設定を保存</button>
+    </form>
+  </div>
+</div>
+
+<!-- 営業時間設定 -->
+<div class="card">
+  <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">営業時間設定</h3>
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>曜日</th>
+          <th>営業</th>
+          <th>開始時刻</th>
+          <th>終了時刻</th>
+        </tr>
+      </thead>
+      <tbody id="businessHoursTable">
+        <!-- JavaScriptで動的に生成 -->
+      </tbody>
+    </table>
+  </div>
+  <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+    <button onclick="saveBusinessHours()" class="btn btn-primary">営業時間を保存</button>
+  </div>
+</div>
+
+<!-- データ管理 -->
+<div class="card">
+  <h3 style="margin-bottom: 1.5rem; color: #2c3e50;">データ管理</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+    <div style="padding: 1.5rem; background-color: #f8f9fa; border-radius: 8px;">
+      <h4 style="margin-bottom: 0.5rem;">データベースバックアップ</h4>
+      <p style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 1rem;">システムデータの完全バックアップを作成</p>
+      <button onclick="createBackup()" class="btn btn-primary" style="width: 100%;">バックアップ作成</button>
+    </div>
+    <div style="padding: 1.5rem; background-color: #f8f9fa; border-radius: 8px;">
+      <h4 style="margin-bottom: 0.5rem;">古いデータのクリーンアップ</h4>
+      <p style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 1rem;">1年以上前のキャンセル済み予約を削除</p>
+      <button onclick="cleanupOldData()" class="btn" style="width: 100%; background-color: #e67e22; color: white;">クリーンアップ実行</button>
+    </div>
+    <div style="padding: 1.5rem; background-color: #f8f9fa; border-radius: 8px;">
+      <h4 style="margin-bottom: 0.5rem;">システムログのエクスポート</h4>
+      <p style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 1rem;">システムログをCSV形式でダウンロード</p>
+      <button onclick="exportLogs()" class="btn" style="width: 100%; background-color: #27ae60; color: white;">ログをエクスポート</button>
+    </div>
+  </div>
+</div>
+
+<!-- 危険な操作 -->
+<div class="card" style="border: 2px solid #e74c3c;">
+  <h3 style="margin-bottom: 1.5rem; color: #e74c3c;">危険な操作</h3>
+  <div style="padding: 1rem; background-color: #fee; border-radius: 4px; margin-bottom: 1rem;">
+    <p style="color: #c0392b; font-weight: 600;">以下の操作は取り消せません。実行する前に必ずバックアップを作成してください。</p>
+  </div>
+  <div style="display: grid; gap: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+      <div>
+        <h4 style="margin-bottom: 0.25rem;">すべての予約データをリセット</h4>
+        <p style="font-size: 0.875rem; color: #7f8c8d; margin: 0;">すべての予約と利用記録を削除します</p>
+      </div>
+      <button onclick="resetReservations()" class="btn btn-danger">リセット</button>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+      <div>
+        <h4 style="margin-bottom: 0.25rem;">すべてのユーザーデータをリセット</h4>
+        <p style="font-size: 0.875rem; color: #7f8c8d; margin: 0;">職員を除くすべてのユーザーアカウントを削除します</p>
+      </div>
+      <button onclick="resetUsers()" class="btn btn-danger">リセット</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadBusinessHours();
+
+  // フォーム送信イベント
+  document.getElementById('basicSettingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveBasicSettings();
+  });
+
+  document.getElementById('reservationSettingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveReservationSettings();
+  });
+
+  document.getElementById('emailSettingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveEmailSettings();
+  });
+});
+
+// 営業時間テーブルを読み込み
+function loadBusinessHours() {
+  const days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+  const defaultHours = {
+    open: true,
+    startTime: '09:00',
+    endTime: '21:00'
+  };
+
+  const html = days.map((day, index) => `
+    <tr>
+      <td><strong>${day}</strong></td>
+      <td>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="dayOpen_${index}" ${defaultHours.open ? 'checked' : ''}>
+          <span>営業</span>
+        </label>
+      </td>
+      <td>
+        <input type="time" id="dayStart_${index}" value="${defaultHours.startTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+      </td>
+      <td>
+        <input type="time" id="dayEnd_${index}" value="${defaultHours.endTime}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('businessHoursTable').innerHTML = html;
+}
+
+// 基本設定を保存
+function saveBasicSettings() {
+  const settings = {
+    siteName: document.getElementById('siteName').value,
+    adminEmail: document.getElementById('adminEmail').value,
+    contactPhone: document.getElementById('contactPhone').value,
+    maintenanceMode: document.getElementById('maintenanceMode').checked
+  };
+
+  console.log('Saving basic settings:', settings);
+  alert('基本設定を保存しました（デモモード）');
+}
+
+// 予約設定を保存
+function saveReservationSettings() {
+  const settings = {
+    maxReservationDays: parseInt(document.getElementById('maxReservationDays').value),
+    reservationDeadlineDays: parseInt(document.getElementById('reservationDeadlineDays').value),
+    cancellationFeeDays: parseInt(document.getElementById('cancellationFeeDays').value),
+    cancellationFeeRate: parseInt(document.getElementById('cancellationFeeRate').value),
+    requireApproval: document.getElementById('requireApproval').checked
+  };
+
+  console.log('Saving reservation settings:', settings);
+  alert('予約設定を保存しました（デモモード）');
+}
+
+// メール設定を保存
+function saveEmailSettings() {
+  const settings = {
+    smtpHost: document.getElementById('smtpHost').value,
+    smtpPort: parseInt(document.getElementById('smtpPort').value),
+    emailFromName: document.getElementById('emailFromName').value,
+    emailFromAddress: document.getElementById('emailFromAddress').value,
+    emailEnabled: document.getElementById('emailEnabled').checked
+  };
+
+  console.log('Saving email settings:', settings);
+  alert('メール設定を保存しました（デモモード）');
+}
+
+// 営業時間を保存
+function saveBusinessHours() {
+  const days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+  const businessHours = days.map((day, index) => ({
+    day,
+    open: document.getElementById(`dayOpen_${index}`).checked,
+    startTime: document.getElementById(`dayStart_${index}`).value,
+    endTime: document.getElementById(`dayEnd_${index}`).value
+  }));
+
+  console.log('Saving business hours:', businessHours);
+  alert('営業時間を保存しました（デモモード）');
+}
+
+// バックアップ作成
+function createBackup() {
+  if (!confirm('データベースの完全バックアップを作成しますか？\nこの処理には数分かかる場合があります。')) {
+    return;
+  }
+
+  alert('バックアップを作成しました（デモモード）\n実際の実装ではサーバー側でバックアップファイルが作成されます。');
+}
+
+// 古いデータのクリーンアップ
+function cleanupOldData() {
+  if (!confirm('1年以上前のキャンセル済み予約を削除しますか？\nこの操作は取り消せません。')) {
+    return;
+  }
+
+  alert('クリーンアップを実行しました（デモモード）\n削除件数: 0件');
+}
+
+// ログのエクスポート
+function exportLogs() {
+  alert('システムログをエクスポートしています（デモモード）\n実際の実装ではCSVファイルがダウンロードされます。');
+}
+
+// 危険な操作: 予約リセット
+function resetReservations() {
+  const confirmation = prompt('すべての予約データを削除します。\n実行するには「RESET」と入力してください:');
+  if (confirmation !== 'RESET') {
+    alert('キャンセルしました');
+    return;
+  }
+
+  alert('予約データをリセットしました（デモモード）\nこの機能は実際の運用では使用しないでください。');
+}
+
+// 危険な操作: ユーザーリセット
+function resetUsers() {
+  const confirmation = prompt('職員を除くすべてのユーザーアカウントを削除します。\n実行するには「RESET」と入力してください:');
+  if (confirmation !== 'RESET') {
+    alert('キャンセルしました');
+    return;
+  }
+
+  alert('ユーザーデータをリセットしました（デモモード）\nこの機能は実際の運用では使用しないでください。');
+}
+</script>
