@@ -42,7 +42,10 @@
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
     <h2 class="card-title" style="margin: 0;">利用者一覧</h2>
-    <div id="totalCount" style="color: #7f8c8d;"></div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div id="totalCount" style="color: #7f8c8d;"></div>
+      <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
+    </div>
   </div>
   <div id="usersContainer">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
@@ -74,6 +77,7 @@
 <script>
 const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 let currentUserId = null;
+let currentUsers = [];
 
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
@@ -112,6 +116,9 @@ async function loadUsers() {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
+
+    // データをエクスポート用に保存
+    currentUsers = data.users || [];
 
     if (data.users && data.users.length > 0) {
       document.getElementById('totalCount').textContent = `全 ${data.users.length} 件`;
@@ -427,4 +434,64 @@ document.getElementById('editModal').addEventListener('click', (e) => {
     closeEditModal();
   }
 });
+
+// CSVエクスポート
+function exportToCSV() {
+  if (!currentUsers || currentUsers.length === 0) {
+    alert('エクスポートするデータがありません');
+    return;
+  }
+
+  // CSVヘッダー
+  const headers = ['ID', '名前', 'メールアドレス', '役割', 'メール認証', '状態', '登録日', '最終ログイン'];
+
+  // CSVデータ行
+  const rows = currentUsers.map(user => {
+    const role = user.role === 'admin' ? '管理者' : user.role === 'staff' ? '職員' : 'ユーザー';
+    const emailVerified = user.emailVerified ? '認証済' : '未認証';
+    const isActive = user.isActive ? 'アクティブ' : '非アクティブ';
+    const lastLoginAt = user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ja-JP') : '-';
+
+    return [
+      user.id,
+      user.name || '-',
+      user.email,
+      role,
+      emailVerified,
+      isActive,
+      new Date(user.createdAt).toLocaleDateString('ja-JP'),
+      lastLoginAt
+    ];
+  });
+
+  // CSV形式に変換
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // セル内にカンマや改行がある場合はダブルクォートで囲む
+      const cellStr = String(cell);
+      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+        return '"' + cellStr.replace(/"/g, '""') + '"';
+      }
+      return cellStr;
+    }).join(','))
+  ].join('\n');
+
+  // BOM付きUTF-8でエンコード（Excelで文字化けしないように）
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // ダウンロードリンクを作成してクリック
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const filename = `users_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 </script>

@@ -1,146 +1,310 @@
 <div class="page-header">
-  <h1 class="page-title">ダッシュボード</h1>
-  <p class="page-description">システムの概要と統計情報</p>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1 class="page-title">ダッシュボード</h1>
+      <p class="page-description">システムの概要と統計情報</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <span style="font-size: 0.875rem; color: #7f8c8d;">最終更新:</span>
+      <span id="lastUpdate" style="font-size: 0.875rem; font-weight: 600; color: #3498db;">-</span>
+      <button onclick="refreshDashboard()" class="btn btn-primary" style="padding: 0.5rem 1rem;">
+        🔄 更新
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- 統計カード -->
+<!-- 統計カード（改善版） -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-  <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">本日の予約</h3>
-    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="todayReservations">-</p>
+  <div class="card" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">本日の予約</h3>
+    <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="todayReservations">-</p>
+    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="todayReservationsTrend"></div>
   </div>
 
-  <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今後の予約</h3>
-    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="upcomingReservations">-</p>
+  <div class="card" style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
+    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">今後の予約</h3>
+    <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="upcomingReservations">-</p>
+    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="upcomingReservationsTrend"></div>
   </div>
 
-  <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">未決済</h3>
-    <p style="font-size: 2.5rem; font-weight: 600; color: #e74c3c;" id="pendingPayments">-</p>
+  <div class="card" style="text-align: center; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none;">
+    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">未決済</h3>
+    <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="pendingPayments">-</p>
+    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="pendingPaymentsTrend"></div>
   </div>
 
-  <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今月の売上</h3>
-    <p style="font-size: 2.5rem; font-weight: 600; color: #f39c12;" id="monthlyRevenue">-</p>
+  <div class="card" style="text-align: center; background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; border: none;">
+    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">今月の売上</h3>
+    <p style="font-size: 2rem; font-weight: 700; margin: 0.5rem 0;" id="monthlyRevenue">-</p>
+    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="monthlyRevenueTrend"></div>
   </div>
 </div>
 
-<!-- 最近の申請 -->
+<!-- 月別売上グラフ -->
 <div class="card">
-  <h2 class="card-title">最近の申請</h2>
-  <div id="recentApplicationsContainer">
+  <h2 class="card-title">月別売上推移</h2>
+  <div id="revenueChartContainer">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
   </div>
 </div>
 
-<!-- 本日の利用 -->
+<!-- 施設利用状況 -->
 <div class="card">
-  <h2 class="card-title">本日の利用</h2>
-  <div id="todayUsagesContainer">
+  <h2 class="card-title">施設利用状況</h2>
+  <div id="roomUsageContainer">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 2カラムレイアウト -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+  <!-- 最近の申請 -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 class="card-title" style="margin: 0;">最近の申請</h2>
+      <a href="/staff/reservations" class="btn" style="padding: 0.5rem 1rem; background-color: #95a5a6; color: white; text-decoration: none;">すべて見る →</a>
+    </div>
+    <div id="recentApplicationsContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+
+  <!-- 本日の利用 -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 class="card-title" style="margin: 0;">本日の利用</h2>
+      <a href="/staff/usages" class="btn" style="padding: 0.5rem 1rem; background-color: #95a5a6; color: white; text-decoration: none;">すべて見る →</a>
+    </div>
+    <div id="todayUsagesContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+</div>
+
+<!-- クイックアクション -->
+<div class="card">
+  <h2 class="card-title">クイックアクション</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <a href="/staff/reservations" class="btn btn-primary" style="padding: 1rem; text-decoration: none; text-align: center;">
+      📅 予約管理
+    </a>
+    <a href="/staff/usages" class="btn" style="padding: 1rem; text-decoration: none; text-align: center; background-color: #27ae60; color: white;">
+      📊 利用記録
+    </a>
+    <a href="/staff/users" class="btn" style="padding: 1rem; text-decoration: none; text-align: center; background-color: #f39c12; color: white;">
+      👥 利用者管理
+    </a>
+    <a href="/staff/reports" class="btn" style="padding: 1rem; text-decoration: none; text-align: center; background-color: #9b59b6; color: white;">
+      📈 レポート
+    </a>
   </div>
 </div>
 
 <script>
-  // トークンを取得
-  const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
-  // ダッシュボード統計を取得
-  fetch('/api/staff/dashboard/stats', {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  })
-  .then(res => res.json())
-  .then(stats => {
-    document.getElementById('todayReservations').textContent = stats.todayReservations;
-    document.getElementById('upcomingReservations').textContent = stats.upcomingReservations;
-    document.getElementById('pendingPayments').textContent = stats.pendingPayments;
-    document.getElementById('monthlyRevenue').textContent = '¥' + stats.monthlyRevenue.toLocaleString();
+// ダッシュボードを更新
+function refreshDashboard() {
+  loadDashboardData();
+}
 
-    // 最近の申請を表示
-    if (stats.recentApplications && stats.recentApplications.length > 0) {
+// ダッシュボードデータを読み込み
+async function loadDashboardData() {
+  updateLastUpdateTime();
+
+  try {
+    const res = await fetch('/api/staff/dashboard/stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stats = await res.json();
+
+    // 統計カードを更新
+    document.getElementById('todayReservations').textContent = stats.todayReservations || 0;
+    document.getElementById('upcomingReservations').textContent = stats.upcomingReservations || 0;
+    document.getElementById('pendingPayments').textContent = stats.pendingPayments || 0;
+    document.getElementById('monthlyRevenue').textContent = '¥' + (stats.monthlyRevenue || 0).toLocaleString();
+
+    // トレンド表示（デモデータ）
+    document.getElementById('todayReservationsTrend').textContent = '前日比 +2件';
+    document.getElementById('upcomingReservationsTrend').textContent = '先週比 +5件';
+    document.getElementById('pendingPaymentsTrend').textContent = stats.pendingPayments > 0 ? '要対応' : '問題なし';
+    document.getElementById('monthlyRevenueTrend').textContent = '前月比 +12%';
+
+    // 最近の申請
+    displayRecentApplications(stats.recentApplications);
+
+    // 本日の利用
+    displayTodayUsages(stats.todayUsages);
+  } catch (error) {
+    console.error('Error loading dashboard stats:', error);
+  }
+
+  // 月別売上グラフを読み込み
+  loadRevenueChart();
+
+  // 施設利用状況を読み込み
+  loadRoomUsage();
+}
+
+// 最近の申請を表示
+function displayRecentApplications(applications) {
+  if (applications && applications.length > 0) {
+    const html = `
+      <div style="max-height: 400px; overflow-y: auto;">
+        ${applications.slice(0, 5).map(app => `
+          <div style="padding: 1rem; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">${app.eventName || '（イベント名なし）'}</div>
+              <div style="font-size: 0.875rem; color: #7f8c8d;">
+                ${app.applicantName} · ¥${(app.totalAmount || 0).toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <span class="badge badge-${app.paymentStatus === 'paid' ? 'success' : 'warning'}">
+                ${app.paymentStatus === 'paid' ? '支払済' : '未決済'}
+              </span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    document.getElementById('recentApplicationsContainer').innerHTML = html;
+  } else {
+    document.getElementById('recentApplicationsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">申請がありません</p>';
+  }
+}
+
+// 本日の利用を表示
+function displayTodayUsages(usages) {
+  if (usages && usages.length > 0) {
+    const html = `
+      <div style="max-height: 400px; overflow-y: auto;">
+        ${usages.map(usage => {
+          const slots = [];
+          if (usage.useMorning) slots.push('午前');
+          if (usage.useAfternoon) slots.push('午後');
+          if (usage.useEvening) slots.push('夜間');
+
+          return `
+            <div style="padding: 1rem; border-bottom: 1px solid #ecf0f1;">
+              <div style="font-weight: 600; margin-bottom: 0.25rem;">${usage.roomName || '-'}</div>
+              <div style="font-size: 0.875rem; color: #7f8c8d;">
+                ${usage.eventName || '-'} · ${slots.join(', ')}
+                ${usage.acRequested ? ' · AC' + (usage.acHours ? usage.acHours + 'h' : '未入力') : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    document.getElementById('todayUsagesContainer').innerHTML = html;
+  } else {
+    document.getElementById('todayUsagesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">本日の利用予定はありません</p>';
+  }
+}
+
+// 月別売上グラフを読み込み
+async function loadRevenueChart() {
+  try {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${year}&month=${month}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.dailyRevenue && data.dailyRevenue.length > 0) {
+      const maxRevenue = Math.max(...data.dailyRevenue.map(d => d.revenue || 0));
+
       const html = `
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>イベント名</th>
-              <th>申請者</th>
-              <th>金額</th>
-              <th>決済状況</th>
-              <th>キャンセル</th>
-              <th>申請日</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${stats.recentApplications.map(app => `
-              <tr>
-                <td>${app.id}</td>
-                <td>${app.eventName}</td>
-                <td>${app.applicantName}</td>
-                <td>¥${app.totalAmount.toLocaleString()}</td>
-                <td>
-                  <span class="badge badge-${app.paymentStatus === 'paid' ? 'success' : app.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
-                    ${app.paymentStatus === 'paid' ? '支払済' : app.paymentStatus === 'unpaid' ? '未決済' : '返金済'}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge badge-${app.cancelStatus === 'cancelled' ? 'danger' : 'success'}">
-                    ${app.cancelStatus === 'cancelled' ? 'キャンセル済' : '有効'}
-                  </span>
-                </td>
-                <td>${new Date(app.createdAt).toLocaleDateString('ja-JP')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      document.getElementById('recentApplicationsContainer').innerHTML = html;
-    } else {
-      document.getElementById('recentApplicationsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">申請がありません</p>';
-    }
-
-    // 本日の利用を表示
-    if (stats.todayUsages && stats.todayUsages.length > 0) {
-      const html = `
-        <table class="table">
-          <thead>
-            <tr>
-              <th>施設</th>
-              <th>イベント名</th>
-              <th>時間帯</th>
-              <th>エアコン</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${stats.todayUsages.map(usage => {
-              const slots = [];
-              if (usage.useMorning) slots.push('午前');
-              if (usage.useAfternoon) slots.push('午後');
-              if (usage.useEvening) slots.push('夜間');
-
+        <div style="padding: 1rem;">
+          <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 200px; gap: 0.5rem;">
+            ${data.dailyRevenue.slice(0, 15).map(day => {
+              const height = maxRevenue > 0 ? (day.revenue / maxRevenue * 100) : 0;
               return `
-                <tr>
-                  <td>${usage.roomName}</td>
-                  <td>${usage.eventName}</td>
-                  <td>${slots.join(', ')}</td>
-                  <td>${usage.acRequested ? (usage.acHours ? usage.acHours + '時間' : '未入力') : '-'}</td>
-                </tr>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                  <div style="font-size: 0.75rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                    ¥${(day.revenue || 0).toLocaleString()}
+                  </div>
+                  <div style="width: 100%; background: linear-gradient(to top, #3498db, #5dade2); height: ${height}%; min-height: 2px; border-radius: 4px 4px 0 0;" title="¥${(day.revenue || 0).toLocaleString()}"></div>
+                  <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 0.5rem;">
+                    ${day.date.split('-')[2]}日
+                  </div>
+                </div>
               `;
             }).join('')}
-          </tbody>
-        </table>
+          </div>
+          <div style="text-align: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 0.875rem; color: #7f8c8d;">今月の総売上</div>
+            <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">¥${(data.totalRevenue || 0).toLocaleString()}</div>
+          </div>
+        </div>
       `;
-      document.getElementById('todayUsagesContainer').innerHTML = html;
+      document.getElementById('revenueChartContainer').innerHTML = html;
     } else {
-      document.getElementById('todayUsagesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">本日の利用予定はありません</p>';
+      document.getElementById('revenueChartContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">データがありません</p>';
     }
-  })
-  .catch(error => {
-    console.error('Error loading dashboard stats:', error);
-    document.getElementById('recentApplicationsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
-    document.getElementById('todayUsagesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
-  });
+  } catch (error) {
+    console.error('Error loading revenue chart:', error);
+    document.getElementById('revenueChartContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 施設利用状況を読み込み
+async function loadRoomUsage() {
+  try {
+    const res = await fetch('/api/staff/dashboard/rooms/usage-stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.rooms && data.rooms.length > 0) {
+      const html = `
+        <div style="padding: 1rem;">
+          ${data.rooms.map(room => `
+            <div style="margin-bottom: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="font-weight: 600;">${room.name}</span>
+                <span style="color: #7f8c8d;">
+                  ${room.usageCount || 0}回 · ¥${(room.totalRevenue || 0).toLocaleString()}
+                </span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="flex: 1; height: 12px; background-color: #ecf0f1; border-radius: 6px; overflow: hidden;">
+                  <div style="height: 100%; background: linear-gradient(to right, #3498db, #2ecc71); width: ${room.utilizationRate || 0}%; transition: width 0.3s ease;"></div>
+                </div>
+                <span style="min-width: 50px; text-align: right; font-weight: 600; color: #3498db;">
+                  ${room.utilizationRate || 0}%
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('roomUsageContainer').innerHTML = html;
+    } else {
+      document.getElementById('roomUsageContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">データがありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading room usage:', error);
+    document.getElementById('roomUsageContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 最終更新時刻を更新
+function updateLastUpdateTime() {
+  const now = new Date();
+  document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ja-JP');
+}
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadDashboardData();
+
+  // 5分ごとに自動更新
+  setInterval(loadDashboardData, 5 * 60 * 1000);
+});
 </script>

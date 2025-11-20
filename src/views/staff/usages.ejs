@@ -38,7 +38,10 @@
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
     <h2 class="card-title" style="margin: 0;" id="listTitle">利用記録一覧</h2>
-    <div id="totalCount" style="color: #7f8c8d;"></div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div id="totalCount" style="color: #7f8c8d;"></div>
+      <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
+    </div>
   </div>
   <div id="usagesContainer">
     <p style="text-align: center; color: #7f8c8d;">上のボタンから検索してください</p>
@@ -59,6 +62,7 @@
 <script>
 const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 let currentUsageId = null;
+let currentUsages = [];
 
 // 今日の日付を設定
 document.addEventListener('DOMContentLoaded', () => {
@@ -137,6 +141,9 @@ async function loadDateRangeUsages() {
 
 // 利用記録を表示
 function displayUsages(usages) {
+  // データをエクスポート用に保存
+  currentUsages = usages || [];
+
   if (usages && usages.length > 0) {
     document.getElementById('totalCount').textContent = `全 ${usages.length} 件`;
 
@@ -438,4 +445,69 @@ document.getElementById('editModal').addEventListener('click', (e) => {
     closeEditModal();
   }
 });
+
+// CSVエクスポート
+function exportToCSV() {
+  if (!currentUsages || currentUsages.length === 0) {
+    alert('エクスポートするデータがありません');
+    return;
+  }
+
+  // CSVヘッダー
+  const headers = ['日付', '施設', 'イベント名', '時間帯', 'AC要否', 'AC時間', '金額', '摘要'];
+
+  // CSVデータ行
+  const rows = currentUsages.map(usage => {
+    const slots = [];
+    if (usage.useMorning) slots.push('午前');
+    if (usage.useMiddayExtension) slots.push('正午延長');
+    if (usage.useAfternoon) slots.push('午後');
+    if (usage.useEveningExtension) slots.push('夕方延長');
+    if (usage.useEvening) slots.push('夜間');
+
+    const acRequired = usage.acRequested ? '要' : '不要';
+    const acHours = usage.acRequested ? (usage.acHours || '未入力') : '-';
+
+    return [
+      new Date(usage.date).toLocaleDateString('ja-JP'),
+      usage.roomName || '-',
+      usage.eventName || '-',
+      slots.join(' / '),
+      acRequired,
+      acHours,
+      usage.subtotalAmount || 0,
+      usage.remarks || '-'
+    ];
+  });
+
+  // CSV形式に変換
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // セル内にカンマや改行がある場合はダブルクォートで囲む
+      const cellStr = String(cell);
+      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+        return '"' + cellStr.replace(/"/g, '""') + '"';
+      }
+      return cellStr;
+    }).join(','))
+  ].join('\n');
+
+  // BOM付きUTF-8でエンコード（Excelで文字化けしないように）
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // ダウンロードリンクを作成してクリック
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const filename = `usages_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 </script>
