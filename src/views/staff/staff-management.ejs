@@ -1,0 +1,516 @@
+<div class="page-header">
+  <h1 class="page-title">職員管理</h1>
+  <p class="page-description">職員アカウントの作成、編集、削除（管理者のみ）</p>
+</div>
+
+<!-- 統計カード -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">総職員数</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="totalStaff">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">管理者</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #e74c3c;" id="adminCount">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">一般職員</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="staffCount">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">アクティブ</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #f39c12;" id="activeStaff">-</p>
+  </div>
+</div>
+
+<!-- 職員一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">職員一覧</h2>
+    <button onclick="showAddModal()" class="btn btn-primary">新規職員を追加</button>
+  </div>
+  <div id="staffContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 職員詳細モーダル -->
+<div id="detailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 900px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">職員詳細</h2>
+      <button onclick="closeDetailModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- 追加/編集モーダル -->
+<div id="formModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1001; overflow-y: auto;">
+  <div style="background-color: white; max-width: 700px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;" id="formModalTitle">職員を追加</h2>
+      <button onclick="closeFormModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="formContent"></div>
+  </div>
+</div>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+let currentStaffId = null;
+let editingStaffId = null;
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadStaff();
+});
+
+// 統計情報を読み込み
+async function loadStats() {
+  try {
+    const res = await fetch('/api/staff/management/staff/stats/summary', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stats = await res.json();
+
+    document.getElementById('totalStaff').textContent = stats.totalStaff || 0;
+    document.getElementById('adminCount').textContent = stats.adminCount || 0;
+    document.getElementById('staffCount').textContent = stats.staffCount || 0;
+    document.getElementById('activeStaff').textContent = stats.activeStaff || 0;
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// 職員一覧を読み込み
+async function loadStaff() {
+  try {
+    const res = await fetch('/api/staff/management/staff', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const staff = await res.json();
+
+    if (staff && staff.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>名前</th>
+                <th>メールアドレス</th>
+                <th>役割</th>
+                <th>職員コード</th>
+                <th>部署</th>
+                <th>役職</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${staff.map(s => `
+                <tr>
+                  <td>${s.id}</td>
+                  <td><strong>${s.name || '-'}</strong></td>
+                  <td>${s.email}</td>
+                  <td>
+                    <span class="badge badge-${s.role === 'admin' ? 'danger' : 'warning'}">
+                      ${s.role === 'admin' ? '管理者' : '職員'}
+                    </span>
+                  </td>
+                  <td>${s.staffCode || '-'}</td>
+                  <td>${s.department || '-'}</td>
+                  <td>${s.position || '-'}</td>
+                  <td>
+                    <span class="badge badge-${s.isActive ? 'success' : 'danger'}">
+                      ${s.isActive ? 'アクティブ' : '非アクティブ'}
+                    </span>
+                    ${s.staffStatus ? `
+                      <br><span class="badge badge-info" style="margin-top: 0.25rem;">
+                        ${s.staffStatus === 'active' ? '在職' : s.staffStatus === 'on_leave' ? '休職中' : '退職'}
+                      </span>
+                    ` : ''}
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <button onclick="showDetail(${s.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">詳細</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('staffContainer').innerHTML = html;
+    } else {
+      document.getElementById('staffContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">職員がいません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading staff:', error);
+    document.getElementById('staffContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 詳細を表示
+async function showDetail(id) {
+  currentStaffId = id;
+
+  try {
+    const res = await fetch(`/api/staff/management/staff/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const staff = await res.json();
+
+    const html = `
+      <div style="display: grid; gap: 1.5rem;">
+        <!-- 基本情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>職員ID:</strong> ${staff.id}
+            </div>
+            <div>
+              <strong>役割:</strong>
+              <span class="badge badge-${staff.role === 'admin' ? 'danger' : 'warning'}" style="margin-left: 0.5rem;">
+                ${staff.role === 'admin' ? '管理者' : '職員'}
+              </span>
+            </div>
+            <div>
+              <strong>名前:</strong> ${staff.name || '-'}
+            </div>
+            <div>
+              <strong>メールアドレス:</strong> ${staff.email}
+            </div>
+          </div>
+        </div>
+
+        <!-- 職員情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">職員情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>職員コード:</strong> ${staff.staffCode || '-'}
+            </div>
+            <div>
+              <strong>部署:</strong> ${staff.department || '-'}
+            </div>
+            <div>
+              <strong>役職:</strong> ${staff.position || '-'}
+            </div>
+            <div>
+              <strong>入職日:</strong> ${staff.hireDate ? new Date(staff.hireDate).toLocaleDateString('ja-JP') : '-'}
+            </div>
+            <div>
+              <strong>職員ステータス:</strong>
+              ${staff.staffStatus ? `
+                <span class="badge badge-${staff.staffStatus === 'active' ? 'success' : staff.staffStatus === 'on_leave' ? 'warning' : 'danger'}" style="margin-left: 0.5rem;">
+                  ${staff.staffStatus === 'active' ? '在職' : staff.staffStatus === 'on_leave' ? '休職中' : '退職'}
+                </span>
+              ` : '-'}
+            </div>
+          </div>
+        </div>
+
+        <!-- アカウント状態 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">アカウント状態</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>状態:</strong>
+              <span class="badge badge-${staff.isActive ? 'success' : 'danger'}" style="margin-left: 0.5rem;">
+                ${staff.isActive ? 'アクティブ' : '非アクティブ'}
+              </span>
+            </div>
+            <div>
+              <strong>メール認証:</strong>
+              <span class="badge badge-${staff.emailVerified ? 'success' : 'warning'}" style="margin-left: 0.5rem;">
+                ${staff.emailVerified ? '認証済' : '未認証'}
+              </span>
+            </div>
+            <div>
+              <strong>登録日:</strong> ${new Date(staff.createdAt).toLocaleString('ja-JP')}
+            </div>
+            <div>
+              <strong>最終ログイン:</strong> ${staff.lastLoginAt ? new Date(staff.lastLoginAt).toLocaleString('ja-JP') : '-'}
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作ボタン -->
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+          <button onclick="showEditModal(${staff.id})" class="btn btn-primary">情報を編集</button>
+          <button onclick="resetPassword(${staff.id})" class="btn" style="background-color: #f39c12; color: white;">パスワードリセット</button>
+          <button onclick="deleteStaff(${staff.id})" class="btn btn-danger">削除</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('detailContent').innerHTML = html;
+    document.getElementById('detailModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error loading staff detail:', error);
+    alert('詳細情報の読み込みに失敗しました');
+  }
+}
+
+// 詳細モーダルを閉じる
+function closeDetailModal() {
+  document.getElementById('detailModal').style.display = 'none';
+  currentStaffId = null;
+}
+
+// 追加モーダルを表示
+function showAddModal() {
+  editingStaffId = null;
+  document.getElementById('formModalTitle').textContent = '職員を追加';
+  showFormModal();
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  editingStaffId = id;
+  document.getElementById('formModalTitle').textContent = '職員情報を編集';
+
+  try {
+    const res = await fetch(`/api/staff/management/staff/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const staff = await res.json();
+    showFormModal(staff);
+  } catch (error) {
+    console.error('Error loading staff for edit:', error);
+    alert('職員情報の読み込みに失敗しました');
+  }
+}
+
+// フォームモーダルを表示
+function showFormModal(staff = null) {
+  const isEdit = !!staff;
+
+  const html = `
+    <form id="staffForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">名前 *</label>
+        <input type="text" id="staffName" value="${staff?.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス *</label>
+        <input type="email" id="staffEmail" value="${staff?.email || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      ${!isEdit ? `
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">パスワード *</label>
+          <input type="password" id="staffPassword" required minlength="6" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.25rem;">※ 6文字以上</p>
+        </div>
+      ` : ''}
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">役割 *</label>
+        <select id="staffRole" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="staff" ${staff?.role === 'staff' ? 'selected' : ''}>職員</option>
+          <option value="admin" ${staff?.role === 'admin' ? 'selected' : ''}>管理者</option>
+        </select>
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">職員情報</h3>
+        <div style="display: grid; gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">職員コード</label>
+            <input type="text" id="staffCode" value="${staff?.staffCode || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">部署</label>
+              <input type="text" id="department" value="${staff?.department || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">役職</label>
+              <input type="text" id="position" value="${staff?.position || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">入職日</label>
+              <input type="date" id="hireDate" value="${staff?.hireDate ? staff.hireDate.split('T')[0] : ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">職員ステータス</label>
+              <select id="staffStatus" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="active" ${staff?.staffStatus === 'active' ? 'selected' : ''}>在職</option>
+                <option value="on_leave" ${staff?.staffStatus === 'on_leave' ? 'selected' : ''}>休職中</option>
+                <option value="retired" ${staff?.staffStatus === 'retired' ? 'selected' : ''}>退職</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="isActive" ${staff?.isActive !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
+          <span style="font-weight: 500;">アカウントを有効化</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeFormModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">${isEdit ? '更新' : '追加'}</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('formContent').innerHTML = html;
+  document.getElementById('formModal').style.display = 'block';
+
+  // フォーム送信イベント
+  document.getElementById('staffForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveStaff();
+  });
+}
+
+// フォームモーダルを閉じる
+function closeFormModal() {
+  document.getElementById('formModal').style.display = 'none';
+  editingStaffId = null;
+}
+
+// 職員を保存
+async function saveStaff() {
+  const data = {
+    name: document.getElementById('staffName').value.trim(),
+    email: document.getElementById('staffEmail').value.trim(),
+    role: document.getElementById('staffRole').value,
+    staffCode: document.getElementById('staffCode').value.trim() || null,
+    department: document.getElementById('department').value.trim() || null,
+    position: document.getElementById('position').value.trim() || null,
+    hireDate: document.getElementById('hireDate').value || null,
+    staffStatus: document.getElementById('staffStatus').value,
+    isActive: document.getElementById('isActive').checked,
+  };
+
+  if (!editingStaffId) {
+    const password = document.getElementById('staffPassword').value;
+    if (!password || password.length < 6) {
+      alert('パスワードは6文字以上で入力してください');
+      return;
+    }
+    data.password = password;
+  }
+
+  if (!data.name || !data.email || !data.role) {
+    alert('名前、メールアドレス、役割は必須です');
+    return;
+  }
+
+  try {
+    const url = editingStaffId
+      ? `/api/staff/management/staff/${editingStaffId}`
+      : '/api/staff/management/staff';
+    const method = editingStaffId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert(editingStaffId ? '職員情報を更新しました' : '職員を追加しました');
+      closeFormModal();
+      closeDetailModal();
+      loadStaff();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving staff:', error);
+    alert('保存に失敗しました');
+  }
+}
+
+// パスワードリセット
+async function resetPassword(id) {
+  const newPassword = prompt('新しいパスワードを入力してください（6文字以上）:');
+  if (!newPassword) return;
+
+  if (newPassword.length < 6) {
+    alert('パスワードは6文字以上で入力してください');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/management/staff/${id}/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ newPassword })
+    });
+
+    if (res.ok) {
+      alert('パスワードをリセットしました');
+    } else {
+      const error = await res.json();
+      alert('リセットに失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    alert('リセットに失敗しました');
+  }
+}
+
+// 職員を削除
+async function deleteStaff(id) {
+  if (!confirm('この職員を削除しますか？\n※論理削除されるため、後で復元可能です')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/management/staff/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      alert('職員を削除しました');
+      closeDetailModal();
+      loadStaff();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting staff:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target.id === 'detailModal') {
+    closeDetailModal();
+  }
+});
+
+document.getElementById('formModal').addEventListener('click', (e) => {
+  if (e.target.id === 'formModal') {
+    closeFormModal();
+  }
+});
+</script>

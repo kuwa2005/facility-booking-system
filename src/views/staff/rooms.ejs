@@ -1,0 +1,292 @@
+<div class="page-header">
+  <h1 class="page-title">施設管理</h1>
+  <p class="page-description">施設・部屋の登録、編集、削除</p>
+</div>
+
+<!-- 部屋一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">施設一覧</h2>
+    <button onclick="showAddModal()" class="btn btn-primary">新規施設を追加</button>
+  </div>
+  <div id="roomsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 追加/編集モーダル -->
+<div id="formModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 700px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;" id="modalTitle">施設を追加</h2>
+      <button onclick="closeFormModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="formContent"></div>
+  </div>
+</div>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+let editingRoomId = null;
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadRooms();
+});
+
+// 部屋一覧を読み込み
+async function loadRooms() {
+  try {
+    const res = await fetch('/api/staff/facilities/rooms', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const rooms = await res.json();
+
+    if (rooms && rooms.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>施設名</th>
+                <th>定員</th>
+                <th>午前料金</th>
+                <th>午後料金</th>
+                <th>夜間料金</th>
+                <th>正午延長</th>
+                <th>夕方延長</th>
+                <th>空調(時間)</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rooms.map(room => `
+                <tr>
+                  <td>${room.id}</td>
+                  <td><strong>${room.name}</strong></td>
+                  <td>${room.capacity}名</td>
+                  <td>¥${(room.basePriceMorning || 0).toLocaleString()}</td>
+                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString()}</td>
+                  <td>¥${(room.basePriceEvening || 0).toLocaleString()}</td>
+                  <td>¥${(room.extensionPriceMidday || 0).toLocaleString()}</td>
+                  <td>¥${(room.extensionPriceEvening || 0).toLocaleString()}</td>
+                  <td>¥${(room.acPricePerHour || 0).toLocaleString()}</td>
+                  <td>
+                    <span class="badge badge-${room.isActive ? 'success' : 'danger'}">
+                      ${room.isActive ? '有効' : '無効'}
+                    </span>
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <button onclick="showEditModal(${room.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
+                    <button onclick="deleteRoom(${room.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('roomsContainer').innerHTML = html;
+    } else {
+      document.getElementById('roomsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">施設がありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading rooms:', error);
+    document.getElementById('roomsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 追加モーダルを表示
+function showAddModal() {
+  editingRoomId = null;
+  document.getElementById('modalTitle').textContent = '施設を追加';
+  showFormModal();
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  editingRoomId = id;
+  document.getElementById('modalTitle').textContent = '施設を編集';
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const rooms = await res.json();
+    const room = rooms.find(r => r.id === id);
+
+    if (!room) {
+      alert('施設が見つかりませんでした');
+      return;
+    }
+
+    showFormModal(room);
+  } catch (error) {
+    console.error('Error loading room:', error);
+    alert('施設情報の読み込みに失敗しました');
+  }
+}
+
+// フォームモーダルを表示
+function showFormModal(room = null) {
+  const html = `
+    <form id="roomForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">施設名 *</label>
+        <input type="text" id="roomName" value="${room?.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">定員 *</label>
+        <input type="number" id="roomCapacity" value="${room?.capacity || ''}" required min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">基本料金</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午前</label>
+            <input type="number" id="basePriceMorning" value="${room?.basePriceMorning || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午後</label>
+            <input type="number" id="basePriceAfternoon" value="${room?.basePriceAfternoon || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夜間</label>
+            <input type="number" id="basePriceEvening" value="${room?.basePriceEvening || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">延長料金</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">正午延長</label>
+            <input type="number" id="extensionPriceMidday" value="${room?.extensionPriceMidday || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夕方延長</label>
+            <input type="number" id="extensionPriceEvening" value="${room?.extensionPriceEvening || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">空調料金（時間あたり）</label>
+        <input type="number" id="acPricePerHour" value="${room?.acPricePerHour || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="isActive" ${room?.isActive !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
+          <span style="font-weight: 500;">有効な施設として表示</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeFormModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">${editingRoomId ? '更新' : '追加'}</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('formContent').innerHTML = html;
+  document.getElementById('formModal').style.display = 'block';
+
+  // フォーム送信イベント
+  document.getElementById('roomForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveRoom();
+  });
+}
+
+// フォームモーダルを閉じる
+function closeFormModal() {
+  document.getElementById('formModal').style.display = 'none';
+  editingRoomId = null;
+}
+
+// 施設を保存
+async function saveRoom() {
+  const data = {
+    name: document.getElementById('roomName').value.trim(),
+    capacity: parseInt(document.getElementById('roomCapacity').value),
+    basePriceMorning: parseInt(document.getElementById('basePriceMorning').value) || 0,
+    basePriceAfternoon: parseInt(document.getElementById('basePriceAfternoon').value) || 0,
+    basePriceEvening: parseInt(document.getElementById('basePriceEvening').value) || 0,
+    extensionPriceMidday: parseInt(document.getElementById('extensionPriceMidday').value) || 0,
+    extensionPriceEvening: parseInt(document.getElementById('extensionPriceEvening').value) || 0,
+    acPricePerHour: parseInt(document.getElementById('acPricePerHour').value) || 0,
+    isActive: document.getElementById('isActive').checked,
+  };
+
+  if (!data.name || !data.capacity) {
+    alert('施設名と定員は必須です');
+    return;
+  }
+
+  try {
+    const url = editingRoomId
+      ? `/api/staff/facilities/rooms/${editingRoomId}`
+      : '/api/staff/facilities/rooms';
+    const method = editingRoomId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert(editingRoomId ? '施設を更新しました' : '施設を追加しました');
+      closeFormModal();
+      loadRooms();
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving room:', error);
+    alert('保存に失敗しました');
+  }
+}
+
+// 施設を削除
+async function deleteRoom(id) {
+  if (!confirm('この施設を削除しますか？\n※論理削除されるため、後で復元可能です')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      alert('施設を削除しました');
+      loadRooms();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting room:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('formModal').addEventListener('click', (e) => {
+  if (e.target.id === 'formModal') {
+    closeFormModal();
+  }
+});
+</script>

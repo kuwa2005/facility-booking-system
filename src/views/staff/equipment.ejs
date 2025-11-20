@@ -1,0 +1,348 @@
+<div class="page-header">
+  <h1 class="page-title">設備管理</h1>
+  <p class="page-description">設備の登録、編集、削除</p>
+</div>
+
+<!-- 設備一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">設備一覧</h2>
+    <button onclick="showAddModal()" class="btn btn-primary">新規設備を追加</button>
+  </div>
+
+  <!-- カテゴリー別タブ -->
+  <div style="display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 2px solid #ecf0f1;">
+    <button onclick="filterByCategory('all')" id="tab-all" class="category-tab active" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid #3498db; font-weight: 600;">
+      すべて
+    </button>
+    <button onclick="filterByCategory('stage')" id="tab-stage" class="category-tab" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+      舞台
+    </button>
+    <button onclick="filterByCategory('lighting')" id="tab-lighting" class="category-tab" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+      照明
+    </button>
+    <button onclick="filterByCategory('sound')" id="tab-sound" class="category-tab" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+      音響
+    </button>
+    <button onclick="filterByCategory('other')" id="tab-other" class="category-tab" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+      その他
+    </button>
+  </div>
+
+  <div id="equipmentContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 追加/編集モーダル -->
+<div id="formModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;" id="modalTitle">設備を追加</h2>
+      <button onclick="closeFormModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="formContent"></div>
+  </div>
+</div>
+
+<style>
+  .category-tab:hover {
+    background-color: #f8f9fa;
+  }
+  .category-tab.active {
+    border-bottom-color: #3498db !important;
+    font-weight: 600;
+    color: #3498db;
+  }
+</style>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+let editingEquipmentId = null;
+let allEquipment = [];
+let currentCategory = 'all';
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadEquipment();
+});
+
+// 設備一覧を読み込み
+async function loadEquipment() {
+  try {
+    const res = await fetch('/api/staff/facilities/equipment', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    allEquipment = await res.json();
+    displayEquipment();
+  } catch (error) {
+    console.error('Error loading equipment:', error);
+    document.getElementById('equipmentContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// カテゴリーでフィルター
+function filterByCategory(category) {
+  currentCategory = category;
+
+  // タブのアクティブ状態を更新
+  document.querySelectorAll('.category-tab').forEach(tab => {
+    tab.classList.remove('active');
+    tab.style.borderBottomColor = 'transparent';
+    tab.style.fontWeight = 'normal';
+    tab.style.color = '';
+  });
+  const activeTab = document.getElementById(`tab-${category}`);
+  activeTab.classList.add('active');
+  activeTab.style.borderBottomColor = '#3498db';
+  activeTab.style.fontWeight = '600';
+  activeTab.style.color = '#3498db';
+
+  displayEquipment();
+}
+
+// 設備を表示
+function displayEquipment() {
+  const filtered = currentCategory === 'all'
+    ? allEquipment
+    : allEquipment.filter(eq => eq.category === currentCategory);
+
+  if (filtered && filtered.length > 0) {
+    const categoryLabel = {
+      stage: '舞台',
+      lighting: '照明',
+      sound: '音響',
+      other: 'その他'
+    };
+
+    const priceTypeLabel = {
+      per_slot: '時間帯ごと',
+      flat: '固定料金',
+      free: '無料'
+    };
+
+    const html = `
+      <div style="overflow-x: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>カテゴリー</th>
+              <th>設備名</th>
+              <th>料金タイプ</th>
+              <th>単価</th>
+              <th>最大数量</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(eq => `
+              <tr>
+                <td>${eq.id}</td>
+                <td>
+                  <span class="badge badge-${eq.category === 'stage' ? 'danger' : eq.category === 'lighting' ? 'warning' : eq.category === 'sound' ? 'info' : 'secondary'}" style="${eq.category === 'other' ? 'background-color: #95a5a6;' : ''}">
+                    ${categoryLabel[eq.category] || eq.category}
+                  </span>
+                </td>
+                <td><strong>${eq.name}</strong></td>
+                <td>${priceTypeLabel[eq.priceType] || eq.priceType}</td>
+                <td>${eq.priceType === 'free' ? '-' : '¥' + (eq.unitPrice || 0).toLocaleString()}</td>
+                <td>${eq.maxQuantity || '-'}個</td>
+                <td>
+                  <span class="badge badge-${eq.enabled ? 'success' : 'danger'}">
+                    ${eq.enabled ? '有効' : '無効'}
+                  </span>
+                </td>
+                <td style="white-space: nowrap;">
+                  <button onclick="showEditModal(${eq.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
+                  <button onclick="deleteEquipment(${eq.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('equipmentContainer').innerHTML = html;
+  } else {
+    document.getElementById('equipmentContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">設備がありません</p>';
+  }
+}
+
+// 追加モーダルを表示
+function showAddModal() {
+  editingEquipmentId = null;
+  document.getElementById('modalTitle').textContent = '設備を追加';
+  showFormModal();
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  editingEquipmentId = id;
+  document.getElementById('modalTitle').textContent = '設備を編集';
+
+  const equipment = allEquipment.find(eq => eq.id === id);
+  if (!equipment) {
+    alert('設備が見つかりませんでした');
+    return;
+  }
+
+  showFormModal(equipment);
+}
+
+// フォームモーダルを表示
+function showFormModal(equipment = null) {
+  const html = `
+    <form id="equipmentForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">カテゴリー *</label>
+        <select id="category" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="">選択してください</option>
+          <option value="stage" ${equipment?.category === 'stage' ? 'selected' : ''}>舞台</option>
+          <option value="lighting" ${equipment?.category === 'lighting' ? 'selected' : ''}>照明</option>
+          <option value="sound" ${equipment?.category === 'sound' ? 'selected' : ''}>音響</option>
+          <option value="other" ${equipment?.category === 'other' ? 'selected' : ''}>その他</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">設備名 *</label>
+        <input type="text" id="equipmentName" value="${equipment?.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">料金タイプ *</label>
+        <select id="priceType" required onchange="togglePriceInput()" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="">選択してください</option>
+          <option value="per_slot" ${equipment?.priceType === 'per_slot' ? 'selected' : ''}>時間帯ごと</option>
+          <option value="flat" ${equipment?.priceType === 'flat' ? 'selected' : ''}>固定料金</option>
+          <option value="free" ${equipment?.priceType === 'free' ? 'selected' : ''}>無料</option>
+        </select>
+      </div>
+
+      <div id="priceInputContainer" style="${equipment?.priceType === 'free' ? 'display: none;' : ''}">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">単価（円）</label>
+        <input type="number" id="unitPrice" value="${equipment?.unitPrice || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">最大数量</label>
+        <input type="number" id="maxQuantity" value="${equipment?.maxQuantity || 1}" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="enabled" ${equipment?.enabled !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
+          <span style="font-weight: 500;">有効な設備として表示</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeFormModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">${editingEquipmentId ? '更新' : '追加'}</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('formContent').innerHTML = html;
+  document.getElementById('formModal').style.display = 'block';
+
+  // フォーム送信イベント
+  document.getElementById('equipmentForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveEquipment();
+  });
+}
+
+// 料金入力欄の表示/非表示を切り替え
+function togglePriceInput() {
+  const priceType = document.getElementById('priceType').value;
+  const container = document.getElementById('priceInputContainer');
+  container.style.display = priceType === 'free' ? 'none' : 'block';
+}
+
+// フォームモーダルを閉じる
+function closeFormModal() {
+  document.getElementById('formModal').style.display = 'none';
+  editingEquipmentId = null;
+}
+
+// 設備を保存
+async function saveEquipment() {
+  const priceType = document.getElementById('priceType').value;
+  const data = {
+    category: document.getElementById('category').value,
+    name: document.getElementById('equipmentName').value.trim(),
+    priceType,
+    unitPrice: priceType === 'free' ? 0 : parseInt(document.getElementById('unitPrice').value) || 0,
+    maxQuantity: parseInt(document.getElementById('maxQuantity').value) || 1,
+    enabled: document.getElementById('enabled').checked,
+  };
+
+  if (!data.category || !data.name || !data.priceType) {
+    alert('カテゴリー、設備名、料金タイプは必須です');
+    return;
+  }
+
+  try {
+    const url = editingEquipmentId
+      ? `/api/staff/facilities/equipment/${editingEquipmentId}`
+      : '/api/staff/facilities/equipment';
+    const method = editingEquipmentId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert(editingEquipmentId ? '設備を更新しました' : '設備を追加しました');
+      closeFormModal();
+      loadEquipment();
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving equipment:', error);
+    alert('保存に失敗しました');
+  }
+}
+
+// 設備を削除
+async function deleteEquipment(id) {
+  if (!confirm('この設備を削除しますか？\n※論理削除されるため、後で復元可能です')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/equipment/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      alert('設備を削除しました');
+      loadEquipment();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting equipment:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('formModal').addEventListener('click', (e) => {
+  if (e.target.id === 'formModal') {
+    closeFormModal();
+  }
+});
+</script>

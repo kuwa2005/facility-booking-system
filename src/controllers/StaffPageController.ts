@@ -132,6 +132,32 @@ export class StaffPageController {
   }
 
   /**
+   * 設備管理ページ
+   */
+  static async equipment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('equipment.ejs', {
+        title: '設備管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 休館日管理ページ
+   */
+  static async closedDates(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('closed-dates.ejs', {
+        title: '休館日管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * 職員管理ページ（管理者のみ）
    */
   static async staffManagement(req: Request, res: Response, next: NextFunction): Promise<void> {

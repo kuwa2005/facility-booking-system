@@ -28,6 +28,8 @@ router.get('/users', StaffPageController.users);
 
 // 施設管理
 router.get('/facilities/rooms', StaffPageController.rooms);
+router.get('/facilities/equipment', StaffPageController.equipment);
+router.get('/facilities/closed-dates', StaffPageController.closedDates);
 
 // 職員管理（管理者のみ）
 router.get('/management', requireAdmin, StaffPageController.staffManagement);
