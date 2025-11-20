@@ -12,6 +12,7 @@ import { AnnouncementController } from '../controllers/AnnouncementController';
 import { MessageController } from '../controllers/MessageController';
 import { UserNoteController } from '../controllers/UserNoteController';
 import { NotificationController, notificationController } from '../controllers/NotificationController';
+import { SystemSettingsController } from '../controllers/SystemSettingsController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -212,5 +213,12 @@ router.post('/management/staff', StaffManagementController.createStaff);
 router.patch('/management/staff/:id', StaffManagementController.updateStaff);
 router.delete('/management/staff/:id', StaffManagementController.deleteStaff);
 router.post('/management/staff/:id/reset-password', StaffManagementController.resetStaffPassword);
+
+// ===== システム設定（管理者のみ） =====
+router.get('/settings', SystemSettingsController.getAllSettings);
+router.post('/settings/basic', SystemSettingsController.updateBasicSettings);
+router.post('/settings/reservation', SystemSettingsController.updateReservationSettings);
+router.post('/settings/email', SystemSettingsController.updateEmailSettings);
+router.post('/settings/business-hours', SystemSettingsController.updateBusinessHours);
 
 export default router;

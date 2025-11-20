@@ -169,6 +169,7 @@ const token = document.cookie.split('; ').find(row => row.startsWith('token='))?
 
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
   loadBusinessHours();
 
   // フォーム送信イベント
@@ -187,6 +188,66 @@ document.addEventListener('DOMContentLoaded', () => {
     saveEmailSettings();
   });
 });
+
+// 設定を読み込み
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/staff/settings', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const settings = await res.json();
+
+    // 基本設定
+    if (settings.site_name) {
+      document.getElementById('siteName').value = settings.site_name.value;
+    }
+    if (settings.admin_email) {
+      document.getElementById('adminEmail').value = settings.admin_email.value;
+    }
+    if (settings.contact_phone) {
+      document.getElementById('contactPhone').value = settings.contact_phone.value;
+    }
+    if (settings.maintenance_mode) {
+      document.getElementById('maintenanceMode').checked = settings.maintenance_mode.value;
+    }
+
+    // 予約設定
+    if (settings.reservation_advance_days) {
+      document.getElementById('maxReservationDays').value = settings.reservation_advance_days.value;
+    }
+    if (settings.reservation_deadline_days) {
+      document.getElementById('reservationDeadlineDays').value = settings.reservation_deadline_days.value;
+    }
+    if (settings.cancellation_fee_days) {
+      document.getElementById('cancellationFeeDays').value = settings.cancellation_fee_days.value;
+    }
+    if (settings.cancellation_fee_rate) {
+      document.getElementById('cancellationFeeRate').value = settings.cancellation_fee_rate.value;
+    }
+    if (settings.require_approval) {
+      document.getElementById('requireApproval').checked = settings.require_approval.value;
+    }
+
+    // メール設定
+    if (settings.smtp_host) {
+      document.getElementById('smtpHost').value = settings.smtp_host.value;
+    }
+    if (settings.smtp_port) {
+      document.getElementById('smtpPort').value = settings.smtp_port.value;
+    }
+    if (settings.email_from_name) {
+      document.getElementById('emailFromName').value = settings.email_from_name.value;
+    }
+    if (settings.email_from_address) {
+      document.getElementById('emailFromAddress').value = settings.email_from_address.value;
+    }
+    if (settings.email_enabled) {
+      document.getElementById('emailEnabled').checked = settings.email_enabled.value;
+    }
+  } catch (error) {
+    console.error('Error loading settings:', error);
+  }
+}
 
 // 営業時間テーブルを読み込み
 function loadBusinessHours() {
@@ -219,7 +280,7 @@ function loadBusinessHours() {
 }
 
 // 基本設定を保存
-function saveBasicSettings() {
+async function saveBasicSettings() {
   const settings = {
     siteName: document.getElementById('siteName').value,
     adminEmail: document.getElementById('adminEmail').value,
@@ -227,12 +288,30 @@ function saveBasicSettings() {
     maintenanceMode: document.getElementById('maintenanceMode').checked
   };
 
-  console.log('Saving basic settings:', settings);
-  alert('基本設定を保存しました（デモモード）');
+  try {
+    const res = await fetch('/api/staff/settings/basic', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    });
+
+    if (res.ok) {
+      alert('基本設定を保存しました');
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving basic settings:', error);
+    alert('保存に失敗しました');
+  }
 }
 
 // 予約設定を保存
-function saveReservationSettings() {
+async function saveReservationSettings() {
   const settings = {
     maxReservationDays: parseInt(document.getElementById('maxReservationDays').value),
     reservationDeadlineDays: parseInt(document.getElementById('reservationDeadlineDays').value),
@@ -241,12 +320,30 @@ function saveReservationSettings() {
     requireApproval: document.getElementById('requireApproval').checked
   };
 
-  console.log('Saving reservation settings:', settings);
-  alert('予約設定を保存しました（デモモード）');
+  try {
+    const res = await fetch('/api/staff/settings/reservation', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    });
+
+    if (res.ok) {
+      alert('予約設定を保存しました');
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving reservation settings:', error);
+    alert('保存に失敗しました');
+  }
 }
 
 // メール設定を保存
-function saveEmailSettings() {
+async function saveEmailSettings() {
   const settings = {
     smtpHost: document.getElementById('smtpHost').value,
     smtpPort: parseInt(document.getElementById('smtpPort').value),
@@ -255,8 +352,26 @@ function saveEmailSettings() {
     emailEnabled: document.getElementById('emailEnabled').checked
   };
 
-  console.log('Saving email settings:', settings);
-  alert('メール設定を保存しました（デモモード）');
+  try {
+    const res = await fetch('/api/staff/settings/email', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    });
+
+    if (res.ok) {
+      alert('メール設定を保存しました');
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving email settings:', error);
+    alert('保存に失敗しました');
+  }
 }
 
 // テストメールを送信
