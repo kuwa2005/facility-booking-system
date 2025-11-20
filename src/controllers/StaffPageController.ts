@@ -158,6 +158,71 @@ export class StaffPageController {
   }
 
   /**
+   * お知らせ管理ページ
+   */
+  static async announcements(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('announcements.ejs', {
+        title: 'お知らせ管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * メッセージ管理ページ
+   */
+  static async messages(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('messages.ejs', {
+        title: 'メッセージ管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 物販管理ページ
+   */
+  static async products(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('products.ejs', {
+        title: '物販管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 代行予約ページ
+   */
+  static async proxyReservations(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('proxy-reservations.ejs', {
+        title: '代行予約',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * レポートページ
+   */
+  static async reports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      this.renderWithLayout('reports.ejs', {
+        title: 'レポート',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * 職員管理ページ（管理者のみ）
    */
   static async staffManagement(req: Request, res: Response, next: NextFunction): Promise<void> {

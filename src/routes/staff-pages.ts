@@ -31,6 +31,15 @@ router.get('/facilities/rooms', StaffPageController.rooms);
 router.get('/facilities/equipment', StaffPageController.equipment);
 router.get('/facilities/closed-dates', StaffPageController.closedDates);
 
+// コミュニケーション
+router.get('/announcements', StaffPageController.announcements);
+router.get('/messages', StaffPageController.messages);
+
+// 追加機能
+router.get('/products', StaffPageController.products);
+router.get('/proxy-reservations', StaffPageController.proxyReservations);
+router.get('/reports', StaffPageController.reports);
+
 // 職員管理（管理者のみ）
 router.get('/management', requireAdmin, StaffPageController.staffManagement);
 

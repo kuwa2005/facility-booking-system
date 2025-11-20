@@ -1,0 +1,273 @@
+<div class="page-header">
+  <h1 class="page-title">レポート・統計</h1>
+  <p class="page-description">売上、利用状況、統計データの確認</p>
+</div>
+
+<!-- レポート選択 -->
+<div class="card">
+  <h2 class="card-title">レポートを選択</h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+    <button onclick="showRevenueReport()" class="btn btn-primary" style="padding: 1.5rem; text-align: left;">
+      <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">💰 売上レポート</div>
+      <div style="font-size: 0.875rem; opacity: 0.9;">月別・期間別の売上統計</div>
+    </button>
+    <button onclick="showRoomUsageReport()" class="btn" style="padding: 1.5rem; text-align: left; background-color: #27ae60; color: white;">
+      <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">🏢 施設利用統計</div>
+      <div style="font-size: 0.875rem; opacity: 0.9;">部屋ごとの利用状況</div>
+    </button>
+    <button onclick="showUserStatistics()" class="btn" style="padding: 1.5rem; text-align: left; background-color: #f39c12; color: white;">
+      <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">👥 利用者統計</div>
+      <div style="font-size: 0.875rem; opacity: 0.9;">登録者数・アクティビティ</div>
+    </button>
+    <button onclick="showDashboardStats()" class="btn" style="padding: 1.5rem; text-align: left; background-color: #9b59b6; color: white;">
+      <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">📊 ダッシュボード統計</div>
+      <div style="font-size: 0.5rem; opacity: 0.9;">リアルタイム統計情報</div>
+    </button>
+  </div>
+</div>
+
+<!-- レポート表示エリア -->
+<div id="reportContainer"></div>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
+// 売上レポートを表示
+async function showRevenueReport() {
+  document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #7f8c8d;">読み込み中...</p></div>';
+
+  try {
+    // 現在の年月を取得
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${currentYear}&month=${currentMonth}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const html = `
+      <div class="card">
+        <h2 class="card-title">💰 売上レポート（${currentYear}年${currentMonth}月）</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+          <div style="padding: 1.5rem; background-color: #d4edda; border-radius: 8px;">
+            <div style="font-size: 0.875rem; color: #155724; margin-bottom: 0.5rem;">総売上</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #155724;">¥${(data.totalRevenue || 0).toLocaleString()}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #d1ecf1; border-radius: 8px;">
+            <div style="font-size: 0.875rem; color: #0c5460; margin-bottom: 0.5rem;">予約件数</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #0c5460;">${data.totalReservations || 0}件</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #fff3cd; border-radius: 8px;">
+            <div style="font-size: 0.875rem; color: #856404; margin-bottom: 0.5rem;">平均単価</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #856404;">¥${data.averageAmount ? Math.round(data.averageAmount).toLocaleString() : 0}</div>
+          </div>
+        </div>
+
+        ${data.dailyRevenue && data.dailyRevenue.length > 0 ? `
+          <h3 style="margin-bottom: 1rem;">日別売上</h3>
+          <div style="overflow-x: auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>売上</th>
+                  <th>予約件数</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.dailyRevenue.map(day => `
+                  <tr>
+                    <td>${day.date}</td>
+                    <td>¥${(day.revenue || 0).toLocaleString()}</td>
+                    <td>${day.count || 0}件</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<p style="text-align: center; color: #7f8c8d; margin-top: 2rem;">データがありません</p>'}
+      </div>
+    `;
+
+    document.getElementById('reportContainer').innerHTML = html;
+  } catch (error) {
+    console.error('Error loading revenue report:', error);
+    document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p></div>';
+  }
+}
+
+// 施設利用統計を表示
+async function showRoomUsageReport() {
+  document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #7f8c8d;">読み込み中...</p></div>';
+
+  try {
+    const res = await fetch('/api/staff/dashboard/rooms/usage-stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const html = `
+      <div class="card">
+        <h2 class="card-title">🏢 施設利用統計</h2>
+        ${data.rooms && data.rooms.length > 0 ? `
+          <div style="overflow-x: auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>施設名</th>
+                  <th>利用回数</th>
+                  <th>総売上</th>
+                  <th>利用率</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.rooms.map(room => `
+                  <tr>
+                    <td><strong>${room.name}</strong></td>
+                    <td>${room.usageCount || 0}回</td>
+                    <td>¥${(room.totalRevenue || 0).toLocaleString()}</td>
+                    <td>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="flex: 1; height: 8px; background-color: #ecf0f1; border-radius: 4px; overflow: hidden;">
+                          <div style="height: 100%; background-color: #3498db; width: ${room.utilizationRate || 0}%;"></div>
+                        </div>
+                        <span style="min-width: 50px; text-align: right;">${room.utilizationRate || 0}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<p style="text-align: center; color: #7f8c8d; margin-top: 2rem;">データがありません</p>'}
+      </div>
+    `;
+
+    document.getElementById('reportContainer').innerHTML = html;
+  } catch (error) {
+    console.error('Error loading room usage report:', error);
+    document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p></div>';
+  }
+}
+
+// 利用者統計を表示
+async function showUserStatistics() {
+  document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #7f8c8d;">読み込み中...</p></div>';
+
+  try {
+    const res = await fetch('/api/staff/users/stats/summary', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const html = `
+      <div class="card">
+        <h2 class="card-title">👥 利用者統計</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+          <div style="padding: 1.5rem; background-color: #d1ecf1; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #0c5460; margin-bottom: 0.5rem;">総利用者数</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #0c5460;">${data.totalUsers || 0}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #d4edda; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #155724; margin-bottom: 0.5rem;">アクティブ</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #155724;">${data.activeUsers || 0}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #fff3cd; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #856404; margin-bottom: 0.5rem;">今月の新規</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #856404;">${data.newUsersThisMonth || 0}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #e7d1f5; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #6f2c91; margin-bottom: 0.5rem;">メール認証済</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #6f2c91;">${data.verifiedUsers || 0}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('reportContainer').innerHTML = html;
+  } catch (error) {
+    console.error('Error loading user statistics:', error);
+    document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p></div>';
+  }
+}
+
+// ダッシュボード統計を表示
+async function showDashboardStats() {
+  document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #7f8c8d;">読み込み中...</p></div>';
+
+  try {
+    const res = await fetch('/api/staff/dashboard/stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    const html = `
+      <div class="card">
+        <h2 class="card-title">📊 ダッシュボード統計</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+          <div style="padding: 1.5rem; background-color: #d1ecf1; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #0c5460; margin-bottom: 0.5rem;">本日の予約</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #0c5460;">${data.todayReservations || 0}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #d4edda; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #155724; margin-bottom: 0.5rem;">今後の予約</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #155724;">${data.upcomingReservations || 0}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #f8d7da; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #721c24; margin-bottom: 0.5rem;">未決済</div>
+            <div style="font-size: 2.5rem; font-weight: 600; color: #721c24;">${data.pendingPayments || 0}</div>
+          </div>
+          <div style="padding: 1.5rem; background-color: #fff3cd; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #856404; margin-bottom: 0.5rem;">今月の売上</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #856404;">¥${(data.monthlyRevenue || 0).toLocaleString()}</div>
+          </div>
+        </div>
+
+        ${data.recentApplications && data.recentApplications.length > 0 ? `
+          <h3 style="margin-bottom: 1rem;">最近の申請</h3>
+          <div style="overflow-x: auto;">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>イベント名</th>
+                  <th>申請者</th>
+                  <th>金額</th>
+                  <th>決済状況</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.recentApplications.slice(0, 10).map(app => `
+                  <tr>
+                    <td>${app.id}</td>
+                    <td>${app.eventName}</td>
+                    <td>${app.applicantName}</td>
+                    <td>¥${(app.totalAmount || 0).toLocaleString()}</td>
+                    <td>
+                      <span class="badge badge-${app.paymentStatus === 'paid' ? 'success' : app.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
+                        ${app.paymentStatus === 'paid' ? '支払済' : app.paymentStatus === 'unpaid' ? '未決済' : '返金済'}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    document.getElementById('reportContainer').innerHTML = html;
+  } catch (error) {
+    console.error('Error loading dashboard stats:', error);
+    document.getElementById('reportContainer').innerHTML = '<div class="card"><p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p></div>';
+  }
+}
+
+// 初期表示
+document.addEventListener('DOMContentLoaded', () => {
+  showDashboardStats();
+});
+</script>

@@ -283,6 +283,19 @@
           <a href="/staff/facilities/closed-dates" class="<%= currentPath === '/staff/facilities/closed-dates' ? 'active' : '' %>">休館日管理</a>
         </div>
 
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">コミュニケーション</div>
+          <a href="/staff/announcements" class="<%= currentPath === '/staff/announcements' ? 'active' : '' %>">お知らせ管理</a>
+          <a href="/staff/messages" class="<%= currentPath === '/staff/messages' ? 'active' : '' %>">メッセージ管理</a>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">追加機能</div>
+          <a href="/staff/products" class="<%= currentPath === '/staff/products' ? 'active' : '' %>">物販管理</a>
+          <a href="/staff/proxy-reservations" class="<%= currentPath === '/staff/proxy-reservations' ? 'active' : '' %>">代行予約</a>
+          <a href="/staff/reports" class="<%= currentPath === '/staff/reports' ? 'active' : '' %>">レポート</a>
+        </div>
+
         <% if (user && user.role === 'admin') { %>
         <div class="sidebar-section">
           <div class="sidebar-section-title">管理者メニュー</div>

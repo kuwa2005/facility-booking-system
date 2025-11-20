@@ -1,0 +1,327 @@
+<div class="page-header">
+  <h1 class="page-title">代行予約</h1>
+  <p class="page-description">会員・ゲストの代行予約を作成</p>
+</div>
+
+<!-- 統計カード -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">総代行予約数</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="totalProxy">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">会員予約</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="memberProxy">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">ゲスト予約</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #f39c12;" id="guestProxy">-</p>
+  </div>
+</div>
+
+<!-- 代行予約作成 -->
+<div class="card">
+  <h2 class="card-title">代行予約を作成</h2>
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+    <button onclick="showMemberProxyModal()" class="btn btn-primary" style="padding: 2rem; text-align: left;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">👤 会員の代行予約</div>
+      <div style="font-size: 0.875rem; opacity: 0.9;">既存会員のために予約を作成します</div>
+    </button>
+    <button onclick="showGuestProxyModal()" class="btn" style="padding: 2rem; text-align: left; background-color: #f39c12; color: white;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎫 ゲストの代行予約</div>
+      <div style="font-size: 0.875rem; opacity: 0.9;">非会員のために予約を作成します</div>
+    </button>
+  </div>
+</div>
+
+<!-- 代行予約一覧 -->
+<div class="card">
+  <h2 class="card-title">代行予約履歴</h2>
+  <div id="proxyReservationsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 会員代行予約モーダル -->
+<div id="memberProxyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">会員の代行予約</h2>
+      <button onclick="closeMemberProxyModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <form id="memberProxyForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">会員ユーザーID *</label>
+        <input type="number" id="memberUserId" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.25rem;">※ 利用者管理画面でユーザーIDを確認してください</p>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">イベント名 *</label>
+        <input type="text" id="memberEventName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">備考</label>
+        <textarea id="memberNotes" rows="3" placeholder="代行予約の理由など..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+      </div>
+
+      <div style="padding: 1rem; background-color: #d1ecf1; border-radius: 4px; border-left: 4px solid #0c5460;">
+        <p style="font-size: 0.875rem; color: #0c5460; margin: 0;">
+          ※ この後、予約詳細（日時、施設、設備など）を入力する画面に進みます
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeMemberProxyModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">次へ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ゲスト代行予約モーダル -->
+<div id="guestProxyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">ゲストの代行予約</h2>
+      <button onclick="closeGuestProxyModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <form id="guestProxyForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">申請者名 *</label>
+        <input type="text" id="guestName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">電話番号 *</label>
+        <input type="tel" id="guestPhone" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス</label>
+        <input type="email" id="guestEmail" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">イベント名 *</label>
+        <input type="text" id="guestEventName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">備考</label>
+        <textarea id="guestNotes" rows="3" placeholder="代行予約の理由など..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+      </div>
+
+      <div style="padding: 1rem; background-color: #d1ecf1; border-radius: 4px; border-left: 4px solid #0c5460;">
+        <p style="font-size: 0.875rem; color: #0c5460; margin: 0;">
+          ※ この後、予約詳細（日時、施設、設備など）を入力する画面に進みます
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeGuestProxyModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">次へ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadProxyReservations();
+
+  document.getElementById('memberProxyForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    createMemberProxy();
+  });
+
+  document.getElementById('guestProxyForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    createGuestProxy();
+  });
+});
+
+// 統計情報を読み込み
+async function loadStats() {
+  try {
+    const res = await fetch('/api/staff/proxy-reservations/stats', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const stats = await res.json();
+
+    document.getElementById('totalProxy').textContent = stats.totalProxyReservations || 0;
+    document.getElementById('memberProxy').textContent = stats.memberProxyReservations || 0;
+    document.getElementById('guestProxy').textContent = stats.guestProxyReservations || 0;
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// 代行予約一覧を読み込み
+async function loadProxyReservations() {
+  try {
+    const res = await fetch('/api/staff/proxy-reservations', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const reservations = await res.json();
+
+    if (reservations && reservations.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>種別</th>
+                <th>申請者/ユーザー</th>
+                <th>イベント名</th>
+                <th>予約日</th>
+                <th>作成者（職員）</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reservations.map(res => `
+                <tr>
+                  <td>${res.id}</td>
+                  <td>
+                    <span class="badge badge-${res.isGuest ? 'warning' : 'info'}">
+                      ${res.isGuest ? 'ゲスト' : '会員'}
+                    </span>
+                  </td>
+                  <td>${res.applicantName || res.userName || '-'}</td>
+                  <td>${res.eventName || '-'}</td>
+                  <td>${new Date(res.createdAt).toLocaleDateString('ja-JP')}</td>
+                  <td>${res.staffName || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('proxyReservationsContainer').innerHTML = html;
+    } else {
+      document.getElementById('proxyReservationsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">代行予約履歴がありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading proxy reservations:', error);
+    document.getElementById('proxyReservationsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 会員代行予約モーダルを表示
+function showMemberProxyModal() {
+  document.getElementById('memberProxyModal').style.display = 'block';
+}
+
+// 会員代行予約モーダルを閉じる
+function closeMemberProxyModal() {
+  document.getElementById('memberProxyModal').style.display = 'none';
+  document.getElementById('memberProxyForm').reset();
+}
+
+// ゲスト代行予約モーダルを表示
+function showGuestProxyModal() {
+  document.getElementById('guestProxyModal').style.display = 'block';
+}
+
+// ゲスト代行予約モーダルを閉じる
+function closeGuestProxyModal() {
+  document.getElementById('guestProxyModal').style.display = 'none';
+  document.getElementById('guestProxyForm').reset();
+}
+
+// 会員代行予約を作成
+async function createMemberProxy() {
+  const data = {
+    userId: parseInt(document.getElementById('memberUserId').value),
+    eventName: document.getElementById('memberEventName').value.trim(),
+    notes: document.getElementById('memberNotes').value.trim() || null,
+  };
+
+  if (!data.userId || !data.eventName) {
+    alert('ユーザーIDとイベント名は必須です');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/proxy-reservations/member', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      const result = await res.json();
+      alert(`会員代行予約を作成しました（予約ID: ${result.id}）\n\n※ 実際のシステムでは、この後予約詳細を入力する画面に遷移します`);
+      closeMemberProxyModal();
+      loadProxyReservations();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('作成に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error creating member proxy:', error);
+    alert('作成に失敗しました');
+  }
+}
+
+// ゲスト代行予約を作成
+async function createGuestProxy() {
+  const data = {
+    guestName: document.getElementById('guestName').value.trim(),
+    guestPhone: document.getElementById('guestPhone').value.trim(),
+    guestEmail: document.getElementById('guestEmail').value.trim() || null,
+    eventName: document.getElementById('guestEventName').value.trim(),
+    notes: document.getElementById('guestNotes').value.trim() || null,
+  };
+
+  if (!data.guestName || !data.guestPhone || !data.eventName) {
+    alert('申請者名、電話番号、イベント名は必須です');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/proxy-reservations/guest', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      const result = await res.json();
+      alert(`ゲスト代行予約を作成しました（予約ID: ${result.id}）\n\n※ 実際のシステムでは、この後予約詳細を入力する画面に遷移します`);
+      closeGuestProxyModal();
+      loadProxyReservations();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('作成に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error creating guest proxy:', error);
+    alert('作成に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+['memberProxyModal', 'guestProxyModal'].forEach(modalId => {
+  document.getElementById(modalId).addEventListener('click', (e) => {
+    if (e.target.id === modalId) {
+      if (modalId === 'memberProxyModal') closeMemberProxyModal();
+      else closeGuestProxyModal();
+    }
+  });
+});
+</script>
