@@ -4,40 +4,61 @@ import { Room } from './types';
 
 export class RoomRepository {
   /**
+   * Convert snake_case database columns to camelCase
+   */
+  private toCamelCase(room: any): Room {
+    return {
+      id: room.id,
+      name: room.name,
+      capacity: room.capacity,
+      basePriceMorning: room.base_price_morning,
+      basePriceAfternoon: room.base_price_afternoon,
+      basePriceEvening: room.base_price_evening,
+      extensionPriceMidday: room.extension_price_midday,
+      extensionPriceEvening: room.extension_price_evening,
+      acPricePerHour: room.ac_price_per_hour,
+      description: room.description,
+      isActive: room.is_active,
+      createdAt: room.created_at,
+      updatedAt: room.updated_at,
+    } as Room;
+  }
+
+  /**
    * Find room by ID
    */
   async findById(id: number): Promise<Room | null> {
-    const [rows] = await pool.query<(Room & RowDataPacket)[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms WHERE id = ?',
       [id]
     );
-    return rows[0] || null;
+    return rows[0] ? this.toCamelCase(rows[0]) : null;
   }
 
   /**
    * Find all active rooms
    */
   async findAllActive(): Promise<Room[]> {
-    const [rows] = await pool.query<(Room & RowDataPacket)[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms WHERE is_active = TRUE ORDER BY name ASC'
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Find all rooms (including inactive)
    */
   async findAll(): Promise<Room[]> {
-    const [rows] = await pool.query<(Room & RowDataPacket)[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms ORDER BY name ASC'
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Create a new room
    */
-  async create(data: Omit<Room, 'id' | 'created_at' | 'updated_at'>): Promise<Room> {
+  async create(data: any): Promise<Room> {
     const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO rooms (
         name, capacity, base_price_morning, base_price_afternoon, base_price_evening,
@@ -47,14 +68,14 @@ export class RoomRepository {
       [
         data.name,
         data.capacity || null,
-        data.base_price_morning,
-        data.base_price_afternoon,
-        data.base_price_evening,
-        data.extension_price_midday,
-        data.extension_price_evening,
-        data.ac_price_per_hour,
+        data.basePriceMorning || data.base_price_morning,
+        data.basePriceAfternoon || data.base_price_afternoon,
+        data.basePriceEvening || data.base_price_evening,
+        data.extensionPriceMidday || data.extension_price_midday,
+        data.extensionPriceEvening || data.extension_price_evening,
+        data.acPricePerHour || data.ac_price_per_hour,
         data.description || null,
-        data.is_active !== false,
+        data.isActive !== false && data.is_active !== false,
       ]
     );
 
@@ -68,13 +89,29 @@ export class RoomRepository {
   /**
    * Update room
    */
-  async update(id: number, data: Partial<Room>): Promise<Room> {
+  async update(id: number, data: any): Promise<Room> {
     const fields: string[] = [];
     const values: any[] = [];
 
+    // Convert camelCase to snake_case
+    const fieldMap: { [key: string]: string } = {
+      name: 'name',
+      capacity: 'capacity',
+      basePriceMorning: 'base_price_morning',
+      basePriceAfternoon: 'base_price_afternoon',
+      basePriceEvening: 'base_price_evening',
+      extensionPriceMidday: 'extension_price_midday',
+      extensionPriceEvening: 'extension_price_evening',
+      acPricePerHour: 'ac_price_per_hour',
+      description: 'description',
+      isActive: 'is_active',
+      updatedAt: 'updated_at',
+    };
+
     Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'created_at') {
-        fields.push(`${key} = ?`);
+      const dbField = fieldMap[key] || key;
+      if (dbField !== 'id' && dbField !== 'created_at') {
+        fields.push(`${dbField} = ?`);
         values.push(value);
       }
     });
