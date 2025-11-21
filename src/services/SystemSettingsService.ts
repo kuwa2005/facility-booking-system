@@ -191,7 +191,8 @@ export class SystemSettingsService {
       'cancellation_deadline_hours',
       'require_approval',
       'contact_email',
-      'business_hours'
+      'business_hours',
+      'maintenance_mode'  // 職員画面での警告バナー表示に必要
     ];
 
     const publicSettings: { [key: string]: any } = {};
