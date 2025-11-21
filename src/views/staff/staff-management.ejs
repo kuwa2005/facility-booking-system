@@ -160,7 +160,7 @@ async function showDetail(id) {
     const res = await fetch(`/api/staff/management/staff/${id}`, {
       credentials: 'include',
       });
-    const staff = await res.json();
+    const { staff } = await res.json();
 
     const html = `
       <div style="display: grid; gap: 1.5rem;">

@@ -150,6 +150,32 @@ export class StaffFacilityManagementService {
   }
 
   /**
+   * 部屋を完全に削除
+   */
+  async permanentlyDeleteRoom(roomId: number, staffId: number): Promise<void> {
+    const room = await RoomRepository.findById(roomId);
+    if (!room) {
+      throw new Error('Room not found');
+    }
+
+    if (room.isActive) {
+      throw new Error('Cannot permanently delete an active room. Please deactivate it first.');
+    }
+
+    // アクティビティログを記録してから削除
+    await this.logActivity(
+      staffId,
+      'delete',
+      'room',
+      roomId,
+      `Room permanently deleted: ${room.name}`
+    );
+
+    // 完全削除を実行
+    await RoomRepository.permanentDelete(roomId);
+  }
+
+  /**
    * 部屋の利用統計を取得
    */
   async getRoomUsageStats(roomId: number, startDate?: Date, endDate?: Date): Promise<any> {

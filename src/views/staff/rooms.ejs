@@ -467,7 +467,8 @@ async function loadInactiveRooms() {
                   <td>¥${(room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>¥${(room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>
-                    <button onclick="restoreRoom(${room.id})" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">復元</button>
+                    <button onclick="restoreRoom(${room.id})" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">復元</button>
+                    <button onclick="permanentlyDeleteRoom(${room.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">完全に削除</button>
                   </td>
                 </tr>
               `).join('')}
@@ -508,6 +509,36 @@ async function restoreRoom(id) {
   } catch (error) {
     console.error('Error restoring room:', error);
     await alert('復元に失敗しました');
+  }
+}
+
+// 施設を完全に削除
+async function permanentlyDeleteRoom(id) {
+  if (!await confirm('この施設を完全に削除しますか？\n\n⚠️ この操作は取り消せません。\n関連する予約データも全て削除されます。')) {
+    return;
+  }
+
+  // 二重確認
+  if (!await confirm('本当に削除してもよろしいですか？\nこの操作は元に戻せません。')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms/${id}/permanent`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (res.ok) {
+      await alert('施設を完全に削除しました');
+      loadInactiveRooms();
+    } else {
+      const error = await res.json();
+      await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error permanently deleting room:', error);
+    await alert('削除に失敗しました');
   }
 }
 </script>

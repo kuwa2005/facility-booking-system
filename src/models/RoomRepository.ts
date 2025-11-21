@@ -149,6 +149,47 @@ export class RoomRepository {
   }
 
   /**
+   * Permanently delete room (physical delete)
+   * This will cascade delete all related data
+   */
+  async permanentDelete(id: number): Promise<void> {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Delete related usage equipment first
+      await connection.query(
+        `DELETE ue FROM usage_equipment ue
+         INNER JOIN usages u ON ue.usage_id = u.id
+         WHERE u.room_id = ?`,
+        [id]
+      );
+
+      // Delete related usages
+      await connection.query('DELETE FROM usages WHERE room_id = ?', [id]);
+
+      // Delete room equipment associations
+      await connection.query('DELETE FROM room_equipment WHERE room_id = ?', [id]);
+
+      // Delete room closed dates
+      await connection.query('DELETE FROM room_closed_dates WHERE room_id = ?', [id]);
+
+      // Delete room timeslot prices
+      await connection.query('DELETE FROM room_timeslot_prices WHERE room_id = ?', [id]);
+
+      // Finally delete the room itself
+      await connection.query('DELETE FROM rooms WHERE id = ?', [id]);
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
    * Check if room has any existing reservations
    */
   async hasReservations(roomId: number): Promise<boolean> {
