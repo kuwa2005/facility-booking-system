@@ -277,7 +277,17 @@ async function loadBusinessHours() {
     if (res.ok) {
       const settings = await res.json();
       if (settings.business_hours && settings.business_hours.value) {
-        businessHoursData = settings.business_hours.value;
+        // JSON文字列の場合はパース
+        if (typeof settings.business_hours.value === 'string') {
+          try {
+            businessHoursData = JSON.parse(settings.business_hours.value);
+          } catch (e) {
+            console.error('Failed to parse business hours:', e);
+            businessHoursData = [];
+          }
+        } else {
+          businessHoursData = settings.business_hours.value;
+        }
       }
     }
   } catch (error) {

@@ -75,7 +75,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let currentUserId = null;
 let currentUsers = [];
 
@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadStats() {
   try {
     const res = await fetch('/api/staff/users/stats/summary', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const stats = await res.json();
 
     document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
@@ -113,8 +113,8 @@ async function loadUsers() {
 
   try {
     const res = await fetch(`/api/staff/users?${params}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     // データをエクスポート用に保存
@@ -188,8 +188,8 @@ async function showDetail(id) {
 
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const user = await res.json();
 
     const html = `
@@ -304,8 +304,8 @@ function closeDetailModal() {
 async function showEditModal(id) {
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const user = await res.json();
 
     const html = `
@@ -371,8 +371,8 @@ async function updateUser(id) {
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ name, nickname, email, bio })
@@ -404,8 +404,8 @@ async function toggleActive(id, currentStatus) {
   try {
     const res = await fetch(`/api/staff/users/${id}/toggle-active`, {
       method: 'PATCH',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert(`ユーザーを${action}にしました`);

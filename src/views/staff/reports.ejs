@@ -30,7 +30,7 @@
 <div id="reportContainer"></div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 
 // 売上レポートを表示
 async function showRevenueReport() {
@@ -43,8 +43,8 @@ async function showRevenueReport() {
     const currentMonth = now.getMonth() + 1;
 
     const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${currentYear}&month=${currentMonth}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     const html = `
@@ -104,8 +104,8 @@ async function showRoomUsageReport() {
 
   try {
     const res = await fetch('/api/staff/dashboard/rooms/usage-stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     const html = `
@@ -158,8 +158,8 @@ async function showUserStatistics() {
 
   try {
     const res = await fetch('/api/staff/users/stats/summary', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     const html = `
@@ -199,8 +199,8 @@ async function showDashboardStats() {
 
   try {
     const res = await fetch('/api/staff/dashboard/stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     const html = `

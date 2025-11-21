@@ -56,7 +56,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let allClosedDates = [];
 let currentViewYear = new Date().getFullYear();
 let currentViewMonth = new Date().getMonth();
@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadClosedDates() {
   try {
     const res = await fetch('/api/staff/facilities/closed-dates', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     allClosedDates = await res.json();
     displayClosedDates();
     renderMonthlyCalendar();
@@ -152,8 +152,8 @@ async function addClosedDate() {
   try {
     const res = await fetch('/api/staff/facilities/closed-dates', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ date, reason })
@@ -186,8 +186,8 @@ async function deleteClosedDate(id) {
   try {
     const res = await fetch(`/api/staff/facilities/closed-dates/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert('休館日を削除しました');

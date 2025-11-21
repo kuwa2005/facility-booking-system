@@ -102,7 +102,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 
 // ダッシュボードを更新
 function refreshDashboard() {
@@ -115,8 +115,8 @@ async function loadDashboardData() {
 
   try {
     const res = await fetch('/api/staff/dashboard/stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const stats = await res.json();
 
     // 統計カードを更新
@@ -212,8 +212,8 @@ async function loadRevenueChart() {
     const month = now.getMonth() + 1;
 
     const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${year}&month=${month}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     if (data.dailyRevenue && data.dailyRevenue.length > 0) {
@@ -257,8 +257,8 @@ async function loadRevenueChart() {
 async function loadRoomUsage() {
   try {
     const res = await fetch('/api/staff/dashboard/rooms/usage-stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     if (data.rooms && data.rooms.length > 0) {

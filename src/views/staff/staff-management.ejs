@@ -57,7 +57,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let currentStaffId = null;
 let editingStaffId = null;
 
@@ -71,8 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadStats() {
   try {
     const res = await fetch('/api/staff/management/staff/stats/summary', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const stats = await res.json();
 
     document.getElementById('totalStaff').textContent = stats.totalStaff || 0;
@@ -88,8 +88,8 @@ async function loadStats() {
 async function loadStaff() {
   try {
     const res = await fetch('/api/staff/management/staff', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const staff = await res.json();
 
     if (staff && staff.length > 0) {
@@ -158,8 +158,8 @@ async function showDetail(id) {
 
   try {
     const res = await fetch(`/api/staff/management/staff/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const staff = await res.json();
 
     const html = `
@@ -275,8 +275,8 @@ async function showEditModal(id) {
 
   try {
     const res = await fetch(`/api/staff/management/staff/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const staff = await res.json();
     showFormModal(staff);
   } catch (error) {
@@ -419,8 +419,8 @@ async function saveStaff() {
 
     const res = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -455,8 +455,8 @@ async function resetPassword(id) {
   try {
     const res = await fetch(`/api/staff/management/staff/${id}/reset-password`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ newPassword })
@@ -483,8 +483,8 @@ async function deleteStaff(id) {
   try {
     const res = await fetch(`/api/staff/management/staff/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert('職員を削除しました');

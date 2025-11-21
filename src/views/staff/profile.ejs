@@ -47,7 +47,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let currentProfile = null;
 
 // 初期ロード
@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadProfile() {
   try {
     const res = await fetch('/api/staff/profile', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     currentProfile = await res.json();
 
     const html = `
@@ -215,8 +215,8 @@ async function updateProfile() {
   try {
     const res = await fetch('/api/staff/profile', {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -260,8 +260,8 @@ async function changePassword() {
   try {
     const res = await fetch('/api/staff/profile/password', {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ currentPassword, newPassword })

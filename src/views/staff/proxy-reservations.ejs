@@ -128,7 +128,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
@@ -150,8 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadStats() {
   try {
     const res = await fetch('/api/staff/proxy-reservations/stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const stats = await res.json();
 
     document.getElementById('totalProxy').textContent = stats.totalProxyReservations || 0;
@@ -166,8 +166,8 @@ async function loadStats() {
 async function loadProxyReservations() {
   try {
     const res = await fetch('/api/staff/proxy-reservations', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const reservations = await res.json();
 
     if (reservations && reservations.length > 0) {
@@ -251,8 +251,8 @@ async function createMemberProxy() {
   try {
     const res = await fetch('/api/staff/proxy-reservations/member', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -292,8 +292,8 @@ async function createGuestProxy() {
   try {
     const res = await fetch('/api/staff/proxy-reservations/guest', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)

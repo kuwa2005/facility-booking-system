@@ -60,7 +60,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let currentUsageId = null;
 let currentUsages = [];
 
@@ -78,8 +78,8 @@ async function loadTodayUsages() {
 
   try {
     const res = await fetch('/api/staff/usages/today/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const usages = await res.json();
 
     displayUsages(usages);
@@ -96,8 +96,8 @@ async function loadMissingAcHours() {
 
   try {
     const res = await fetch('/api/staff/usages/missing-ac-hours/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const usages = await res.json();
 
     displayUsages(usages);
@@ -128,8 +128,8 @@ async function loadDateRangeUsages() {
   try {
     const params = new URLSearchParams({ startDate, endDate });
     const res = await fetch(`/api/staff/usages/date-range/all?${params}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const usages = await res.json();
 
     displayUsages(usages);
@@ -215,8 +215,8 @@ async function showEditModal(id) {
 
   try {
     const res = await fetch(`/api/staff/usages/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const usage = await res.json();
 
     const slots = [];
@@ -350,8 +350,8 @@ async function updateAcHours() {
   try {
     const res = await fetch(`/api/staff/usages/${currentUsageId}/ac-hours`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ acHours })
@@ -392,8 +392,8 @@ async function updateActualTime() {
   try {
     const res = await fetch(`/api/staff/usages/${currentUsageId}/actual-time`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ actualStartTime, actualEndTime })
@@ -420,8 +420,8 @@ async function updateRemarks() {
   try {
     const res = await fetch(`/api/staff/usages/${currentUsageId}/remarks`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ remarks })

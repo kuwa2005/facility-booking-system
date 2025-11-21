@@ -64,7 +64,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
@@ -82,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadStats() {
   try {
     const res = await fetch('/api/staff/messages/stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const stats = await res.json();
 
     document.getElementById('totalMessages').textContent = stats.totalMessages || 0;
@@ -98,8 +98,8 @@ async function loadStats() {
 async function loadMessages() {
   try {
     const res = await fetch('/api/staff/messages', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const messages = await res.json();
 
     if (messages && messages.length > 0) {
@@ -176,8 +176,8 @@ async function sendMessage() {
   try {
     const res = await fetch('/api/staff/messages', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -207,8 +207,8 @@ async function deleteMessage(id) {
   try {
     const res = await fetch(`/api/staff/messages/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert('メッセージを削除しました');

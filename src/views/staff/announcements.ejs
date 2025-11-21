@@ -36,7 +36,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let editingAnnouncementId = null;
 
 // 初期ロード
@@ -50,8 +50,8 @@ async function loadAnnouncements() {
 
   try {
     const res = await fetch('/api/staff/announcements', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     let announcements = await res.json();
 
     // フィルター適用
@@ -128,8 +128,8 @@ async function showEditModal(id) {
 
   try {
     const res = await fetch('/api/staff/announcements', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const announcements = await res.json();
     const announcement = announcements.find(a => a.id === id);
 
@@ -210,8 +210,8 @@ async function saveAnnouncement() {
 
     const res = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -236,8 +236,8 @@ async function toggleActive(id, currentStatus) {
   try {
     const res = await fetch(`/api/staff/announcements/${id}/toggle`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert(`お知らせを${currentStatus ? '無効' : '有効'}にしました`);
@@ -261,8 +261,8 @@ async function deleteAnnouncement(id) {
   try {
     const res = await fetch(`/api/staff/announcements/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert('お知らせを削除しました');

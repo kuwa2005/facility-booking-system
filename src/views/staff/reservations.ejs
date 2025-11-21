@@ -76,7 +76,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let currentReservationId = null;
 let currentReservations = [];
 
@@ -110,8 +110,8 @@ async function loadReservations() {
 
   try {
     const res = await fetch(`/api/staff/reservations?${params}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const data = await res.json();
 
     // データをエクスポート用に保存
@@ -196,8 +196,8 @@ async function showDetail(id) {
 
   try {
     const res = await fetch(`/api/staff/reservations/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const reservation = await res.json();
 
     const usages = reservation.usages || [];
@@ -360,8 +360,8 @@ async function updatePaymentStatus(id, status) {
   try {
     const res = await fetch(`/api/staff/reservations/${id}/payment-status`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ paymentStatus: status })
@@ -389,8 +389,8 @@ async function cancelReservation(id) {
   try {
     const res = await fetch(`/api/staff/reservations/${id}/cancel`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ reason })
@@ -414,8 +414,8 @@ async function cancelReservation(id) {
 async function showNotes(id) {
   try {
     const res = await fetch(`/api/staff/reservations/${id}/notes`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const notes = await res.json();
 
     const html = `
@@ -467,8 +467,8 @@ async function addNote(id) {
   try {
     const res = await fetch(`/api/staff/reservations/${id}/notes`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ content })

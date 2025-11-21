@@ -89,7 +89,7 @@
 </div>
 
 <script>
-const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+
 let editingProductId = null;
 let allProducts = [];
 
@@ -126,8 +126,8 @@ function showTab(tabName) {
 async function loadProducts() {
   try {
     const res = await fetch('/api/staff/products', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     allProducts = await res.json();
 
     if (allProducts && allProducts.length > 0) {
@@ -190,8 +190,8 @@ function updateProductSelect() {
 async function loadSales() {
   try {
     const res = await fetch('/api/staff/sales', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
     const sales = await res.json();
 
     if (sales && sales.length > 0) {
@@ -318,8 +318,8 @@ async function saveProduct() {
 
     const res = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -346,8 +346,8 @@ async function deleteProduct(id) {
   try {
     const res = await fetch(`/api/staff/products/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      credentials: 'include',
+      });
 
     if (res.ok) {
       alert('商品を削除しました');
@@ -389,8 +389,8 @@ async function recordSale() {
   try {
     const res = await fetch('/api/staff/sales', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
