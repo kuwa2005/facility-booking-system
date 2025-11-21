@@ -437,6 +437,24 @@ export class ExtendedFacilityController {
         return;
       }
 
+      // バリデーション: 各要素が正しい形式か確認
+      for (const update of orderUpdates) {
+        if (!update.id || typeof update.id !== 'number' || update.id <= 0) {
+          res.status(400).json({
+            error: 'Invalid room ID',
+            details: `Room ID must be a positive number, got: ${JSON.stringify(update)}`
+          });
+          return;
+        }
+        if (typeof update.displayOrder !== 'number' || update.displayOrder < 0) {
+          res.status(400).json({
+            error: 'Invalid display order',
+            details: `Display order must be a non-negative number, got: ${JSON.stringify(update)}`
+          });
+          return;
+        }
+      }
+
       await RoomRepository.updateBulkDisplayOrder(orderUpdates);
       res.json({ message: 'Room display order updated successfully' });
     } catch (error) {

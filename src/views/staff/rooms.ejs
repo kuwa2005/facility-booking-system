@@ -90,6 +90,8 @@ async function loadRooms() {
     // アクティブな部屋のみをフィルタリング
     roomsData = allRooms.filter(room => room.isActive === true || room.isActive === 1);
 
+    console.log('Loaded rooms:', roomsData); // デバッグ用
+
     if (roomsData && roomsData.length > 0) {
       const html = `
         <div style="overflow-x: auto;">
@@ -422,15 +424,23 @@ function handleDragLeave(e) {
 // 表示順をサーバーに保存
 async function saveDisplayOrder() {
   const tbody = document.getElementById('roomsTableBody');
+  if (!tbody) {
+    console.error('roomsTableBody not found');
+    return;
+  }
+
   const rows = tbody.querySelectorAll('tr[data-room-id]');
 
   const orderUpdates = Array.from(rows).map((row, index) => {
-    const id = parseInt(row.getAttribute('data-room-id'));
+    const roomIdAttr = row.getAttribute('data-room-id');
+    const id = parseInt(roomIdAttr || '0', 10);
     return {
       id: id,
       displayOrder: index
     };
   }).filter(update => !isNaN(update.id) && update.id > 0);
+
+  console.log('Display order updates:', orderUpdates); // デバッグ用
 
   if (orderUpdates.length === 0) {
     console.warn('No valid room IDs to update');
@@ -449,15 +459,17 @@ async function saveDisplayOrder() {
 
     if (!res.ok) {
       let errorMessage = '表示順の保存に失敗しました';
+      let errorDetails = null;
       try {
         const error = await res.json();
         errorMessage = error.error || errorMessage;
+        errorDetails = error.details;
       } catch {
         const text = await res.text();
         if (text) errorMessage = text;
       }
-      console.error('Failed to save display order:', errorMessage);
-      await alert(errorMessage);
+      console.error('Failed to save display order:', errorMessage, errorDetails);
+      await alert(errorMessage + (errorDetails ? '\n' + errorDetails : ''));
       // エラー時は元の順序に戻すために再読み込み
       await loadRooms();
     }
