@@ -70,7 +70,10 @@ async function loadRooms() {
     const res = await fetch('/api/staff/facilities/rooms', {
       credentials: 'include',
       });
-    roomsData = await res.json();
+    const allRooms = await res.json();
+
+    // アクティブな部屋のみをフィルタリング
+    roomsData = allRooms.filter(room => room.isActive === true || room.isActive === 1);
 
     if (roomsData && roomsData.length > 0) {
       const html = `
@@ -280,8 +283,9 @@ async function saveRoom() {
     if (res.ok) {
       await alert(editingRoomId ? '施設を更新しました' : '施設を追加しました');
       closeFormModal();
-      loadRooms();
-      loadInactiveRooms();
+      // リストを更新（await して完了を待つ）
+      await loadRooms();
+      await loadInactiveRooms();
     } else {
       const error = await res.json();
       await alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
@@ -306,8 +310,9 @@ async function deleteRoom(id) {
 
     if (res.ok) {
       await alert('施設を削除しました');
-      loadRooms();
-      loadInactiveRooms();
+      // リストを更新（await して完了を待つ）
+      await loadRooms();
+      await loadInactiveRooms();
     } else {
       const error = await res.json();
       await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
@@ -404,10 +409,18 @@ async function saveDisplayOrder() {
   const tbody = document.getElementById('roomsTableBody');
   const rows = tbody.querySelectorAll('tr[data-room-id]');
 
-  const orderUpdates = Array.from(rows).map((row, index) => ({
-    id: parseInt(row.getAttribute('data-room-id')),
-    displayOrder: index
-  }));
+  const orderUpdates = Array.from(rows).map((row, index) => {
+    const id = parseInt(row.getAttribute('data-room-id'));
+    return {
+      id: id,
+      displayOrder: index
+    };
+  }).filter(update => !isNaN(update.id) && update.id > 0);
+
+  if (orderUpdates.length === 0) {
+    console.warn('No valid room IDs to update');
+    return;
+  }
 
   try {
     const res = await fetch('/api/staff/facilities/rooms/display-order', {
@@ -422,9 +435,9 @@ async function saveDisplayOrder() {
     if (!res.ok) {
       const error = await res.json();
       console.error('Failed to save display order:', error);
-      await alert('表示順の保存に失敗しました');
+      await alert('表示順の保存に失敗しました: ' + (error.error || '不明なエラー'));
       // エラー時は元の順序に戻すために再読み込み
-      loadRooms();
+      await loadRooms();
     }
   } catch (error) {
     console.error('Error saving display order:', error);
@@ -500,8 +513,9 @@ async function restoreRoom(id) {
 
     if (res.ok) {
       await alert('施設を復元しました');
-      loadRooms();
-      loadInactiveRooms();
+      // リストを更新（await して完了を待つ）
+      await loadRooms();
+      await loadInactiveRooms();
     } else {
       const error = await res.json();
       await alert('復元に失敗しました: ' + (error.error || '不明なエラー'));
@@ -531,7 +545,8 @@ async function permanentlyDeleteRoom(id) {
 
     if (res.ok) {
       await alert('施設を完全に削除しました');
-      loadInactiveRooms();
+      // リストを更新（await して完了を待つ）
+      await loadInactiveRooms();
     } else {
       const error = await res.json();
       await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));

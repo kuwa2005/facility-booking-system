@@ -301,22 +301,23 @@ async function saveEquipment() {
     });
 
     if (res.ok) {
-      alert(editingEquipmentId ? '設備を更新しました' : '設備を追加しました');
+      await alert(editingEquipmentId ? '設備を更新しました' : '設備を追加しました');
       closeFormModal();
-      loadEquipment();
+      // リストを更新（await して完了を待つ）
+      await loadEquipment();
     } else {
       const error = await res.json();
-      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+      await alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
     }
   } catch (error) {
     console.error('Error saving equipment:', error);
-    alert('保存に失敗しました');
+    await alert('保存に失敗しました');
   }
 }
 
 // 設備を削除
 async function deleteEquipment(id) {
-  if (!confirm('この設備を削除しますか？\n※論理削除されるため、後で復元可能です')) {
+  if (!await confirm('この設備を削除しますか？\n※論理削除されるため、後で復元可能です')) {
     return;
   }
 
@@ -327,15 +328,16 @@ async function deleteEquipment(id) {
       });
 
     if (res.ok) {
-      alert('設備を削除しました');
-      loadEquipment();
+      await alert('設備を削除しました');
+      // リストを更新（await して完了を待つ）
+      await loadEquipment();
     } else {
       const error = await res.json();
-      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+      await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
     }
   } catch (error) {
     console.error('Error deleting equipment:', error);
-    alert('削除に失敗しました');
+    await alert('削除に失敗しました');
   }
 }
 
