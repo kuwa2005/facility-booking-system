@@ -307,18 +307,18 @@
               <div class="price-section">
                 <h4>利用料金</h4>
                 <ul class="price-list">
-                  <li>午前（9:00-12:00）: ¥<%= room.base_price_morning?.toLocaleString() || '0' %></li>
-                  <li>午後（13:00-17:00）: ¥<%= room.base_price_afternoon?.toLocaleString() || '0' %></li>
-                  <li>夜間（18:00-21:30）: ¥<%= room.base_price_evening?.toLocaleString() || '0' %></li>
+                  <li>午前（9:00-12:00）: ¥<%= (room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                  <li>午後（13:00-17:00）: ¥<%= (room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                  <li>夜間（18:00-21:30）: ¥<%= (room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
                 </ul>
-                <% if (room.extension_price_midday > 0 || room.extension_price_evening > 0) { %>
+                <% if (room.extensionPriceMidday > 0 || room.extensionPriceEvening > 0) { %>
                   <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
                     ※延長料金あり
                   </p>
                 <% } %>
-                <% if (room.ac_price_per_hour > 0) { %>
+                <% if (room.acPricePerHour > 0) { %>
                   <p style="margin-top: 0.25rem; font-size: 0.875rem; color: #6b7280;">
-                    エアコン: ¥<%= room.ac_price_per_hour %>/時間
+                    エアコン: ¥<%= (room.acPricePerHour || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>/時間
                   </p>
                 <% } %>
               </div>
