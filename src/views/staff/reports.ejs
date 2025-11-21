@@ -53,7 +53,7 @@ async function showRevenueReport() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
           <div style="padding: 1.5rem; background-color: #d4edda; border-radius: 8px;">
             <div style="font-size: 0.875rem; color: #155724; margin-bottom: 0.5rem;">総売上</div>
-            <div style="font-size: 2rem; font-weight: 600; color: #155724;">¥${(data.totalRevenue || 0).toLocaleString()}</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #155724;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
           </div>
           <div style="padding: 1.5rem; background-color: #d1ecf1; border-radius: 8px;">
             <div style="font-size: 0.875rem; color: #0c5460; margin-bottom: 0.5rem;">予約件数</div>
@@ -61,7 +61,7 @@ async function showRevenueReport() {
           </div>
           <div style="padding: 1.5rem; background-color: #fff3cd; border-radius: 8px;">
             <div style="font-size: 0.875rem; color: #856404; margin-bottom: 0.5rem;">平均単価</div>
-            <div style="font-size: 2rem; font-weight: 600; color: #856404;">¥${data.averageAmount ? Math.round(data.averageAmount).toLocaleString() : 0}</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #856404;">¥${data.averageAmount ? Math.round(data.averageAmount).toLocaleString('ja-JP', {maximumFractionDigits: 0}) : 0}</div>
           </div>
         </div>
 
@@ -80,7 +80,7 @@ async function showRevenueReport() {
                 ${data.dailyRevenue.map(day => `
                   <tr>
                     <td>${day.date}</td>
-                    <td>¥${(day.revenue || 0).toLocaleString()}</td>
+                    <td>¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                     <td>${day.count || 0}件</td>
                   </tr>
                 `).join('')}
@@ -127,7 +127,7 @@ async function showRoomUsageReport() {
                   <tr>
                     <td><strong>${room.name}</strong></td>
                     <td>${room.usageCount || 0}回</td>
-                    <td>¥${(room.totalRevenue || 0).toLocaleString()}</td>
+                    <td>¥${(room.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                     <td>
                       <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <div style="flex: 1; height: 8px; background-color: #ecf0f1; border-radius: 4px; overflow: hidden;">
@@ -221,7 +221,7 @@ async function showDashboardStats() {
           </div>
           <div style="padding: 1.5rem; background-color: #fff3cd; border-radius: 8px; text-align: center;">
             <div style="font-size: 0.875rem; color: #856404; margin-bottom: 0.5rem;">今月の売上</div>
-            <div style="font-size: 2rem; font-weight: 600; color: #856404;">¥${(data.monthlyRevenue || 0).toLocaleString()}</div>
+            <div style="font-size: 2rem; font-weight: 600; color: #856404;">¥${(data.monthlyRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
           </div>
         </div>
 
@@ -244,7 +244,7 @@ async function showDashboardStats() {
                     <td>${app.id}</td>
                     <td>${app.eventName}</td>
                     <td>${app.applicantName}</td>
-                    <td>¥${(app.totalAmount || 0).toLocaleString()}</td>
+                    <td>¥${(app.totalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                     <td>
                       <span class="badge badge-${app.paymentStatus === 'paid' ? 'success' : app.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
                         ${app.paymentStatus === 'paid' ? '支払済' : app.paymentStatus === 'unpaid' ? '未決済' : '返金済'}

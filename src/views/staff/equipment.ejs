@@ -147,7 +147,7 @@ function displayEquipment() {
                 </td>
                 <td><strong>${eq.name}</strong></td>
                 <td>${priceTypeLabel[eq.priceType] || eq.priceType}</td>
-                <td>${eq.priceType === 'free' ? '-' : '¥' + (eq.unitPrice || 0).toLocaleString()}</td>
+                <td>${eq.priceType === 'free' ? '-' : '¥' + (eq.unitPrice || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                 <td>${eq.maxQuantity || '-'}個</td>
                 <td>
                   <span class="badge badge-${eq.enabled ? 'success' : 'danger'}">

@@ -123,7 +123,7 @@ async function loadDashboardData() {
     document.getElementById('todayReservations').textContent = stats.todayReservations || 0;
     document.getElementById('upcomingReservations').textContent = stats.upcomingReservations || 0;
     document.getElementById('pendingPayments').textContent = stats.pendingPayments || 0;
-    document.getElementById('monthlyRevenue').textContent = '¥' + (stats.monthlyRevenue || 0).toLocaleString();
+    document.getElementById('monthlyRevenue').textContent = '¥' + (stats.monthlyRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0});
 
     // トレンド表示（デモデータ）
     document.getElementById('todayReservationsTrend').textContent = '前日比 +2件';
@@ -157,7 +157,7 @@ function displayRecentApplications(applications) {
             <div style="flex: 1;">
               <div style="font-weight: 600; margin-bottom: 0.25rem;">${app.eventName || '（イベント名なし）'}</div>
               <div style="font-size: 0.875rem; color: #7f8c8d;">
-                ${app.applicantName} · ¥${(app.totalAmount || 0).toLocaleString()}
+                ${app.applicantName} · ¥${(app.totalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
               </div>
             </div>
             <div>
@@ -227,9 +227,9 @@ async function loadRevenueChart() {
               return `
                 <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
                   <div style="font-size: 0.75rem; color: #7f8c8d; margin-bottom: 0.5rem;">
-                    ¥${(day.revenue || 0).toLocaleString()}
+                    ¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
                   </div>
-                  <div style="width: 100%; background: linear-gradient(to top, #3498db, #5dade2); height: ${height}%; min-height: 2px; border-radius: 4px 4px 0 0;" title="¥${(day.revenue || 0).toLocaleString()}"></div>
+                  <div style="width: 100%; background: linear-gradient(to top, #3498db, #5dade2); height: ${height}%; min-height: 2px; border-radius: 4px 4px 0 0;" title="¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}"></div>
                   <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 0.5rem;">
                     ${day.date.split('-')[2]}日
                   </div>
@@ -239,7 +239,7 @@ async function loadRevenueChart() {
           </div>
           <div style="text-align: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
             <div style="font-size: 0.875rem; color: #7f8c8d;">今月の総売上</div>
-            <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">¥${(data.totalRevenue || 0).toLocaleString()}</div>
+            <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
           </div>
         </div>
       `;
@@ -269,7 +269,7 @@ async function loadRoomUsage() {
               <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span style="font-weight: 600;">${room.name}</span>
                 <span style="color: #7f8c8d;">
-                  ${room.usageCount || 0}回 · ¥${(room.totalRevenue || 0).toLocaleString()}
+                  ${room.usageCount || 0}回 · ¥${(room.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
                 </span>
               </div>
               <div style="display: flex; align-items: center; gap: 1rem;">

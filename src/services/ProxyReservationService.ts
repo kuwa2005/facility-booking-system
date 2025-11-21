@@ -19,7 +19,7 @@ export class ProxyReservationService {
   async createForMember(
     staffId: number,
     userId: number,
-    data: CreateApplicationDto,
+    data: any,
     notes?: string
   ): Promise<any> {
     // チケット倍率を計算
@@ -29,12 +29,19 @@ export class ProxyReservationService {
     );
 
     // 予約を作成
-    // TODO: Implement ApplicationRepository.create method
-    const application: any = null; // await ApplicationRepository.create({
-    //   ...data,
-    //   user_id: userId,
-    //   ticket_multiplier: ticketMultiplier,
-    // });
+    const { usages, equipment, ...applicationData } = data;
+
+    const result = await ApplicationRepository.createWithUsages(
+      {
+        ...applicationData,
+        user_id: userId,
+        ticket_multiplier: ticketMultiplier,
+      },
+      usages || [],
+      equipment || []
+    );
+
+    const application = result.application;
 
     // 代行記録を作成
     await pool.query(
@@ -60,7 +67,7 @@ export class ProxyReservationService {
    */
   async createForGuest(
     staffId: number,
-    data: CreateApplicationDto,
+    data: any,
     notes?: string
   ): Promise<any> {
     // チケット倍率を計算
@@ -70,12 +77,19 @@ export class ProxyReservationService {
     );
 
     // 予約を作成（user_id なし）
-    // TODO: Implement ApplicationRepository.create method
-    const application: any = null; // await ApplicationRepository.create({
-    //   ...data,
-    //   user_id: null,
-    //   ticket_multiplier: ticketMultiplier,
-    // });
+    const { usages, equipment, ...applicationData } = data;
+
+    const result = await ApplicationRepository.createWithUsages(
+      {
+        ...applicationData,
+        user_id: null,
+        ticket_multiplier: ticketMultiplier,
+      },
+      usages || [],
+      equipment || []
+    );
+
+    const application = result.application;
 
     // 代行記録を作成
     await pool.query(
@@ -90,7 +104,7 @@ export class ProxyReservationService {
       'create',
       'application',
       application.id,
-      `Proxy reservation created for guest: ${data.applicant_representative}`
+      `Proxy reservation created for guest: ${applicationData.applicant_representative}`
     );
 
     return application;

@@ -99,12 +99,12 @@ async function loadRooms() {
                   <td>${room.id}</td>
                   <td><strong>${room.name}</strong></td>
                   <td>${room.capacity}名</td>
-                  <td>¥${(room.basePriceMorning || 0).toLocaleString()}</td>
-                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString()}</td>
-                  <td>¥${(room.basePriceEvening || 0).toLocaleString()}</td>
-                  <td>¥${(room.extensionPriceMidday || 0).toLocaleString()}</td>
-                  <td>¥${(room.extensionPriceEvening || 0).toLocaleString()}</td>
-                  <td>¥${(room.acPricePerHour || 0).toLocaleString()}</td>
+                  <td>¥${(room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.extensionPriceMidday || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.extensionPriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.acPricePerHour || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>
                     <span class="badge badge-${room.isActive ? 'success' : 'danger'}">
                       ${room.isActive ? '有効' : '無効'}
@@ -463,9 +463,9 @@ async function loadInactiveRooms() {
                   <td>${room.id}</td>
                   <td><strong>${room.name}</strong></td>
                   <td>${room.capacity}名</td>
-                  <td>¥${(room.basePriceMorning || 0).toLocaleString()}</td>
-                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString()}</td>
-                  <td>¥${(room.basePriceEvening || 0).toLocaleString()}</td>
+                  <td>¥${(room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>
                     <button onclick="restoreRoom(${room.id})" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">復元</button>
                   </td>

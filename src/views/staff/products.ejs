@@ -148,7 +148,7 @@ async function loadProducts() {
               <tr>
                 <td>${product.id}</td>
                 <td><strong>${product.name}</strong></td>
-                <td>¥${(product.price || 0).toLocaleString()}</td>
+                <td>¥${(product.price || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                 <td>${product.stock || 0}個</td>
                 <td>
                   <span class="badge badge-${product.isActive ? 'success' : 'danger'}">
@@ -182,7 +182,7 @@ function updateProductSelect() {
   const select = document.getElementById('saleProductId');
   select.innerHTML = '<option value="">選択してください</option>' +
     allProducts.filter(p => p.isActive).map(p =>
-      `<option value="${p.id}">${p.name} - ¥${p.price.toLocaleString()}</option>`
+      `<option value="${p.id}">${p.name} - ¥${p.price.toLocaleString('ja-JP', {maximumFractionDigits: 0})}</option>`
     ).join('');
 }
 
@@ -214,8 +214,8 @@ async function loadSales() {
                 <td>${sale.id}</td>
                 <td>${sale.productName || '-'}</td>
                 <td>${sale.quantity}個</td>
-                <td>¥${(sale.unitPrice || 0).toLocaleString()}</td>
-                <td><strong>¥${(sale.totalAmount || 0).toLocaleString()}</strong></td>
+                <td>¥${(sale.unitPrice || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                <td><strong>¥${(sale.totalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</strong></td>
                 <td>${sale.buyerName || '-'}</td>
                 <td>${new Date(sale.createdAt).toLocaleString('ja-JP')}</td>
               </tr>
