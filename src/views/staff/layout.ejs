@@ -369,6 +369,133 @@
     <p>&copy; 2025 施設予約システム. All rights reserved.</p>
   </footer>
 
+  <!-- カスタムダイアログ -->
+  <div id="customDialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div id="customDialogBox" style="background-color: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.2s ease-out;">
+      <div id="customDialogIcon" style="text-align: center; font-size: 3rem; margin-bottom: 1rem;"></div>
+      <h3 id="customDialogTitle" style="text-align: center; margin-bottom: 1rem; font-size: 1.25rem; color: #2c3e50;"></h3>
+      <p id="customDialogMessage" style="text-align: center; margin-bottom: 2rem; color: #555; white-space: pre-wrap; line-height: 1.6;"></p>
+      <div id="customDialogButtons" style="display: flex; gap: 1rem; justify-content: center;"></div>
+    </div>
+  </div>
+
+  <script>
+    // カスタムダイアログの表示関数
+    function showCustomDialog(type, message, title) {
+      return new Promise((resolve) => {
+        const dialog = document.getElementById('customDialog');
+        const dialogBox = document.getElementById('customDialogBox');
+        const iconEl = document.getElementById('customDialogIcon');
+        const titleEl = document.getElementById('customDialogTitle');
+        const messageEl = document.getElementById('customDialogMessage');
+        const buttonsEl = document.getElementById('customDialogButtons');
+
+        // アイコンとタイトルを設定
+        if (type === 'confirm') {
+          iconEl.innerHTML = '❓';
+          titleEl.textContent = title || '確認';
+        } else if (type === 'alert') {
+          iconEl.innerHTML = 'ℹ️';
+          titleEl.textContent = title || 'お知らせ';
+        } else if (type === 'error') {
+          iconEl.innerHTML = '⚠️';
+          titleEl.textContent = title || 'エラー';
+        } else if (type === 'success') {
+          iconEl.innerHTML = '✅';
+          titleEl.textContent = title || '成功';
+        }
+
+        messageEl.textContent = message;
+
+        // ボタンを作成
+        buttonsEl.innerHTML = '';
+        if (type === 'confirm') {
+          const cancelBtn = document.createElement('button');
+          cancelBtn.textContent = 'キャンセル';
+          cancelBtn.className = 'btn';
+          cancelBtn.style.cssText = 'background-color: #95a5a6; color: white; padding: 0.75rem 2rem; font-size: 1rem;';
+          cancelBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(false);
+          };
+
+          const okBtn = document.createElement('button');
+          okBtn.textContent = 'OK';
+          okBtn.className = 'btn btn-primary';
+          okBtn.style.cssText = 'padding: 0.75rem 2rem; font-size: 1rem;';
+          okBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(true);
+          };
+
+          buttonsEl.appendChild(cancelBtn);
+          buttonsEl.appendChild(okBtn);
+        } else {
+          const okBtn = document.createElement('button');
+          okBtn.textContent = 'OK';
+          okBtn.className = 'btn btn-primary';
+          okBtn.style.cssText = 'padding: 0.75rem 2rem; font-size: 1rem;';
+          okBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(true);
+          };
+          buttonsEl.appendChild(okBtn);
+        }
+
+        // ダイアログを表示
+        dialog.style.display = 'flex';
+        setTimeout(() => {
+          dialogBox.style.transform = 'scale(1)';
+        }, 10);
+
+        // Escapeキーで閉じる
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            closeCustomDialog();
+            resolve(false);
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        // 背景クリックで閉じる
+        dialog.onclick = (e) => {
+          if (e.target === dialog) {
+            closeCustomDialog();
+            resolve(false);
+          }
+        };
+      });
+    }
+
+    function closeCustomDialog() {
+      const dialog = document.getElementById('customDialog');
+      const dialogBox = document.getElementById('customDialogBox');
+      dialogBox.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        dialog.style.display = 'none';
+      }, 200);
+    }
+
+    // グローバルconfirm/alert関数をオーバーライド
+    window.confirm = function(message) {
+      return showCustomDialog('confirm', message);
+    };
+
+    window.alert = function(message) {
+      return showCustomDialog('alert', message);
+    };
+
+    // カスタム関数も追加（呼び出し側でawaitできるように）
+    window.showSuccess = function(message, title) {
+      return showCustomDialog('success', message, title);
+    };
+
+    window.showError = function(message, title) {
+      return showCustomDialog('error', message, title);
+    };
+  </script>
+
   <%- typeof additionalScripts !== 'undefined' ? additionalScripts : '' %>
 </body>
 </html>

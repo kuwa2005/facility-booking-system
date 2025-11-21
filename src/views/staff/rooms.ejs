@@ -151,14 +151,14 @@ async function showEditModal(id) {
     const room = rooms.find(r => r.id === id);
 
     if (!room) {
-      alert('施設が見つかりませんでした');
+      await alert('施設が見つかりませんでした');
       return;
     }
 
     showFormModal(room);
   } catch (error) {
     console.error('Error loading room:', error);
-    alert('施設情報の読み込みに失敗しました');
+    await alert('施設情報の読み込みに失敗しました');
   }
 }
 
@@ -258,7 +258,7 @@ async function saveRoom() {
   };
 
   if (!data.name || !data.capacity) {
-    alert('施設名と定員は必須です');
+    await alert('施設名と定員は必須です');
     return;
   }
 
@@ -278,22 +278,23 @@ async function saveRoom() {
     });
 
     if (res.ok) {
-      alert(editingRoomId ? '施設を更新しました' : '施設を追加しました');
+      await alert(editingRoomId ? '施設を更新しました' : '施設を追加しました');
       closeFormModal();
       loadRooms();
+      loadInactiveRooms();
     } else {
       const error = await res.json();
-      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+      await alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
     }
   } catch (error) {
     console.error('Error saving room:', error);
-    alert('保存に失敗しました');
+    await alert('保存に失敗しました');
   }
 }
 
 // 施設を削除
 async function deleteRoom(id) {
-  if (!confirm('この施設を削除しますか？\n※論理削除されるため、後で復元可能です')) {
+  if (!await confirm('この施設を削除しますか？\n※論理削除されるため、後で復元可能です')) {
     return;
   }
 
@@ -304,15 +305,16 @@ async function deleteRoom(id) {
       });
 
     if (res.ok) {
-      alert('施設を削除しました');
+      await alert('施設を削除しました');
       loadRooms();
+      loadInactiveRooms();
     } else {
       const error = await res.json();
-      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+      await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
     }
   } catch (error) {
     console.error('Error deleting room:', error);
-    alert('削除に失敗しました');
+    await alert('削除に失敗しました');
   }
 }
 
@@ -420,13 +422,13 @@ async function saveDisplayOrder() {
     if (!res.ok) {
       const error = await res.json();
       console.error('Failed to save display order:', error);
-      alert('表示順の保存に失敗しました');
+      await alert('表示順の保存に失敗しました');
       // エラー時は元の順序に戻すために再読み込み
       loadRooms();
     }
   } catch (error) {
     console.error('Error saving display order:', error);
-    alert('表示順の保存に失敗しました');
+    await alert('表示順の保存に失敗しました');
     loadRooms();
   }
 }
@@ -485,7 +487,7 @@ async function loadInactiveRooms() {
 
 // 施設を復元
 async function restoreRoom(id) {
-  if (!confirm('この施設を復元しますか？\n復元すると一般ユーザーにも表示されるようになります。')) {
+  if (!await confirm('この施設を復元しますか？\n復元すると一般ユーザーにも表示されるようになります。')) {
     return;
   }
 
@@ -496,16 +498,16 @@ async function restoreRoom(id) {
     });
 
     if (res.ok) {
-      alert('施設を復元しました');
+      await alert('施設を復元しました');
       loadRooms();
       loadInactiveRooms();
     } else {
       const error = await res.json();
-      alert('復元に失敗しました: ' + (error.error || '不明なエラー'));
+      await alert('復元に失敗しました: ' + (error.error || '不明なエラー'));
     }
   } catch (error) {
     console.error('Error restoring room:', error);
-    alert('復元に失敗しました');
+    await alert('復元に失敗しました');
   }
 }
 </script>
