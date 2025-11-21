@@ -364,10 +364,44 @@
               btn.textContent = '❤️';
             }
           });
+
+          // お気に入りの施設を先頭に移動
+          sortRoomsByFavorites();
         }
       } catch (error) {
         console.error('Failed to load favorites:', error);
       }
+    }
+
+    // お気に入りの施設を先頭に表示するようにソート
+    function sortRoomsByFavorites() {
+      const roomGrid = document.querySelector('.room-grid');
+      if (!roomGrid) return;
+
+      const roomCards = Array.from(roomGrid.querySelectorAll('.room-card'));
+
+      // お気に入りとそれ以外に分割
+      const favoriteCards = [];
+      const regularCards = [];
+
+      roomCards.forEach(card => {
+        const favoriteBtn = card.querySelector('button[data-room-id]');
+        if (favoriteBtn) {
+          const roomId = parseInt(favoriteBtn.getAttribute('data-room-id') || '0', 10);
+          if (favorites.has(roomId)) {
+            favoriteCards.push(card);
+          } else {
+            regularCards.push(card);
+          }
+        } else {
+          regularCards.push(card);
+        }
+      });
+
+      // お気に入りを先頭に、その後通常のカードを配置
+      roomGrid.innerHTML = '';
+      favoriteCards.forEach(card => roomGrid.appendChild(card));
+      regularCards.forEach(card => roomGrid.appendChild(card));
     }
 
     async function toggleFavorite(roomId, btn) {
@@ -385,6 +419,8 @@
           if (response.ok && data.success) {
             favorites.delete(roomId);
             btn.textContent = '🤍';
+            // お気に入り解除後に並び替え
+            sortRoomsByFavorites();
           } else {
             const errorMsg = data.error ? `${data.message}\n詳細: ${data.error}` : (data.message || '不明なエラー');
             alert('削除に失敗しました: ' + errorMsg);
@@ -405,6 +441,8 @@
           if (response.ok && data.success) {
             favorites.add(roomId);
             btn.textContent = '❤️';
+            // お気に入り登録後に並び替え
+            sortRoomsByFavorites();
           } else {
             const errorMsg = data.error ? `${data.message}\n詳細: ${data.error}` : (data.message || '不明なエラー');
             alert('追加に失敗しました: ' + errorMsg);
