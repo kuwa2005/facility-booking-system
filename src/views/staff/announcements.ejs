@@ -49,10 +49,11 @@ async function loadAnnouncements() {
   const status = document.getElementById('statusFilter').value;
 
   try {
-    const res = await fetch('/api/staff/announcements', {
+    const res = await fetch('/api/staff/announcements?includeInactive=true', {
       credentials: 'include',
       });
-    let announcements = await res.json();
+    const response = await res.json();
+    let announcements = response.data || response;
 
     // フィルター適用
     if (status === 'active') {
@@ -127,10 +128,11 @@ async function showEditModal(id) {
   document.getElementById('modalTitle').textContent = 'お知らせを編集';
 
   try {
-    const res = await fetch('/api/staff/announcements', {
+    const res = await fetch('/api/staff/announcements?includeInactive=true', {
       credentials: 'include',
       });
-    const announcements = await res.json();
+    const response = await res.json();
+    const announcements = response.data || response;
     const announcement = announcements.find(a => a.id === id);
 
     if (!announcement) {
@@ -157,6 +159,15 @@ function showFormModal(announcement = null) {
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">内容 *</label>
         <textarea id="content" rows="8" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${announcement?.content || ''}</textarea>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">表示対象 *</label>
+        <select id="announcementType" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="public" ${!announcement || announcement?.announcementType === 'public' ? 'selected' : ''}>公開（すべての訪問者）</option>
+          <option value="user" ${announcement?.announcementType === 'user' ? 'selected' : ''}>会員のみ</option>
+        </select>
+        <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #7f8c8d;">公開：ログインしていないユーザーにも表示されます / 会員のみ：ログイン済みの会員のみに表示されます</p>
       </div>
 
       <div>
@@ -194,11 +205,12 @@ async function saveAnnouncement() {
   const data = {
     title: document.getElementById('title').value.trim(),
     content: document.getElementById('content').value.trim(),
-    isActive: document.getElementById('isActive').checked,
+    announcement_type: document.getElementById('announcementType').value,
+    is_active: document.getElementById('isActive').checked,
   };
 
-  if (!data.title || !data.content) {
-    alert('タイトルと内容は必須です');
+  if (!data.title || !data.content || !data.announcement_type) {
+    alert('タイトル、内容、表示対象は必須です');
     return;
   }
 
@@ -237,7 +249,11 @@ async function toggleActive(id, currentStatus) {
     const res = await fetch(`/api/staff/announcements/${id}/toggle`, {
       method: 'POST',
       credentials: 'include',
-      });
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ is_active: !currentStatus })
+    });
 
     if (res.ok) {
       alert(`お知らせを${currentStatus ? '無効' : '有効'}にしました`);

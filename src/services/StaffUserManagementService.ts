@@ -238,7 +238,8 @@ export class StaffUserManagementService {
          SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admin_users,
          SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active_users,
          SUM(CASE WHEN deleted_at IS NOT NULL THEN 1 ELSE 0 END) as deleted_users,
-         SUM(CASE WHEN email_verified = TRUE THEN 1 ELSE 0 END) as verified_users
+         SUM(CASE WHEN email_verified = TRUE THEN 1 ELSE 0 END) as verified_users,
+         SUM(CASE WHEN DATE_FORMAT(created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN 1 ELSE 0 END) as new_users_this_month
        FROM users`
     );
 
@@ -251,6 +252,7 @@ export class StaffUserManagementService {
       activeUsers: result.active_users || 0,
       deletedUsers: result.deleted_users || 0,
       verifiedUsers: result.verified_users || 0,
+      newUsersThisMonth: result.new_users_this_month || 0,
     };
   }
 
