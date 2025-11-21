@@ -13,6 +13,12 @@ export async function checkMaintenanceMode(
   next: NextFunction
 ): Promise<void> {
   try {
+    // 静的ファイルはスキップ
+    if (req.path.match(/\.(ico|png|jpg|jpeg|gif|svg|css|js|woff|woff2|ttf|eot)$/)) {
+      next();
+      return;
+    }
+
     // 職員・管理者はメンテナンスモード中でもアクセス可能
     if (req.user && (req.user.role === 'staff' || req.user.role === 'admin')) {
       next();
