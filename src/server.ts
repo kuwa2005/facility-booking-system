@@ -83,6 +83,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Favicon リダイレクト
+app.get('/favicon.ico', (req, res) => {
+  res.redirect(301, '/favicon.svg');
+});
+
 // APIルート
 app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
