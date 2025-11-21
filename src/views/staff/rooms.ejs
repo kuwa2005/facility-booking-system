@@ -1,6 +1,25 @@
+<style>
+  .drag-handle {
+    cursor: move;
+    user-select: none;
+    color: #95a5a6;
+    font-size: 1.2rem;
+  }
+  .drag-handle:hover {
+    color: #7f8c8d;
+  }
+  .dragging {
+    opacity: 0.5;
+    background-color: #ecf0f1 !important;
+  }
+  .drag-over {
+    border-top: 3px solid #3498db;
+  }
+</style>
+
 <div class="page-header">
   <h1 class="page-title">施設管理</h1>
-  <p class="page-description">施設・部屋の登録、編集、削除</p>
+  <p class="page-description">施設・部屋の登録、編集、削除（ドラッグ＆ドロップで表示順を変更できます）</p>
 </div>
 
 <!-- 部屋一覧 -->
@@ -35,19 +54,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // 部屋一覧を読み込み
+let roomsData = [];
 async function loadRooms() {
   try {
     const res = await fetch('/api/staff/facilities/rooms', {
       credentials: 'include',
       });
-    const rooms = await res.json();
+    roomsData = await res.json();
 
-    if (rooms && rooms.length > 0) {
+    if (roomsData && roomsData.length > 0) {
       const html = `
         <div style="overflow-x: auto;">
-          <table class="table">
+          <table class="table" id="roomsTable">
             <thead>
               <tr>
+                <th style="width: 30px;"></th>
                 <th>ID</th>
                 <th>施設名</th>
                 <th>定員</th>
@@ -61,9 +82,10 @@ async function loadRooms() {
                 <th>操作</th>
               </tr>
             </thead>
-            <tbody>
-              ${rooms.map(room => `
-                <tr>
+            <tbody id="roomsTableBody">
+              ${roomsData.map(room => `
+                <tr draggable="true" data-room-id="${room.id}" data-display-order="${room.displayOrder || 0}">
+                  <td><span class="drag-handle">⋮⋮</span></td>
                   <td>${room.id}</td>
                   <td><strong>${room.name}</strong></td>
                   <td>${room.capacity}名</td>
@@ -89,6 +111,7 @@ async function loadRooms() {
         </div>
       `;
       document.getElementById('roomsContainer').innerHTML = html;
+      initializeDragAndDrop();
     } else {
       document.getElementById('roomsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">施設がありません</p>';
     }
@@ -289,4 +312,112 @@ document.getElementById('formModal').addEventListener('click', (e) => {
     closeFormModal();
   }
 });
+
+// ドラッグ&ドロップ機能の初期化
+let draggedRow = null;
+
+function initializeDragAndDrop() {
+  const tbody = document.getElementById('roomsTableBody');
+  if (!tbody) return;
+
+  const rows = tbody.querySelectorAll('tr[draggable="true"]');
+
+  rows.forEach(row => {
+    row.addEventListener('dragstart', handleDragStart);
+    row.addEventListener('dragend', handleDragEnd);
+    row.addEventListener('dragover', handleDragOver);
+    row.addEventListener('drop', handleDrop);
+    row.addEventListener('dragleave', handleDragLeave);
+  });
+}
+
+function handleDragStart(e) {
+  draggedRow = e.currentTarget;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+}
+
+function handleDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+
+  // すべての行からdrag-overクラスを削除
+  const rows = document.querySelectorAll('#roomsTableBody tr');
+  rows.forEach(row => row.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault();
+  }
+  e.dataTransfer.dropEffect = 'move';
+  return false;
+}
+
+function handleDrop(e) {
+  if (e.stopPropagation) {
+    e.stopPropagation();
+  }
+  e.preventDefault();
+
+  const targetRow = e.currentTarget;
+
+  if (draggedRow !== targetRow) {
+    // ドラッグした行をターゲット行の前に挿入
+    const tbody = targetRow.parentNode;
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    const draggedIndex = allRows.indexOf(draggedRow);
+    const targetIndex = allRows.indexOf(targetRow);
+
+    if (draggedIndex < targetIndex) {
+      tbody.insertBefore(draggedRow, targetRow.nextSibling);
+    } else {
+      tbody.insertBefore(draggedRow, targetRow);
+    }
+
+    // 新しい順序をサーバーに保存
+    saveDisplayOrder();
+  }
+
+  targetRow.classList.remove('drag-over');
+  return false;
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+// 表示順をサーバーに保存
+async function saveDisplayOrder() {
+  const tbody = document.getElementById('roomsTableBody');
+  const rows = tbody.querySelectorAll('tr[data-room-id]');
+
+  const orderUpdates = Array.from(rows).map((row, index) => ({
+    id: parseInt(row.getAttribute('data-room-id')),
+    displayOrder: index
+  }));
+
+  try {
+    const res = await fetch('/api/staff/facilities/rooms/display-order', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderUpdates })
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      console.error('Failed to save display order:', error);
+      alert('表示順の保存に失敗しました');
+      // エラー時は元の順序に戻すために再読み込み
+      loadRooms();
+    }
+  } catch (error) {
+    console.error('Error saving display order:', error);
+    alert('表示順の保存に失敗しました');
+    loadRooms();
+  }
+}
 </script>

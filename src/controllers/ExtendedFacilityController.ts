@@ -5,6 +5,7 @@ import ProxyReservationService from '../services/ProxyReservationService';
 import RoomEquipmentManagementService from '../services/RoomEquipmentManagementService';
 import ExtendedClosureDateService from '../services/ExtendedClosureDateService';
 import StaffUserManagementService from '../services/StaffUserManagementService';
+import RoomRepository from '../models/RoomRepository';
 
 /**
  * 拡張施設管理コントローラー
@@ -415,6 +416,29 @@ export class ExtendedFacilityController {
       const { userId } = req.params;
       await StaffUserManagementService.withdrawMemberByStaff(parseInt(userId), req.user.userId);
       res.json({ message: 'Member withdrawn successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ===== 施設表示順管理 =====
+
+  static async updateRoomsDisplayOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { orderUpdates } = req.body;
+
+      if (!Array.isArray(orderUpdates) || orderUpdates.length === 0) {
+        res.status(400).json({ error: 'orderUpdates must be a non-empty array' });
+        return;
+      }
+
+      await RoomRepository.updateBulkDisplayOrder(orderUpdates);
+      res.json({ message: 'Room display order updated successfully' });
     } catch (error) {
       next(error);
     }

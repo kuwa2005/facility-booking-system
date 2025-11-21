@@ -19,6 +19,7 @@ export class RoomRepository {
       acPricePerHour: room.ac_price_per_hour,
       description: room.description,
       isActive: room.is_active,
+      displayOrder: room.display_order,
       createdAt: room.created_at,
       updatedAt: room.updated_at,
     };
@@ -40,7 +41,7 @@ export class RoomRepository {
    */
   async findAllActive(): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM rooms WHERE is_active = TRUE ORDER BY name ASC'
+      'SELECT * FROM rooms WHERE is_active = TRUE ORDER BY display_order ASC, name ASC'
     );
     return rows.map(row => this.toCamelCase(row));
   }
@@ -50,7 +51,7 @@ export class RoomRepository {
    */
   async findAll(): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM rooms ORDER BY name ASC'
+      'SELECT * FROM rooms ORDER BY display_order ASC, name ASC'
     );
     return rows.map(row => this.toCamelCase(row));
   }
@@ -105,6 +106,7 @@ export class RoomRepository {
       acPricePerHour: 'ac_price_per_hour',
       description: 'description',
       isActive: 'is_active',
+      displayOrder: 'display_order',
       updatedAt: 'updated_at',
     };
 
@@ -148,6 +150,30 @@ export class RoomRepository {
       [roomId]
     );
     return rows[0].count > 0;
+  }
+
+  /**
+   * Update display order for multiple rooms
+   */
+  async updateBulkDisplayOrder(orderUpdates: { id: number; displayOrder: number }[]): Promise<void> {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      for (const update of orderUpdates) {
+        await connection.query(
+          'UPDATE rooms SET display_order = ? WHERE id = ?',
+          [update.displayOrder, update.id]
+        );
+      }
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 }
 

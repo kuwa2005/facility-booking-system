@@ -105,6 +105,7 @@ router.post('/facilities/rooms', StaffFacilityController.createRoom);
 router.patch('/facilities/rooms/:id', StaffFacilityController.updateRoom);
 router.delete('/facilities/rooms/:id', StaffFacilityController.deleteRoom);
 router.get('/facilities/rooms/:id/usage-stats', StaffFacilityController.getRoomUsageStats);
+router.patch('/facilities/rooms/display-order', ExtendedFacilityController.updateRoomsDisplayOrder);
 
 // 設備管理
 router.get('/facilities/equipment', StaffFacilityController.getEquipment);
