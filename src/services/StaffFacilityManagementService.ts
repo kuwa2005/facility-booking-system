@@ -126,6 +126,30 @@ export class StaffFacilityManagementService {
   }
 
   /**
+   * 部屋を復元（再有効化）
+   */
+  async restoreRoom(roomId: number, staffId: number): Promise<void> {
+    const room = await RoomRepository.findById(roomId);
+    if (!room) {
+      throw new Error('Room not found');
+    }
+
+    if (room.isActive) {
+      throw new Error('Room is already active');
+    }
+
+    await RoomRepository.restore(roomId);
+
+    await this.logActivity(
+      staffId,
+      'update',
+      'room',
+      roomId,
+      `Room restored: ${room.name}`
+    );
+  }
+
+  /**
    * 部屋の利用統計を取得
    */
   async getRoomUsageStats(roomId: number, startDate?: Date, endDate?: Date): Promise<any> {

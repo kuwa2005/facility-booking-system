@@ -33,6 +33,15 @@
   </div>
 </div>
 
+<!-- 削除された施設 -->
+<div class="card" style="margin-top: 2rem;">
+  <h2 class="card-title">削除された施設</h2>
+  <p style="color: #7f8c8d; margin-bottom: 1rem;">削除（無効化）された施設の一覧です。復元すると再び有効になります。</p>
+  <div id="inactiveRoomsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
 <!-- 追加/編集モーダル -->
 <div id="formModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
   <div style="background-color: white; max-width: 700px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
@@ -51,6 +60,7 @@ let editingRoomId = null;
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
   loadRooms();
+  loadInactiveRooms();
 });
 
 // 部屋一覧を読み込み
@@ -418,6 +428,84 @@ async function saveDisplayOrder() {
     console.error('Error saving display order:', error);
     alert('表示順の保存に失敗しました');
     loadRooms();
+  }
+}
+
+// 削除された施設一覧を読み込み
+async function loadInactiveRooms() {
+  try {
+    const res = await fetch('/api/staff/facilities/rooms?includeInactive=true', {
+      credentials: 'include',
+    });
+    const allRooms = await res.json();
+    const inactiveRooms = allRooms.filter(room => !room.isActive);
+
+    if (inactiveRooms && inactiveRooms.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>施設名</th>
+                <th>定員</th>
+                <th>午前料金</th>
+                <th>午後料金</th>
+                <th>夜間料金</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${inactiveRooms.map(room => `
+                <tr style="background-color: #f8d7da;">
+                  <td>${room.id}</td>
+                  <td><strong>${room.name}</strong></td>
+                  <td>${room.capacity}名</td>
+                  <td>¥${(room.basePriceMorning || 0).toLocaleString()}</td>
+                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString()}</td>
+                  <td>¥${(room.basePriceEvening || 0).toLocaleString()}</td>
+                  <td>
+                    <button onclick="restoreRoom(${room.id})" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">復元</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('inactiveRoomsContainer').innerHTML = html;
+    } else {
+      document.getElementById('inactiveRoomsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">削除された施設はありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading inactive rooms:', error);
+    document.getElementById('inactiveRoomsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 施設を復元
+async function restoreRoom(id) {
+  if (!confirm('この施設を復元しますか？\n復元すると一般ユーザーにも表示されるようになります。')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms/${id}/restore`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (res.ok) {
+      alert('施設を復元しました');
+      loadRooms();
+      loadInactiveRooms();
+    } else {
+      const error = await res.json();
+      alert('復元に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error restoring room:', error);
+    alert('復元に失敗しました');
   }
 }
 </script>

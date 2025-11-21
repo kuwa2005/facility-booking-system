@@ -104,6 +104,7 @@ router.get('/facilities/rooms', StaffFacilityController.getRooms);
 router.post('/facilities/rooms', StaffFacilityController.createRoom);
 router.patch('/facilities/rooms/:id', StaffFacilityController.updateRoom);
 router.delete('/facilities/rooms/:id', StaffFacilityController.deleteRoom);
+router.post('/facilities/rooms/:id/restore', StaffFacilityController.restoreRoom);
 router.get('/facilities/rooms/:id/usage-stats', StaffFacilityController.getRoomUsageStats);
 router.patch('/facilities/rooms/display-order', ExtendedFacilityController.updateRoomsDisplayOrder);
 

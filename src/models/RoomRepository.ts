@@ -142,6 +142,13 @@ export class RoomRepository {
   }
 
   /**
+   * Restore room (reactivate by setting is_active to true)
+   */
+  async restore(id: number): Promise<void> {
+    await pool.query('UPDATE rooms SET is_active = TRUE WHERE id = ?', [id]);
+  }
+
+  /**
    * Check if room has any existing reservations
    */
   async hasReservations(roomId: number): Promise<boolean> {
