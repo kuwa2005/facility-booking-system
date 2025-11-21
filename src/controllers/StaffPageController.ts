@@ -26,6 +26,7 @@ export class StaffPageController {
       }
 
       const layoutData = {
+        ...res.locals,  // res.localsの内容を含める（isMaintenanceMode, siteNameなど）
         ...data,
         body: bodyHtml,
         user: req.user,
