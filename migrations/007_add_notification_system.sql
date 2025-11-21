@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS scheduled_notifications (
 -- =====================================================
 
 -- 予約完了通知テンプレート
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('application_created', '予約完了通知', 'ユーザーが予約を作成した時に送信',
 '【予約完了】{{facility_name}} のご予約を承りました',
 '{{user_name}} 様
@@ -130,7 +130,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 予約承認通知テンプレート
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('application_approved', '予約承認通知', '予約が承認された時に送信',
 '【予約承認】{{facility_name}} のご予約が承認されました',
 '{{user_name}} 様
@@ -153,7 +153,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 予約却下通知テンプレート
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('application_rejected', '予約却下通知', '予約が却下された時に送信',
 '【予約不可】{{facility_name}} のご予約について',
 '{{user_name}} 様
@@ -176,7 +176,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 利用日前日リマインダー
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('usage_reminder', '利用日前日リマインダー', '利用日の前日に送信',
 '【リマインダー】明日は{{facility_name}}のご利用日です',
 '{{user_name}} 様
@@ -198,7 +198,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 支払期限リマインダー
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('payment_reminder', '支払期限リマインダー', '支払期限が近づいた時に送信',
 '【お支払いのお願い】{{facility_name}} ご利用料金について',
 '{{user_name}} 様
@@ -220,7 +220,7 @@ TRUE);
 -- =====================================================
 -- デフォルト通知設定の挿入
 -- =====================================================
-INSERT INTO notification_settings (setting_key, setting_name, description, is_enabled, template_code, send_timing) VALUES
+INSERT IGNORE INTO notification_settings (setting_key, setting_name, description, is_enabled, template_code, send_timing) VALUES
 ('notify_application_created', '予約完了通知', '予約作成時にユーザーに通知', TRUE, 'application_created', 'immediate'),
 ('notify_application_approved', '予約承認通知', '予約承認時にユーザーに通知', TRUE, 'application_approved', 'immediate'),
 ('notify_application_rejected', '予約却下通知', '予約却下時にユーザーに通知', TRUE, 'application_rejected', 'immediate'),
