@@ -483,7 +483,15 @@ export class PageController {
    * ログアウト
    */
   static logout(req: Request, res: Response): void {
+    // ユーザーが職員または管理者の場合は /staff/login にリダイレクト
+    const isStaff = req.user && (req.user.role === 'staff' || req.user.role === 'admin');
+
     res.clearCookie('token');
-    res.redirect('/');
+
+    if (isStaff) {
+      res.redirect('/staff/login');
+    } else {
+      res.redirect('/');
+    }
   }
 }
