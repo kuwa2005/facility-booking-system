@@ -74,7 +74,7 @@
     </div>
   </div>
   <div id="logContainer">
-    <p style="text-align: center; color: #7f8c8d;">検索ボタンを押してログを表示してください</p>
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
   </div>
 </div>
 
@@ -97,6 +97,8 @@ let currentLogs = [];
 document.addEventListener('DOMContentLoaded', () => {
   loadStats();
   setDefaultDateRange();
+  // 初期表示時にデフォルトの検索条件でログを表示
+  loadActivityLog();
 });
 
 // デフォルトの日時範囲を設定（今日）
