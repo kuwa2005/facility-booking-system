@@ -109,9 +109,6 @@ export async function checkMaintenanceMode(
               しばらく時間をおいてから再度アクセスしてください。
             </p>
             <a href="/" class="back-button">トップページに戻る</a>
-            <div class="staff-login">
-              <a href="/staff/login">職員ログインはこちら</a>
-            </div>
           </div>
         </body>
         </html>

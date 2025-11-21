@@ -243,10 +243,61 @@
       padding: 1.5rem;
       margin-top: 2rem;
     }
+
+    /* メンテナンスモードバナー */
+    .maintenance-banner {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .maintenance-banner-icon {
+      font-size: 1.2rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    .maintenance-banner a {
+      color: white;
+      text-decoration: underline;
+      margin-left: 1rem;
+      font-weight: 700;
+    }
+
+    .maintenance-banner a:hover {
+      color: #ecf0f1;
+    }
   </style>
   <%- typeof additionalStyles !== 'undefined' ? additionalStyles : '' %>
 </head>
 <body>
+  <!-- メンテナンスモード警告バナー -->
+  <% if (isMaintenanceMode) { %>
+  <div class="maintenance-banner">
+    <span class="maintenance-banner-icon">⚠️</span>
+    <span>メンテナンスモード中です！一般利用者はアクセスできません。</span>
+    <a href="/staff/settings">設定画面で解除する</a>
+  </div>
+  <% } %>
+
   <!-- ヘッダー -->
   <header class="header">
     <div class="header-content">

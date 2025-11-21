@@ -20,6 +20,9 @@ export async function loadSystemSettings(
     res.locals.contactEmail = settings.contact_email || '';
     res.locals.systemSettings = settings;
 
+    // メンテナンスモード状態（職員画面での警告表示用）
+    res.locals.isMaintenanceMode = settings.maintenance_mode || false;
+
     next();
   } catch (error) {
     // エラーが発生してもデフォルト値を設定して続行
@@ -27,6 +30,7 @@ export async function loadSystemSettings(
     res.locals.siteName = '施設予約システム';
     res.locals.contactEmail = '';
     res.locals.systemSettings = {};
+    res.locals.isMaintenanceMode = false;
     next();
   }
 }
