@@ -73,11 +73,27 @@ async function loadEquipment() {
     const res = await fetch('/api/staff/facilities/equipment', {
       credentials: 'include',
       });
+
+    if (!res.ok) {
+      // レート制限やその他のHTTPエラー
+      let errorMessage = 'データの読み込みに失敗しました';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースできない場合はテキストとして取得
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      throw new Error(errorMessage);
+    }
+
     allEquipment = await res.json();
     displayEquipment();
   } catch (error) {
     console.error('Error loading equipment:', error);
-    document.getElementById('equipmentContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+    const message = error instanceof Error ? error.message : 'データの読み込みに失敗しました';
+    document.getElementById('equipmentContainer').innerHTML = `<p style="text-align: center; color: #e74c3c;">${message}</p>`;
   }
 }
 

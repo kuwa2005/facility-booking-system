@@ -70,6 +70,21 @@ async function loadRooms() {
     const res = await fetch('/api/staff/facilities/rooms', {
       credentials: 'include',
       });
+
+    if (!res.ok) {
+      // レート制限やその他のHTTPエラー
+      let errorMessage = 'データの読み込みに失敗しました';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースできない場合はテキストとして取得
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      throw new Error(errorMessage);
+    }
+
     const allRooms = await res.json();
 
     // アクティブな部屋のみをフィルタリング
@@ -433,16 +448,24 @@ async function saveDisplayOrder() {
     });
 
     if (!res.ok) {
-      const error = await res.json();
-      console.error('Failed to save display order:', error);
-      await alert('表示順の保存に失敗しました: ' + (error.error || '不明なエラー'));
+      let errorMessage = '表示順の保存に失敗しました';
+      try {
+        const error = await res.json();
+        errorMessage = error.error || errorMessage;
+      } catch {
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      console.error('Failed to save display order:', errorMessage);
+      await alert(errorMessage);
       // エラー時は元の順序に戻すために再読み込み
       await loadRooms();
     }
   } catch (error) {
     console.error('Error saving display order:', error);
-    await alert('表示順の保存に失敗しました');
-    loadRooms();
+    const message = error instanceof Error ? error.message : '表示順の保存に失敗しました';
+    await alert(message);
+    await loadRooms();
   }
 }
 
@@ -452,6 +475,21 @@ async function loadInactiveRooms() {
     const res = await fetch('/api/staff/facilities/rooms?includeInactive=true', {
       credentials: 'include',
     });
+
+    if (!res.ok) {
+      // レート制限やその他のHTTPエラー
+      let errorMessage = 'データの読み込みに失敗しました';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースできない場合はテキストとして取得
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      throw new Error(errorMessage);
+    }
+
     const allRooms = await res.json();
     const inactiveRooms = allRooms.filter(room => !room.isActive);
 
