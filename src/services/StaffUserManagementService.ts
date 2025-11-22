@@ -42,6 +42,7 @@ export class StaffUserManagementService {
 
   /**
    * ユーザー一覧を取得
+   * デフォルトでは一般利用者（role='user'）のみを表示
    */
   async getUsers(filter: UserFilter = {}): Promise<any[]> {
     let query = `
@@ -70,10 +71,14 @@ export class StaffUserManagementService {
 
     const params: any[] = [];
 
-    // ロールフィルタ
+    // ロールフィルタ（デフォルトは'user'のみ表示）
     if (filter.role && filter.role !== 'all') {
       query += ' AND role = ?';
       params.push(filter.role);
+    } else if (!filter.role) {
+      // フィルタ指定なしの場合は一般利用者のみ表示（職員・管理者を除外）
+      query += ' AND role = ?';
+      params.push('user');
     }
 
     // アクティブフィルタ
@@ -257,7 +262,7 @@ export class StaffUserManagementService {
   }
 
   /**
-   * 最近登録されたユーザー
+   * 最近登録されたユーザー（一般利用者のみ）
    */
   async getRecentUsers(limit: number = 10): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -272,6 +277,7 @@ export class StaffUserManagementService {
          created_at
        FROM users
        WHERE deleted_at IS NULL
+         AND role = 'user'
        ORDER BY created_at DESC
        LIMIT ?`,
       [limit]
