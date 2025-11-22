@@ -1,6 +1,7 @@
 import { pool } from '../config/database';
 import { RowDataPacket } from 'mysql2';
 import UserRepository from '../models/UserRepository';
+import bcrypt from 'bcrypt';
 
 export interface UserFilter {
   role?: 'user' | 'staff' | 'admin' | 'all';
@@ -21,6 +22,8 @@ export class StaffUserManagementService {
       id: user.id,
       email: user.email,
       name: user.name,
+      nickname: user.nickname,
+      bio: user.bio,
       organizationName: user.organization_name,
       phone: user.phone,
       address: user.address,
@@ -32,7 +35,7 @@ export class StaffUserManagementService {
       hireDate: user.hire_date,
       staffStatus: user.staff_status,
       emailVerified: user.email_verified,
-      nickname: user.nickname,
+      profileImagePath: user.profile_image_path,
       deletedAt: user.deleted_at,
       lastLoginAt: user.last_login_at,
       createdAt: user.created_at,
@@ -42,6 +45,7 @@ export class StaffUserManagementService {
 
   /**
    * ユーザー一覧を取得
+   * デフォルトでは一般利用者（role='user'）のみを表示
    */
   async getUsers(filter: UserFilter = {}): Promise<any[]> {
     let query = `
@@ -70,10 +74,14 @@ export class StaffUserManagementService {
 
     const params: any[] = [];
 
-    // ロールフィルタ
+    // ロールフィルタ（デフォルトは'user'のみ表示）
     if (filter.role && filter.role !== 'all') {
       query += ' AND role = ?';
       params.push(filter.role);
+    } else if (!filter.role) {
+      // フィルタ指定なしの場合は一般利用者のみ表示（職員・管理者を除外）
+      query += ' AND role = ?';
+      params.push('user');
     }
 
     // アクティブフィルタ
@@ -116,8 +124,9 @@ export class StaffUserManagementService {
       throw new Error('User not found');
     }
 
-    // パスワードハッシュを除外
-    const { password_hash, ...userInfo } = user;
+    // パスワードハッシュを除外し、camelCaseに変換
+    const { password_hash, ...userDbInfo } = user;
+    const userInfo = this.toCamelCaseUser(userDbInfo);
 
     // ユーザーの予約履歴を取得
     const [applications] = await pool.query<RowDataPacket[]>(
@@ -210,45 +219,68 @@ export class StaffUserManagementService {
       throw new Error('User not found');
     }
 
-    // パスワードハッシュの更新は許可しない
-    if ('password_hash' in updates) {
-      delete updates.password_hash;
+    // camelCaseからsnake_caseに変換
+    const dbUpdates: any = {};
+    const fieldMapping: Record<string, string> = {
+      'name': 'name',
+      'nickname': 'nickname',
+      'email': 'email',
+      'bio': 'bio',
+      'organizationName': 'organization_name',
+      'phone': 'phone',
+      'address': 'address',
+      'emailVerified': 'email_verified',
+      'isActive': 'is_active',
+    };
+
+    for (const [camelKey, value] of Object.entries(updates)) {
+      if (camelKey === 'password') {
+        // パスワード変更処理
+        const passwordHash = await bcrypt.hash(value as string, 10);
+        dbUpdates.password_hash = passwordHash;
+      } else if (fieldMapping[camelKey]) {
+        dbUpdates[fieldMapping[camelKey]] = value;
+      }
     }
 
-    await UserRepository.update(userId, updates);
+    // password_hashの直接更新は許可しない（passwordキー経由のみ）
+    if ('password_hash' in updates) {
+      delete dbUpdates.password_hash;
+    }
+
+    await UserRepository.update(userId, dbUpdates);
+
+    const logDescription = updates.password
+      ? `User information updated (including password reset): ${JSON.stringify({ ...updates, password: '[REDACTED]' })}`
+      : `User information updated: ${JSON.stringify(updates)}`;
 
     await this.logActivity(
       staffId,
       'update',
       'user',
       userId,
-      `User information updated: ${JSON.stringify(updates)}`
+      logDescription
     );
   }
 
   /**
-   * ユーザー統計サマリー
+   * ユーザー統計サマリー（一般利用者のみ）
    */
   async getUserStatsSummary(): Promise<any> {
     const [stats] = await pool.query<RowDataPacket[]>(
       `SELECT
          COUNT(*) as total_users,
-         SUM(CASE WHEN role = 'user' THEN 1 ELSE 0 END) as general_users,
-         SUM(CASE WHEN role = 'staff' THEN 1 ELSE 0 END) as staff_users,
-         SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admin_users,
          SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active_users,
          SUM(CASE WHEN deleted_at IS NOT NULL THEN 1 ELSE 0 END) as deleted_users,
          SUM(CASE WHEN email_verified = TRUE THEN 1 ELSE 0 END) as verified_users,
          SUM(CASE WHEN DATE_FORMAT(created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN 1 ELSE 0 END) as new_users_this_month
-       FROM users`
+       FROM users
+       WHERE role = 'user'`
     );
 
     const result = stats[0] || {};
     return {
       totalUsers: result.total_users || 0,
-      generalUsers: result.general_users || 0,
-      staffUsers: result.staff_users || 0,
-      adminUsers: result.admin_users || 0,
       activeUsers: result.active_users || 0,
       deletedUsers: result.deleted_users || 0,
       verifiedUsers: result.verified_users || 0,
@@ -257,7 +289,7 @@ export class StaffUserManagementService {
   }
 
   /**
-   * 最近登録されたユーザー
+   * 最近登録されたユーザー（一般利用者のみ）
    */
   async getRecentUsers(limit: number = 10): Promise<any[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
@@ -272,6 +304,7 @@ export class StaffUserManagementService {
          created_at
        FROM users
        WHERE deleted_at IS NULL
+         AND role = 'user'
        ORDER BY created_at DESC
        LIMIT ?`,
       [limit]

@@ -87,10 +87,17 @@ async function loadRooms() {
 
     const allRooms = await res.json();
 
-    // アクティブな部屋のみをフィルタリング
-    roomsData = allRooms.filter(room => room.isActive === true || room.isActive === 1);
+    // アクティブな部屋のみをフィルタリング + IDが存在するものだけ
+    roomsData = allRooms.filter(room => {
+      if (!room.id) {
+        console.warn('Room without ID found:', room);
+        return false;
+      }
+      return room.isActive === true || room.isActive === 1;
+    });
 
     console.log('Loaded rooms:', roomsData); // デバッグ用
+    console.log('Room IDs:', roomsData.map(r => r.id)); // ID一覧を出力
 
     if (roomsData && roomsData.length > 0) {
       const html = `
@@ -141,6 +148,21 @@ async function loadRooms() {
         </div>
       `;
       document.getElementById('roomsContainer').innerHTML = html;
+
+      // デバッグ: レンダリング直後のdata-room-id属性を検証
+      const tbody = document.getElementById('roomsTableBody');
+      if (tbody) {
+        const renderedRows = tbody.querySelectorAll('tr[data-room-id]');
+        console.log(`Rendered ${renderedRows.length} rows`);
+        renderedRows.forEach((row, idx) => {
+          const roomId = row.getAttribute('data-room-id');
+          console.log(`Rendered row ${idx}: data-room-id="${roomId}"`);
+          if (!roomId || roomId === 'undefined' || roomId === 'null') {
+            console.error(`ERROR: Row ${idx} has invalid data-room-id:`, roomId, row);
+          }
+        });
+      }
+
       initializeDragAndDrop();
     } else {
       document.getElementById('roomsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">施設がありません</p>';
@@ -430,22 +452,52 @@ async function saveDisplayOrder() {
   }
 
   const rows = tbody.querySelectorAll('tr[data-room-id]');
+  console.log(`Found ${rows.length} rows with data-room-id`); // デバッグ
 
-  const orderUpdates = Array.from(rows).map((row, index) => {
+  const orderUpdates = [];
+  Array.from(rows).forEach((row, index) => {
     const roomIdAttr = row.getAttribute('data-room-id');
-    const id = parseInt(roomIdAttr || '0', 10);
-    return {
+
+    // デバッグ: 属性の値を確認
+    console.log(`Row ${index}: data-room-id = "${roomIdAttr}"`, row); // 詳細ログ
+
+    if (!roomIdAttr) {
+      console.warn(`Row ${index}: data-room-id attribute is missing or empty`, row);
+      return;
+    }
+
+    const id = parseInt(roomIdAttr, 10);
+
+    // NaNや無効なIDをチェック
+    if (isNaN(id) || id <= 0) {
+      console.warn(`Row ${index}: Invalid room ID parsed from '${roomIdAttr}' -> ${id}`, row);
+      return;
+    }
+
+    orderUpdates.push({
       id: id,
       displayOrder: index
-    };
-  }).filter(update => !isNaN(update.id) && update.id > 0);
+    });
+  });
 
   console.log('Display order updates:', orderUpdates); // デバッグ用
 
   if (orderUpdates.length === 0) {
     console.warn('No valid room IDs to update');
+    alert('表示順の更新に失敗しました: 有効な施設IDが見つかりません');
     return;
   }
+
+  // さらに詳細なデバッグ: 送信前のデータ検証
+  const invalidItems = orderUpdates.filter(item => !item.id || typeof item.id !== 'number');
+  if (invalidItems.length > 0) {
+    console.error('Invalid items detected before sending:', invalidItems);
+    alert('無効なデータが検出されました。コンソールを確認してください。');
+    return;
+  }
+
+  const requestBody = { orderUpdates };
+  console.log('Request body to be sent:', JSON.stringify(requestBody, null, 2));
 
   try {
     const res = await fetch('/api/staff/facilities/rooms/display-order', {
@@ -454,7 +506,7 @@ async function saveDisplayOrder() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ orderUpdates })
+      body: JSON.stringify(requestBody)
     });
 
     if (!res.ok) {

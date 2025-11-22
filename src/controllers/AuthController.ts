@@ -86,9 +86,12 @@ export class AuthController {
       const result = await AuthService.login(email, password);
 
       // Set cookie (optional, for browser-based auth)
+      // secureフラグはHTTPS接続の時のみ有効にする
+      const useHttps = process.env.APP_URL?.startsWith('https://') || false;
       res.cookie('token', result.token.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: useHttps, // HTTPSの時のみsecure
+        sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
@@ -206,6 +209,64 @@ export class AuthController {
       });
     } catch (error: any) {
       next(createError(error.message, 400));
+    }
+  }
+
+  /**
+   * Log staff login attempt by regular user
+   * POST /api/auth/log-staff-login-attempt
+   */
+  static async logStaffLoginAttempt(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId, email, role } = req.body;
+
+      if (!userId || !email || !role) {
+        res.status(400).json({
+          success: false,
+          message: 'Missing required fields',
+        });
+        return;
+      }
+
+      // audit_logsテーブルに記録
+      const { pool } = await import('../config/database');
+      await pool.query(
+        `INSERT INTO audit_logs
+         (user_id, entity_type, entity_id, action, old_values, ip_address, user_agent)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          'security',
+          0,
+          'create',
+          JSON.stringify({
+            event: 'unauthorized_staff_login_attempt',
+            role: role,
+            email: email,
+            attempted_url: '/staff/login',
+            timestamp: new Date().toISOString(),
+            severity: 'warning'
+          }),
+          req.ip || req.socket.remoteAddress || 'Unknown',
+          req.get('user-agent') || 'Unknown'
+        ]
+      );
+
+      console.warn(
+        `[Security Warning] User (ID: ${userId}, Role: ${role}, Email: ${email}) attempted to login via staff login page`
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Login attempt logged',
+      });
+    } catch (error: any) {
+      console.error('Error logging staff login attempt:', error);
+      // ログ記録失敗でもエラーレスポンスは返さない（UX優先）
+      res.status(200).json({
+        success: true,
+        message: 'Login attempt logged',
+      });
     }
   }
 }

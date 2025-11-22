@@ -184,13 +184,27 @@ async function loadUsers() {
 
 // 利用者詳細を表示
 async function showDetail(id) {
+  if (!id || isNaN(id) || id <= 0) {
+    console.error('Invalid user ID:', id);
+    alert('無効なユーザーIDです');
+    return;
+  }
+
   currentUserId = id;
 
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
       credentials: 'include',
       });
-    const user = await res.json();
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // APIレスポンスがuserオブジェクトを含むか、直接userオブジェクトかを確認
+    const user = data.user || data;
 
     const html = `
       <div style="display: grid; gap: 1.5rem;">
@@ -222,6 +236,22 @@ async function showDetail(id) {
                 <p style="margin-top: 0.5rem; padding: 0.5rem; background-color: white; border-radius: 4px;">${user.bio}</p>
               </div>
             ` : ''}
+          </div>
+        </div>
+
+        <!-- 連絡先情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">連絡先情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div style="grid-column: 1 / -1;">
+              <strong>組織・団体名:</strong> ${user.organizationName || '-'}
+            </div>
+            <div>
+              <strong>電話番号:</strong> ${user.phone || '-'}
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong>住所:</strong> ${user.address || '-'}
+            </div>
           </div>
         </div>
 
@@ -302,32 +332,123 @@ function closeDetailModal() {
 
 // 編集モーダルを表示
 async function showEditModal(id) {
+  if (!id || isNaN(id) || id <= 0) {
+    console.error('Invalid user ID for edit:', id);
+    alert('無効なユーザーIDです');
+    return;
+  }
+
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
       credentials: 'include',
       });
-    const user = await res.json();
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // APIレスポンスがuserオブジェクトを含むか、直接userオブジェクトかを確認
+    const user = data.user || data;
 
     const html = `
-      <form id="editForm" style="display: grid; gap: 1rem;">
-        <div>
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">名前 *</label>
-          <input type="text" id="editName" value="${user.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      <form id="editForm" style="display: grid; gap: 1.5rem;">
+        <!-- 基本情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1rem;">基本情報</h3>
+          <div style="display: grid; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">名前 *</label>
+                <input type="text" id="editName" value="${user.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ニックネーム</label>
+                <input type="text" id="editNickname" value="${user.nickname || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+            </div>
+
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス *</label>
+              <input type="email" id="editEmail" value="${user.email}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">自己紹介</label>
+              <textarea id="editBio" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${user.bio || ''}</textarea>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ニックネーム</label>
-          <input type="text" id="editNickname" value="${user.nickname || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <!-- 連絡先情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1rem;">連絡先情報</h3>
+          <div style="display: grid; gap: 1rem;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">組織・団体名</label>
+              <input type="text" id="editOrganizationName" value="${user.organizationName || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">電話番号 *</label>
+              <input type="tel" id="editPhone" value="${user.phone || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;" placeholder="例: 03-1234-5678">
+            </div>
+
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">住所</label>
+              <textarea id="editAddress" rows="2" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${user.address || ''}</textarea>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス *</label>
-          <input type="email" id="editEmail" value="${user.email}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <!-- パスワード変更 -->
+        <div style="padding: 1rem; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #856404; font-size: 1rem;">🔒 パスワード変更</h3>
+          <div style="display: grid; gap: 1rem;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #856404;">新しいパスワード</label>
+              <input type="password" id="editPassword" style="width: 100%; padding: 0.75rem; border: 1px solid #ffc107; border-radius: 4px;" placeholder="変更しない場合は空欄のまま">
+              <small style="display: block; margin-top: 0.25rem; color: #856404;">1文字以上で入力してください（文字種・文字数の制限なし）</small>
+            </div>
+
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #856404;">新しいパスワード（確認）</label>
+              <input type="password" id="editPasswordConfirm" style="width: 100%; padding: 0.75rem; border: 1px solid #ffc107; border-radius: 4px;" placeholder="確認のため再入力">
+            </div>
+
+            <div style="padding: 0.75rem; background-color: #fff; border-radius: 4px;">
+              <strong style="color: #856404;">⚠️ 注意事項</strong>
+              <ul style="margin: 0.5rem 0 0 1.5rem; color: #856404;">
+                <li>パスワードを変更すると、ユーザーは新しいパスワードでログインする必要があります</li>
+                <li>変更後は必ずユーザーに新しいパスワードをお伝えください</li>
+                <li>空欄のまま保存するとパスワードは変更されません</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">自己紹介</label>
-          <textarea id="editBio" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${user.bio || ''}</textarea>
+        <!-- アカウント設定 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1rem;">アカウント設定</h3>
+          <div style="display: grid; gap: 1rem;">
+            <div>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="editEmailVerified" ${user.emailVerified ? 'checked' : ''} style="width: 1.25rem; height: 1.25rem;">
+                <span style="font-weight: 500;">メール認証済み</span>
+              </label>
+              <small style="display: block; margin-top: 0.25rem; color: #7f8c8d;">チェックするとメールアドレスが認証済みになります</small>
+            </div>
+
+            <div>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="editIsActive" ${user.isActive ? 'checked' : ''} style="width: 1.25rem; height: 1.25rem;">
+                <span style="font-weight: 500;">アカウントを有効化</span>
+              </label>
+              <small style="display: block; margin-top: 0.25rem; color: #7f8c8d;">無効化するとログインできなくなります</small>
+            </div>
+          </div>
         </div>
 
         <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
@@ -362,10 +483,46 @@ async function updateUser(id) {
   const nickname = document.getElementById('editNickname').value.trim();
   const email = document.getElementById('editEmail').value.trim();
   const bio = document.getElementById('editBio').value.trim();
+  const organizationName = document.getElementById('editOrganizationName').value.trim();
+  const phone = document.getElementById('editPhone').value.trim();
+  const address = document.getElementById('editAddress').value.trim();
+  const password = document.getElementById('editPassword').value;
+  const passwordConfirm = document.getElementById('editPasswordConfirm').value;
+  const emailVerified = document.getElementById('editEmailVerified').checked;
+  const isActive = document.getElementById('editIsActive').checked;
 
-  if (!name || !email) {
-    alert('名前とメールアドレスは必須です');
+  if (!name || !email || !phone) {
+    alert('名前、メールアドレス、電話番号は必須です');
     return;
+  }
+
+  // パスワード変更のバリデーション
+  if (password || passwordConfirm) {
+    if (password !== passwordConfirm) {
+      alert('パスワードと確認用パスワードが一致しません');
+      return;
+    }
+    if (password.length < 1) {
+      alert('パスワードは1文字以上で入力してください');
+      return;
+    }
+  }
+
+  const updates = {
+    name,
+    nickname: nickname || null,
+    email,
+    bio: bio || null,
+    organizationName: organizationName || null,
+    phone,
+    address: address || null,
+    emailVerified,
+    isActive
+  };
+
+  // パスワードが入力されている場合のみ含める
+  if (password) {
+    updates.password = password;
   }
 
   try {
@@ -375,11 +532,11 @@ async function updateUser(id) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name, nickname, email, bio })
+      body: JSON.stringify({ updates })
     });
 
     if (res.ok) {
-      alert('利用者情報を更新しました');
+      alert('利用者情報を更新しました' + (password ? '\nパスワードも変更されました。ユーザーに新しいパスワードをお伝えください。' : ''));
       closeEditModal();
       closeDetailModal();
       loadUsers();

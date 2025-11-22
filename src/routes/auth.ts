@@ -20,6 +20,7 @@ router.post(
   AuthController.resetPassword
 );
 router.post('/resend-verification', AuthController.resendVerification);
+router.post('/log-staff-login-attempt', AuthController.logStaffLoginAttempt);
 
 // Protected routes
 router.post(

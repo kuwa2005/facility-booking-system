@@ -280,13 +280,24 @@ async function loadBusinessHours() {
         // JSON文字列の場合はパース
         if (typeof settings.business_hours.value === 'string') {
           try {
-            businessHoursData = JSON.parse(settings.business_hours.value);
+            const parsed = JSON.parse(settings.business_hours.value);
+            // 配列かどうかをチェック
+            if (Array.isArray(parsed)) {
+              businessHoursData = parsed;
+            } else {
+              // オブジェクト形式（古い形式）の場合は空配列
+              console.log('Business hours is not an array, using default hours');
+              businessHoursData = [];
+            }
           } catch (e) {
             console.error('Failed to parse business hours:', e);
             businessHoursData = [];
           }
-        } else {
+        } else if (Array.isArray(settings.business_hours.value)) {
           businessHoursData = settings.business_hours.value;
+        } else {
+          // オブジェクト形式の場合は空配列
+          businessHoursData = [];
         }
       }
     }
@@ -296,7 +307,9 @@ async function loadBusinessHours() {
 
   const html = days.map((day, index) => {
     // データベースから読み込んだ値があればそれを使用、なければデフォルト値
-    const dayData = businessHoursData.find(d => d.day === day) || defaultHours;
+    const dayData = Array.isArray(businessHoursData)
+      ? (businessHoursData.find(d => d.day === day) || defaultHours)
+      : defaultHours;
 
     return `
       <tr>
@@ -482,12 +495,23 @@ function sendTestEmail() {
 // 営業時間を保存
 async function saveBusinessHours() {
   const days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
-  const businessHours = days.map((day, index) => ({
-    day,
-    open: document.getElementById(`dayOpen_${index}`).checked,
-    startTime: document.getElementById(`dayStart_${index}`).value,
-    endTime: document.getElementById(`dayEnd_${index}`).value
-  }));
+  const businessHours = days.map((day, index) => {
+    const openCheckbox = document.getElementById(`dayOpen_${index}`);
+    const startInput = document.getElementById(`dayStart_${index}`);
+    const endInput = document.getElementById(`dayEnd_${index}`);
+
+    if (!openCheckbox || !startInput || !endInput) {
+      console.error(`Missing elements for day ${index}:`, { openCheckbox, startInput, endInput });
+      return { day, open: true, startTime: '09:00', endTime: '21:00' };
+    }
+
+    return {
+      day,
+      open: openCheckbox.checked,
+      startTime: startInput.value,
+      endTime: endInput.value
+    };
+  });
 
   try {
     const res = await fetch('/api/staff/settings/business-hours', {

@@ -46,8 +46,9 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - facility-network
-    ports:
-      - "3306:3306"
+    # ポートは外部に公開せず、Docker内部ネットワークのみでアクセス可能に
+    expose:
+      - "3306"
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s

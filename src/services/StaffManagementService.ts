@@ -316,7 +316,15 @@ export class StaffManagementService {
        WHERE role IN ('staff', 'admin')`
     );
 
-    return stats[0] || {};
+    const result = stats[0] || {};
+    return {
+      totalStaff: result.total_staff || 0,
+      adminCount: result.admin_count || 0,
+      staffCount: result.staff_count || 0,
+      activeStaff: result.active_count || 0,
+      onLeaveCount: result.on_leave_count || 0,
+      retiredCount: result.retired_count || 0,
+    };
   }
 
   /**

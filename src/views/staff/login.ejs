@@ -202,6 +202,23 @@
               window.location.href = '/staff';
             }, 500);
           } else {
+            // 一般ユーザーが職員ログイン画面でログインを試みた場合、警告をログに記録
+            try {
+              await fetch('/api/auth/log-staff-login-attempt', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: data.user.id,
+                  email: email,
+                  role: data.user.role
+                }),
+              });
+            } catch (logError) {
+              console.error('Failed to log access attempt:', logError);
+            }
+
             showAlert('職員アカウントでログインしてください', 'error');
             submitBtn.disabled = false;
             submitBtn.textContent = 'ログイン';
