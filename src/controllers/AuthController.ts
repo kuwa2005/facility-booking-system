@@ -86,9 +86,12 @@ export class AuthController {
       const result = await AuthService.login(email, password);
 
       // Set cookie (optional, for browser-based auth)
+      // secureフラグはHTTPS接続の時のみ有効にする
+      const useHttps = process.env.APP_URL?.startsWith('https://') || false;
       res.cookie('token', result.token.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: useHttps, // HTTPSの時のみsecure
+        sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
