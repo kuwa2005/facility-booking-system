@@ -32,8 +32,16 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // セキュリティミドルウェア
+// HTTPSが必要なヘッダーは開発環境(HTTP)では無効化
+const isProduction = process.env.NODE_ENV === 'production';
+const useHttps = process.env.APP_URL?.startsWith('https://') || false;
+
 app.use(helmet({
   contentSecurityPolicy: false, // 開発環境では無効、本番環境では適切に設定
+  // Cross-Origin-Opener-Policy: HTTPSが必要なため、HTTP環境では無効化
+  crossOriginOpenerPolicy: isProduction && useHttps ? { policy: 'same-origin-allow-popups' } : false,
+  // Origin-Agent-Cluster: HTTPSが必要なため、HTTP環境では無効化
+  originAgentCluster: isProduction && useHttps,
 }));
 
 // CORS設定
