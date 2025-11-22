@@ -431,14 +431,29 @@ async function saveDisplayOrder() {
 
   const rows = tbody.querySelectorAll('tr[data-room-id]');
 
-  const orderUpdates = Array.from(rows).map((row, index) => {
+  const orderUpdates = [];
+  Array.from(rows).forEach((row, index) => {
     const roomIdAttr = row.getAttribute('data-room-id');
-    const id = parseInt(roomIdAttr || '0', 10);
-    return {
+
+    // デバッグ: 属性の値を確認
+    if (!roomIdAttr) {
+      console.warn(`Row ${index}: data-room-id attribute is missing or empty`, row);
+      return;
+    }
+
+    const id = parseInt(roomIdAttr, 10);
+
+    // NaNや無効なIDをチェック
+    if (isNaN(id) || id <= 0) {
+      console.warn(`Row ${index}: Invalid room ID parsed from '${roomIdAttr}' -> ${id}`, row);
+      return;
+    }
+
+    orderUpdates.push({
       id: id,
       displayOrder: index
-    };
-  }).filter(update => !isNaN(update.id) && update.id > 0);
+    });
+  });
 
   console.log('Display order updates:', orderUpdates); // デバッグ用
 
