@@ -410,7 +410,7 @@ async function showEditModal(id) {
             <div>
               <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #856404;">新しいパスワード</label>
               <input type="password" id="editPassword" style="width: 100%; padding: 0.75rem; border: 1px solid #ffc107; border-radius: 4px;" placeholder="変更しない場合は空欄のまま">
-              <small style="display: block; margin-top: 0.25rem; color: #856404;">8文字以上で入力してください</small>
+              <small style="display: block; margin-top: 0.25rem; color: #856404;">1文字以上で入力してください（文字種・文字数の制限なし）</small>
             </div>
 
             <div>
@@ -502,8 +502,8 @@ async function updateUser(id) {
       alert('パスワードと確認用パスワードが一致しません');
       return;
     }
-    if (password.length < 8) {
-      alert('パスワードは8文字以上で入力してください');
+    if (password.length < 1) {
+      alert('パスワードは1文字以上で入力してください');
       return;
     }
   }
