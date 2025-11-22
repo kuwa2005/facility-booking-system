@@ -102,12 +102,13 @@ router.patch('/users/:id', StaffUserController.updateUser);
 // 部屋管理
 router.get('/facilities/rooms', StaffFacilityController.getRooms);
 router.post('/facilities/rooms', StaffFacilityController.createRoom);
+// 注意: display-orderルートは:idルートより前に配置する必要があります
+router.patch('/facilities/rooms/display-order', ExtendedFacilityController.updateRoomsDisplayOrder);
 router.patch('/facilities/rooms/:id', StaffFacilityController.updateRoom);
 router.delete('/facilities/rooms/:id', StaffFacilityController.deleteRoom);
 router.post('/facilities/rooms/:id/restore', StaffFacilityController.restoreRoom);
 router.delete('/facilities/rooms/:id/permanent', StaffFacilityController.permanentlyDeleteRoom);
 router.get('/facilities/rooms/:id/usage-stats', StaffFacilityController.getRoomUsageStats);
-router.patch('/facilities/rooms/display-order', ExtendedFacilityController.updateRoomsDisplayOrder);
 
 // 設備管理
 router.get('/facilities/equipment', StaffFacilityController.getEquipment);
