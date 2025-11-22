@@ -76,15 +76,18 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
  * Staff or Admin middleware
  * Must be used after authenticate middleware
  * Allows both staff and admin roles
+ * 一般ユーザーの場合はログインページにリダイレクト
  */
 export const requireStaff = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
+    // 未認証の場合は職員ログインページにリダイレクト
+    res.redirect('/staff/login');
     return;
   }
 
   if (req.user.role !== 'staff' && req.user.role !== 'admin') {
-    res.status(403).json({ error: 'Staff access required' });
+    // 一般ユーザーの場合は職員ログインページにリダイレクト
+    res.redirect('/staff/login?error=access_denied');
     return;
   }
 
@@ -94,15 +97,18 @@ export const requireStaff = (req: Request, res: Response, next: NextFunction): v
 /**
  * User-only middleware (excludes staff and admin)
  * Must be used after authenticate middleware
+ * 職員・管理者の場合は職員ページにリダイレクト
  */
 export const requireUser = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
+    // 未認証の場合は一般ログインページにリダイレクト
+    res.redirect('/login');
     return;
   }
 
-  if (req.user.role !== 'user') {
-    res.status(403).json({ error: 'User access required' });
+  if (req.user.role === 'staff' || req.user.role === 'admin') {
+    // 職員・管理者の場合は職員ダッシュボードにリダイレクト
+    res.redirect('/staff');
     return;
   }
 
