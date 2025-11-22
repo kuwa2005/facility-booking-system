@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import AuthService from '../services/AuthService';
+import ActivityLogService from '../services/ActivityLogService';
 
 // Extend Express Request to include user property
 declare global {
@@ -80,12 +81,28 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
  */
 export const requireStaff = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
+    // 未認証の場合はアクティビティログに記録
+    ActivityLogService.logUserAccessDenied(
+      null,
+      null,
+      req.originalUrl || req.url,
+      req
+    ).catch(err => console.error('Failed to log access denial:', err));
+
     // 未認証の場合は職員ログインページにリダイレクト
     res.redirect('/staff/login');
     return;
   }
 
   if (req.user.role !== 'staff' && req.user.role !== 'admin') {
+    // 一般ユーザーの場合はアクティビティログに記録
+    ActivityLogService.logUserAccessDenied(
+      req.user.userId,
+      req.user.role,
+      req.originalUrl || req.url,
+      req
+    ).catch(err => console.error('Failed to log access denial:', err));
+
     // 一般ユーザーの場合は職員ログインページにリダイレクト
     res.redirect('/staff/login?error=access_denied');
     return;
@@ -107,6 +124,13 @@ export const requireUser = (req: Request, res: Response, next: NextFunction): vo
   }
 
   if (req.user.role === 'staff' || req.user.role === 'admin') {
+    // 職員・管理者の場合はアクティビティログに記録
+    ActivityLogService.logStaffAccessDenied(
+      req.user.userId,
+      req.originalUrl || req.url,
+      req
+    ).catch(err => console.error('Failed to log staff access denial:', err));
+
     // 職員・管理者の場合は職員ダッシュボードにリダイレクト
     res.redirect('/staff');
     return;
