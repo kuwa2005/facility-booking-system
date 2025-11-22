@@ -184,13 +184,27 @@ async function loadUsers() {
 
 // 利用者詳細を表示
 async function showDetail(id) {
+  if (!id || isNaN(id) || id <= 0) {
+    console.error('Invalid user ID:', id);
+    alert('無効なユーザーIDです');
+    return;
+  }
+
   currentUserId = id;
 
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
       credentials: 'include',
       });
-    const user = await res.json();
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // APIレスポンスがuserオブジェクトを含むか、直接userオブジェクトかを確認
+    const user = data.user || data;
 
     const html = `
       <div style="display: grid; gap: 1.5rem;">
@@ -302,11 +316,25 @@ function closeDetailModal() {
 
 // 編集モーダルを表示
 async function showEditModal(id) {
+  if (!id || isNaN(id) || id <= 0) {
+    console.error('Invalid user ID for edit:', id);
+    alert('無効なユーザーIDです');
+    return;
+  }
+
   try {
     const res = await fetch(`/api/staff/users/${id}`, {
       credentials: 'include',
       });
-    const user = await res.json();
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // APIレスポンスがuserオブジェクトを含むか、直接userオブジェクトかを確認
+    const user = data.user || data;
 
     const html = `
       <form id="editForm" style="display: grid; gap: 1rem;">
