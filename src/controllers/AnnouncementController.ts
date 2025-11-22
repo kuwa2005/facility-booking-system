@@ -121,7 +121,7 @@ export class AnnouncementController {
    */
   async createAnnouncement(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const data: CreateAnnouncementDto = req.body;
 
       // バリデーション
@@ -167,7 +167,7 @@ export class AnnouncementController {
    */
   async updateAnnouncement(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const announcementId = parseInt(req.params.id);
       const updates: UpdateAnnouncementDto = req.body;
 
@@ -216,7 +216,7 @@ export class AnnouncementController {
    */
   async deleteAnnouncement(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const announcementId = parseInt(req.params.id);
 
       if (isNaN(announcementId)) {
@@ -249,7 +249,7 @@ export class AnnouncementController {
    */
   async toggleAnnouncementStatus(req: Request, res: Response): Promise<void> {
     try {
-      const staffId = (req as any).user.id;
+      const staffId = (req as any).user.userId;
       const announcementId = parseInt(req.params.id);
       const { is_active } = req.body;
 
