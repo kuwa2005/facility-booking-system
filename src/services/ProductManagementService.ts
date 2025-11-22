@@ -25,6 +25,51 @@ export interface CreateSaleDto {
  */
 export class ProductManagementService {
   /**
+   * Convert snake_case database columns to camelCase
+   */
+  private toCamelCaseProduct(product: any): any {
+    return {
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      cost: product.cost,
+      stock: product.stock_quantity,
+      stockQuantity: product.stock_quantity,
+      isActive: product.is_available,
+      isAvailable: product.is_available,
+      description: product.description,
+      displayOrder: product.display_order,
+      createdAt: product.created_at,
+      updatedAt: product.updated_at,
+    };
+  }
+
+  /**
+   * Convert snake_case sale columns to camelCase
+   */
+  private toCamelCaseSale(sale: any): any {
+    return {
+      id: sale.id,
+      applicationId: sale.application_id,
+      productId: sale.product_id,
+      productName: sale.product_name,
+      productCategory: sale.product_category,
+      quantity: sale.quantity,
+      unitPrice: sale.unit_price,
+      totalAmount: sale.total_price,
+      totalPrice: sale.total_price,
+      soldBy: sale.sold_by,
+      staffName: sale.staff_name,
+      buyerName: sale.customer_name,
+      customerName: sale.customer_name,
+      notes: sale.notes,
+      createdAt: sale.sold_at,
+      soldAt: sale.sold_at,
+    };
+  }
+
+  /**
    * 商品一覧を取得
    */
   async getProducts(includeUnavailable: boolean = false): Promise<Product[]> {
@@ -37,7 +82,7 @@ export class ProductManagementService {
     query += ' ORDER BY display_order, name';
 
     const [rows] = await pool.query<RowDataPacket[]>(query);
-    return rows as Product[];
+    return rows.map(row => this.toCamelCaseProduct(row));
   }
 
   /**
@@ -65,7 +110,7 @@ export class ProductManagementService {
 
     await this.logActivity(staffId, 'create', 'product', result.insertId, `Product created: ${data.name}`);
 
-    return product[0] as Product;
+    return this.toCamelCaseProduct(product[0]) as Product;
   }
 
   /**
@@ -184,7 +229,7 @@ export class ProductManagementService {
       `Sale created: ${product.name} x ${data.quantity} = ¥${totalPrice}`
     );
 
-    return sale[0] as Sale;
+    return this.toCamelCaseSale(sale[0]) as Sale;
   }
 
   /**
@@ -233,7 +278,7 @@ export class ProductManagementService {
     query += ' ORDER BY s.sold_at DESC';
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
-    return rows;
+    return rows.map(row => this.toCamelCaseSale(row));
   }
 
   /**

@@ -90,6 +90,56 @@ export class StaffFacilityController {
   }
 
   /**
+   * 部屋を復元
+   */
+  static async restoreRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { id } = req.params;
+      const roomId = parseInt(id);
+
+      if (isNaN(roomId)) {
+        res.status(400).json({ error: 'Invalid room ID' });
+        return;
+      }
+
+      await StaffFacilityManagementService.restoreRoom(roomId, req.user.userId);
+      res.json({ message: 'Room restored successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 部屋を完全に削除
+   */
+  static async permanentlyDeleteRoom(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { id } = req.params;
+      const roomId = parseInt(id);
+
+      if (isNaN(roomId)) {
+        res.status(400).json({ error: 'Invalid room ID' });
+        return;
+      }
+
+      await StaffFacilityManagementService.permanentlyDeleteRoom(roomId, req.user.userId);
+      res.json({ message: 'Room permanently deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * 部屋の利用統計を取得
    */
   static async getRoomUsageStats(req: Request, res: Response, next: NextFunction): Promise<void> {

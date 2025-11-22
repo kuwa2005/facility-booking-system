@@ -4,67 +4,90 @@ import { Equipment } from './types';
 
 export class EquipmentRepository {
   /**
+   * Convert snake_case database columns to camelCase
+   */
+  private toCamelCase(equipment: any): any {
+    return {
+      id: equipment.id,
+      category: equipment.category,
+      name: equipment.name,
+      priceType: equipment.price_type,
+      unitPrice: equipment.unit_price,
+      maxQuantity: equipment.max_quantity,
+      enabled: equipment.enabled,
+      remark: equipment.remark,
+      createdAt: equipment.created_at,
+      updatedAt: equipment.updated_at,
+    };
+  }
+
+  /**
    * Find equipment by ID
    */
-  async findById(id: number): Promise<Equipment | null> {
-    const [rows] = await pool.query<(Equipment & RowDataPacket)[]>(
+  async findById(id: number): Promise<any> {
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment WHERE id = ?',
       [id]
     );
-    return rows[0] || null;
+    return rows[0] ? this.toCamelCase(rows[0]) : null;
   }
 
   /**
    * Find all enabled equipment
    */
-  async findAllEnabled(): Promise<Equipment[]> {
-    const [rows] = await pool.query<(Equipment & RowDataPacket)[]>(
+  async findAllEnabled(): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment WHERE enabled = TRUE ORDER BY category, name ASC'
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Find all equipment (including disabled)
    */
-  async findAll(): Promise<Equipment[]> {
-    const [rows] = await pool.query<(Equipment & RowDataPacket)[]>(
+  async findAll(): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment ORDER BY category, name ASC'
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Find equipment by category
    */
-  async findByCategory(category: 'stage' | 'lighting' | 'sound' | 'other'): Promise<Equipment[]> {
-    const [rows] = await pool.query<(Equipment & RowDataPacket)[]>(
+  async findByCategory(category: 'stage' | 'lighting' | 'sound' | 'other'): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM equipment WHERE category = ? AND enabled = TRUE ORDER BY name ASC',
       [category]
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Find multiple equipment by IDs
    */
-  async findByIds(ids: number[]): Promise<Equipment[]> {
+  async findByIds(ids: number[]): Promise<any[]> {
     if (ids.length === 0) {
       return [];
     }
 
     const placeholders = ids.map(() => '?').join(',');
-    const [rows] = await pool.query<(Equipment & RowDataPacket)[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT * FROM equipment WHERE id IN (${placeholders})`,
       ids
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Create new equipment
    */
-  async create(data: Omit<Equipment, 'id' | 'created_at' | 'updated_at'>): Promise<Equipment> {
+  async create(data: Omit<Equipment, 'id' | 'created_at' | 'updated_at'>): Promise<any> {
+    // Support both camelCase and snake_case input
+    const priceType = (data as any).priceType || (data as any).price_type;
+    const unitPrice = (data as any).unitPrice || (data as any).unit_price;
+    const maxQuantity = (data as any).maxQuantity || (data as any).max_quantity;
+
     const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO equipment (
         category, name, price_type, unit_price, max_quantity, enabled, remark
@@ -72,9 +95,9 @@ export class EquipmentRepository {
       [
         data.category,
         data.name,
-        data.price_type,
-        data.unit_price,
-        data.max_quantity,
+        priceType,
+        unitPrice,
+        maxQuantity,
         data.enabled !== false,
         data.remark || null,
       ]
@@ -90,13 +113,22 @@ export class EquipmentRepository {
   /**
    * Update equipment
    */
-  async update(id: number, data: Partial<Equipment>): Promise<Equipment> {
+  async update(id: number, data: Partial<Equipment>): Promise<any> {
     const fields: string[] = [];
     const values: any[] = [];
 
+    // Map camelCase to snake_case for database columns
+    const columnMapping: { [key: string]: string } = {
+      priceType: 'price_type',
+      unitPrice: 'unit_price',
+      maxQuantity: 'max_quantity',
+      updatedAt: 'updated_at',
+    };
+
     Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'created_at') {
-        fields.push(`${key} = ?`);
+      if (key !== 'id' && key !== 'createdAt' && key !== 'created_at') {
+        const dbColumn = columnMapping[key] || key;
+        fields.push(`${dbColumn} = ?`);
         values.push(value);
       }
     });

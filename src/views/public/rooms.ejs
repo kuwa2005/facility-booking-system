@@ -307,18 +307,18 @@
               <div class="price-section">
                 <h4>利用料金</h4>
                 <ul class="price-list">
-                  <li>午前（9:00-12:00）: ¥<%= room.base_price_morning?.toLocaleString() || '0' %></li>
-                  <li>午後（13:00-17:00）: ¥<%= room.base_price_afternoon?.toLocaleString() || '0' %></li>
-                  <li>夜間（18:00-21:30）: ¥<%= room.base_price_evening?.toLocaleString() || '0' %></li>
+                  <li>午前（9:00-12:00）: ¥<%= (room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                  <li>午後（13:00-17:00）: ¥<%= (room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                  <li>夜間（18:00-21:30）: ¥<%= (room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
                 </ul>
-                <% if (room.extension_price_midday > 0 || room.extension_price_evening > 0) { %>
+                <% if (room.extensionPriceMidday > 0 || room.extensionPriceEvening > 0) { %>
                   <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
                     ※延長料金あり
                   </p>
                 <% } %>
-                <% if (room.ac_price_per_hour > 0) { %>
+                <% if (room.acPricePerHour > 0) { %>
                   <p style="margin-top: 0.25rem; font-size: 0.875rem; color: #6b7280;">
-                    エアコン: ¥<%= room.ac_price_per_hour %>/時間
+                    エアコン: ¥<%= (room.acPricePerHour || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>/時間
                   </p>
                 <% } %>
               </div>
@@ -364,10 +364,44 @@
               btn.textContent = '❤️';
             }
           });
+
+          // お気に入りの施設を先頭に移動
+          sortRoomsByFavorites();
         }
       } catch (error) {
         console.error('Failed to load favorites:', error);
       }
+    }
+
+    // お気に入りの施設を先頭に表示するようにソート
+    function sortRoomsByFavorites() {
+      const roomGrid = document.querySelector('.room-grid');
+      if (!roomGrid) return;
+
+      const roomCards = Array.from(roomGrid.querySelectorAll('.room-card'));
+
+      // お気に入りとそれ以外に分割
+      const favoriteCards = [];
+      const regularCards = [];
+
+      roomCards.forEach(card => {
+        const favoriteBtn = card.querySelector('button[data-room-id]');
+        if (favoriteBtn) {
+          const roomId = parseInt(favoriteBtn.getAttribute('data-room-id') || '0', 10);
+          if (favorites.has(roomId)) {
+            favoriteCards.push(card);
+          } else {
+            regularCards.push(card);
+          }
+        } else {
+          regularCards.push(card);
+        }
+      });
+
+      // お気に入りを先頭に、その後通常のカードを配置
+      roomGrid.innerHTML = '';
+      favoriteCards.forEach(card => roomGrid.appendChild(card));
+      regularCards.forEach(card => roomGrid.appendChild(card));
     }
 
     async function toggleFavorite(roomId, btn) {
@@ -385,6 +419,8 @@
           if (response.ok && data.success) {
             favorites.delete(roomId);
             btn.textContent = '🤍';
+            // お気に入り解除後に並び替え
+            sortRoomsByFavorites();
           } else {
             const errorMsg = data.error ? `${data.message}\n詳細: ${data.error}` : (data.message || '不明なエラー');
             alert('削除に失敗しました: ' + errorMsg);
@@ -405,6 +441,8 @@
           if (response.ok && data.success) {
             favorites.add(roomId);
             btn.textContent = '❤️';
+            // お気に入り登録後に並び替え
+            sortRoomsByFavorites();
           } else {
             const errorMsg = data.error ? `${data.message}\n詳細: ${data.error}` : (data.message || '不明なエラー');
             alert('追加に失敗しました: ' + errorMsg);

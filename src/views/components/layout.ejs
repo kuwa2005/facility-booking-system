@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title || '施設予約システム' %></title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
     * {
       margin: 0;
@@ -247,17 +248,217 @@
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     }
 
-    /* レスポンシブ */
+    /* ハンバーガーメニュー */
+    .mobile-menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    /* テーブルのレスポンシブ対応 */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+    }
+
+    table th,
+    table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    table th {
+      background-color: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    /* レスポンシブ（タブレット） */
+    @media (max-width: 1024px) {
+      .container {
+        padding: 0 15px;
+      }
+
+      .card {
+        padding: 1.5rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+      }
+    }
+
+    /* レスポンシブ（モバイル） */
     @media (max-width: 768px) {
+      body {
+        font-size: 14px;
+      }
+
+      .container {
+        padding: 0 10px;
+      }
+
+      /* ヘッダー */
+      header {
+        padding: 0.75rem 0;
+      }
+
       header .container {
-      max-width: 1200px;
-        flex-direction: column;
-        gap: 1rem;
+        flex-direction: row;
+        gap: 0;
+      }
+
+      header h1 {
+        font-size: 1.25rem;
+        flex: 1;
       }
 
       header nav {
-        flex-wrap: wrap;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        background-color: #2563eb;
+        flex-direction: column;
+        gap: 0;
+        padding: 1rem 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transform: translateY(-100%);
+        transition: transform 0.3s ease-out;
+        z-index: 1000;
+        display: none;
+      }
+
+      header nav.active {
+        display: flex;
+        transform: translateY(0);
+      }
+
+      header nav a {
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem 1rem;
+        border-radius: 0;
+      }
+
+      .mobile-menu-toggle {
+        display: block;
+      }
+
+      /* メインコンテンツ */
+      main {
+        padding: 1rem 0;
+      }
+
+      /* カード */
+      .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+      }
+
+      .card-title {
+        font-size: 1.25rem;
+      }
+
+      /* ボタン */
+      .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.875rem;
+        /* タッチターゲットサイズを44px以上に */
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
+      }
+
+      /* フォーム */
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        font-size: 16px; /* iOSのズーム防止 */
+        padding: 0.625rem;
+      }
+
+      /* グリッド */
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      /* テーブル */
+      table {
+        font-size: 0.75rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.5rem 0.25rem;
+      }
+
+      /* 横スクロール可能なテーブルのヒント */
+      .table-responsive::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 30px;
+        background: linear-gradient(to left, rgba(255,255,255,0.8), transparent);
+        pointer-events: none;
+      }
+
+      /* フッター */
+      footer {
+        padding: 1.5rem 0;
+        margin-top: 2rem;
+        font-size: 0.875rem;
+      }
+
+      footer .container p {
+        margin: 0.5rem 0;
+      }
+
+      footer a {
+        display: inline-block;
+        margin: 0.25rem 0.5rem;
+      }
+    }
+
+    /* レスポンシブ（小型スマートフォン） */
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 1.1rem;
+      }
+
+      .card {
+        padding: 0.75rem;
+      }
+
+      .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8125rem;
+      }
+
+      table {
+        font-size: 0.6875rem;
+      }
+
+      table th,
+      table td {
+        padding: 0.375rem 0.125rem;
       }
     }
   </style>
@@ -271,7 +472,10 @@
       <h1>
         <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
       </h1>
-      <nav>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="メニュー">
+        ☰
+      </button>
+      <nav id="mainNav">
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <% if (typeof user !== 'undefined' && user) { %>
@@ -306,5 +510,38 @@
   <% if (typeof customScripts !== 'undefined') { %>
     <script><%= customScripts %></script>
   <% } %>
+
+  <script>
+    // モバイルメニュートグル
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const mainNav = document.getElementById('mainNav');
+
+      if (mobileMenuToggle && mainNav) {
+        mobileMenuToggle.addEventListener('click', function() {
+          mainNav.classList.toggle('active');
+        });
+
+        // メニュー項目をクリックしたら閉じる
+        const navLinks = mainNav.querySelectorAll('a');
+        navLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+              mainNav.classList.remove('active');
+            }
+          });
+        });
+
+        // メニュー外をクリックしたら閉じる
+        document.addEventListener('click', function(event) {
+          if (window.innerWidth <= 768) {
+            if (!mainNav.contains(event.target) && !mobileMenuToggle.contains(event.target)) {
+              mainNav.classList.remove('active');
+            }
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>

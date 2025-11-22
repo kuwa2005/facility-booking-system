@@ -4,6 +4,7 @@ import { ApplicationController } from '../controllers/ApplicationController';
 import { ReviewController } from '../controllers/ReviewController';
 import { AnnouncementController } from '../controllers/AnnouncementController';
 import { MessageController } from '../controllers/MessageController';
+import { SystemSettingsController } from '../controllers/SystemSettingsController';
 import { authenticate, optionalAuth } from '../middleware/auth';
 
 const router = express.Router();
@@ -43,5 +44,8 @@ router.post(
   '/contact/public',
   messageController.sendPublicContactMessage.bind(messageController)
 );
+
+// System settings (public - no authentication required)
+router.get('/settings/public', SystemSettingsController.getPublicSettings);
 
 export default router;

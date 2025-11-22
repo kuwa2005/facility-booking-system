@@ -192,8 +192,8 @@
         const data = await response.json();
 
         if (response.ok) {
-          // トークンをクッキーに保存
-          document.cookie = `token=${data.token.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+          // サーバー側でCookieは既に設定済み（30日間有効）
+          console.log('Login successful, token cookie set by server');
 
           // ユーザーのロールを確認
           if (data.user.role === 'staff' || data.user.role === 'admin') {

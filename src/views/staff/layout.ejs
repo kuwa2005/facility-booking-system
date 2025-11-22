@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title || '職員ページ' %> - 施設予約システム</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
     * {
       margin: 0;
@@ -243,10 +244,61 @@
       padding: 1.5rem;
       margin-top: 2rem;
     }
+
+    /* メンテナンスモードバナー */
+    .maintenance-banner {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .maintenance-banner-icon {
+      font-size: 1.2rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    .maintenance-banner a {
+      color: white;
+      text-decoration: underline;
+      margin-left: 1rem;
+      font-weight: 700;
+    }
+
+    .maintenance-banner a:hover {
+      color: #ecf0f1;
+    }
   </style>
   <%- typeof additionalStyles !== 'undefined' ? additionalStyles : '' %>
 </head>
 <body>
+  <!-- メンテナンスモード警告バナー -->
+  <% if (isMaintenanceMode) { %>
+  <div class="maintenance-banner">
+    <span class="maintenance-banner-icon">⚠️</span>
+    <span>メンテナンスモード中です！一般利用者はアクセスできません。</span>
+    <a href="/staff/settings">設定画面で解除する</a>
+  </div>
+  <% } %>
+
   <!-- ヘッダー -->
   <header class="header">
     <div class="header-content">
@@ -283,10 +335,25 @@
           <a href="/staff/facilities/closed-dates" class="<%= currentPath === '/staff/facilities/closed-dates' ? 'active' : '' %>">休館日管理</a>
         </div>
 
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">コミュニケーション</div>
+          <a href="/staff/announcements" class="<%= currentPath === '/staff/announcements' ? 'active' : '' %>">お知らせ管理</a>
+          <a href="/staff/messages" class="<%= currentPath === '/staff/messages' ? 'active' : '' %>">メッセージ管理</a>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">追加機能</div>
+          <a href="/staff/products" class="<%= currentPath === '/staff/products' ? 'active' : '' %>">物販管理</a>
+          <a href="/staff/proxy-reservations" class="<%= currentPath === '/staff/proxy-reservations' ? 'active' : '' %>">代行予約</a>
+          <a href="/staff/reports" class="<%= currentPath === '/staff/reports' ? 'active' : '' %>">レポート</a>
+        </div>
+
         <% if (user && user.role === 'admin') { %>
         <div class="sidebar-section">
           <div class="sidebar-section-title">管理者メニュー</div>
           <a href="/staff/management" class="<%= currentPath === '/staff/management' ? 'active' : '' %>">職員管理</a>
+          <a href="/staff/settings" class="<%= currentPath === '/staff/settings' ? 'active' : '' %>">システム設定</a>
+          <a href="/staff/activity-log" class="<%= currentPath === '/staff/activity-log' ? 'active' : '' %>">アクティビティログ</a>
         </div>
         <% } %>
       </nav>
@@ -302,6 +369,133 @@
   <footer class="footer">
     <p>&copy; 2025 施設予約システム. All rights reserved.</p>
   </footer>
+
+  <!-- カスタムダイアログ -->
+  <div id="customDialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div id="customDialogBox" style="background-color: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.2s ease-out;">
+      <div id="customDialogIcon" style="text-align: center; font-size: 3rem; margin-bottom: 1rem;"></div>
+      <h3 id="customDialogTitle" style="text-align: center; margin-bottom: 1rem; font-size: 1.25rem; color: #2c3e50;"></h3>
+      <p id="customDialogMessage" style="text-align: center; margin-bottom: 2rem; color: #555; white-space: pre-wrap; line-height: 1.6;"></p>
+      <div id="customDialogButtons" style="display: flex; gap: 1rem; justify-content: center;"></div>
+    </div>
+  </div>
+
+  <script>
+    // カスタムダイアログの表示関数
+    function showCustomDialog(type, message, title) {
+      return new Promise((resolve) => {
+        const dialog = document.getElementById('customDialog');
+        const dialogBox = document.getElementById('customDialogBox');
+        const iconEl = document.getElementById('customDialogIcon');
+        const titleEl = document.getElementById('customDialogTitle');
+        const messageEl = document.getElementById('customDialogMessage');
+        const buttonsEl = document.getElementById('customDialogButtons');
+
+        // アイコンとタイトルを設定
+        if (type === 'confirm') {
+          iconEl.innerHTML = '❓';
+          titleEl.textContent = title || '確認';
+        } else if (type === 'alert') {
+          iconEl.innerHTML = 'ℹ️';
+          titleEl.textContent = title || 'お知らせ';
+        } else if (type === 'error') {
+          iconEl.innerHTML = '⚠️';
+          titleEl.textContent = title || 'エラー';
+        } else if (type === 'success') {
+          iconEl.innerHTML = '✅';
+          titleEl.textContent = title || '成功';
+        }
+
+        messageEl.textContent = message;
+
+        // ボタンを作成
+        buttonsEl.innerHTML = '';
+        if (type === 'confirm') {
+          const cancelBtn = document.createElement('button');
+          cancelBtn.textContent = 'キャンセル';
+          cancelBtn.className = 'btn';
+          cancelBtn.style.cssText = 'background-color: #95a5a6; color: white; padding: 0.75rem 2rem; font-size: 1rem;';
+          cancelBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(false);
+          };
+
+          const okBtn = document.createElement('button');
+          okBtn.textContent = 'OK';
+          okBtn.className = 'btn btn-primary';
+          okBtn.style.cssText = 'padding: 0.75rem 2rem; font-size: 1rem;';
+          okBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(true);
+          };
+
+          buttonsEl.appendChild(cancelBtn);
+          buttonsEl.appendChild(okBtn);
+        } else {
+          const okBtn = document.createElement('button');
+          okBtn.textContent = 'OK';
+          okBtn.className = 'btn btn-primary';
+          okBtn.style.cssText = 'padding: 0.75rem 2rem; font-size: 1rem;';
+          okBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(true);
+          };
+          buttonsEl.appendChild(okBtn);
+        }
+
+        // ダイアログを表示
+        dialog.style.display = 'flex';
+        setTimeout(() => {
+          dialogBox.style.transform = 'scale(1)';
+        }, 10);
+
+        // Escapeキーで閉じる
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            closeCustomDialog();
+            resolve(false);
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        // 背景クリックで閉じる
+        dialog.onclick = (e) => {
+          if (e.target === dialog) {
+            closeCustomDialog();
+            resolve(false);
+          }
+        };
+      });
+    }
+
+    function closeCustomDialog() {
+      const dialog = document.getElementById('customDialog');
+      const dialogBox = document.getElementById('customDialogBox');
+      dialogBox.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        dialog.style.display = 'none';
+      }, 200);
+    }
+
+    // グローバルconfirm/alert関数をオーバーライド
+    window.confirm = function(message) {
+      return showCustomDialog('confirm', message);
+    };
+
+    window.alert = function(message) {
+      return showCustomDialog('alert', message);
+    };
+
+    // カスタム関数も追加（呼び出し側でawaitできるように）
+    window.showSuccess = function(message, title) {
+      return showCustomDialog('success', message, title);
+    };
+
+    window.showError = function(message, title) {
+      return showCustomDialog('error', message, title);
+    };
+  </script>
 
   <%- typeof additionalScripts !== 'undefined' ? additionalScripts : '' %>
 </body>

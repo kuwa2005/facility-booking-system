@@ -1,0 +1,302 @@
+<div class="page-header">
+  <h1 class="page-title">お知らせ管理</h1>
+  <p class="page-description">利用者向けのお知らせの作成、編集、削除</p>
+</div>
+
+<!-- お知らせ一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">お知らせ一覧</h2>
+    <button onclick="showAddModal()" class="btn btn-primary">新規お知らせを作成</button>
+  </div>
+
+  <!-- フィルター -->
+  <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+    <select id="statusFilter" onchange="loadAnnouncements()" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+      <option value="">すべて</option>
+      <option value="active">有効のみ</option>
+      <option value="inactive">無効のみ</option>
+    </select>
+  </div>
+
+  <div id="announcementsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 追加/編集モーダル -->
+<div id="formModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 700px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;" id="modalTitle">お知らせを作成</h2>
+      <button onclick="closeFormModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="formContent"></div>
+  </div>
+</div>
+
+<script>
+
+let editingAnnouncementId = null;
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnnouncements();
+});
+
+// お知らせ一覧を読み込み
+async function loadAnnouncements() {
+  const status = document.getElementById('statusFilter').value;
+
+  try {
+    const res = await fetch('/api/staff/announcements?includeInactive=true', {
+      credentials: 'include',
+      });
+    const response = await res.json();
+    let announcements = response.data || response;
+
+    // フィルター適用
+    if (status === 'active') {
+      announcements = announcements.filter(a => a.isActive);
+    } else if (status === 'inactive') {
+      announcements = announcements.filter(a => !a.isActive);
+    }
+
+    if (announcements && announcements.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>タイトル</th>
+                <th>内容（抜粋）</th>
+                <th>作成日</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${announcements.map(announcement => {
+                const contentPreview = announcement.content.length > 50
+                  ? announcement.content.substring(0, 50) + '...'
+                  : announcement.content;
+
+                return `
+                  <tr>
+                    <td>${announcement.id}</td>
+                    <td><strong>${announcement.title}</strong></td>
+                    <td>${contentPreview}</td>
+                    <td>${new Date(announcement.createdAt).toLocaleDateString('ja-JP')}</td>
+                    <td>
+                      <span class="badge badge-${announcement.isActive ? 'success' : 'danger'}">
+                        ${announcement.isActive ? '有効' : '無効'}
+                      </span>
+                    </td>
+                    <td style="white-space: nowrap;">
+                      <button onclick="showEditModal(${announcement.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
+                      <button onclick="toggleActive(${announcement.id}, ${announcement.isActive})" class="btn ${announcement.isActive ? '' : 'btn-success'}" style="${announcement.isActive ? 'background-color: #95a5a6; color: white;' : ''} padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">${announcement.isActive ? '無効化' : '有効化'}</button>
+                      <button onclick="deleteAnnouncement(${announcement.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('announcementsContainer').innerHTML = html;
+    } else {
+      document.getElementById('announcementsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">お知らせがありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading announcements:', error);
+    document.getElementById('announcementsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 追加モーダルを表示
+function showAddModal() {
+  editingAnnouncementId = null;
+  document.getElementById('modalTitle').textContent = 'お知らせを作成';
+  showFormModal();
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  editingAnnouncementId = id;
+  document.getElementById('modalTitle').textContent = 'お知らせを編集';
+
+  try {
+    const res = await fetch('/api/staff/announcements?includeInactive=true', {
+      credentials: 'include',
+      });
+    const response = await res.json();
+    const announcements = response.data || response;
+    const announcement = announcements.find(a => a.id === id);
+
+    if (!announcement) {
+      alert('お知らせが見つかりませんでした');
+      return;
+    }
+
+    showFormModal(announcement);
+  } catch (error) {
+    console.error('Error loading announcement:', error);
+    alert('お知らせの読み込みに失敗しました');
+  }
+}
+
+// フォームモーダルを表示
+function showFormModal(announcement = null) {
+  const html = `
+    <form id="announcementForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">タイトル *</label>
+        <input type="text" id="title" value="${announcement?.title || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">内容 *</label>
+        <textarea id="content" rows="8" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${announcement?.content || ''}</textarea>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">表示対象 *</label>
+        <select id="announcementType" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="public" ${!announcement || announcement?.announcementType === 'public' ? 'selected' : ''}>公開（すべての訪問者）</option>
+          <option value="user" ${announcement?.announcementType === 'user' ? 'selected' : ''}>会員のみ</option>
+        </select>
+        <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #7f8c8d;">公開：ログインしていないユーザーにも表示されます / 会員のみ：ログイン済みの会員のみに表示されます</p>
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="isActive" ${announcement?.isActive !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
+          <span style="font-weight: 500;">このお知らせを有効にする</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeFormModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">${editingAnnouncementId ? '更新' : '作成'}</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('formContent').innerHTML = html;
+  document.getElementById('formModal').style.display = 'block';
+
+  // フォーム送信イベント
+  document.getElementById('announcementForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveAnnouncement();
+  });
+}
+
+// フォームモーダルを閉じる
+function closeFormModal() {
+  document.getElementById('formModal').style.display = 'none';
+  editingAnnouncementId = null;
+}
+
+// お知らせを保存
+async function saveAnnouncement() {
+  const data = {
+    title: document.getElementById('title').value.trim(),
+    content: document.getElementById('content').value.trim(),
+    announcement_type: document.getElementById('announcementType').value,
+    is_active: document.getElementById('isActive').checked,
+  };
+
+  if (!data.title || !data.content || !data.announcement_type) {
+    alert('タイトル、内容、表示対象は必須です');
+    return;
+  }
+
+  try {
+    const url = editingAnnouncementId
+      ? `/api/staff/announcements/${editingAnnouncementId}`
+      : '/api/staff/announcements';
+    const method = editingAnnouncementId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert(editingAnnouncementId ? 'お知らせを更新しました' : 'お知らせを作成しました');
+      closeFormModal();
+      loadAnnouncements();
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving announcement:', error);
+    alert('保存に失敗しました');
+  }
+}
+
+// アクティブ状態を切り替え
+async function toggleActive(id, currentStatus) {
+  try {
+    const res = await fetch(`/api/staff/announcements/${id}/toggle`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ is_active: !currentStatus })
+    });
+
+    if (res.ok) {
+      alert(`お知らせを${currentStatus ? '無効' : '有効'}にしました`);
+      loadAnnouncements();
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error toggling announcement:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// お知らせを削除
+async function deleteAnnouncement(id) {
+  if (!confirm('このお知らせを削除しますか？')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/announcements/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      });
+
+    if (res.ok) {
+      alert('お知らせを削除しました');
+      loadAnnouncements();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting announcement:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('formModal').addEventListener('click', (e) => {
+  if (e.target.id === 'formModal') {
+    closeFormModal();
+  }
+});
+</script>

@@ -1,0 +1,289 @@
+<div class="page-header">
+  <h1 class="page-title">プロフィール</h1>
+  <p class="page-description">あなたのアカウント情報</p>
+</div>
+
+<!-- プロフィール情報 -->
+<div class="card">
+  <h2 class="card-title">基本情報</h2>
+  <div id="profileContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- パスワード変更 -->
+<div class="card">
+  <h2 class="card-title">パスワード変更</h2>
+  <form id="passwordForm" style="max-width: 500px;">
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">現在のパスワード *</label>
+      <input type="password" id="currentPassword" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">新しいパスワード *</label>
+      <input type="password" id="newPassword" required minlength="6" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.25rem;">※ 6文字以上</p>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">新しいパスワード（確認） *</label>
+      <input type="password" id="confirmPassword" required minlength="6" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+
+    <button type="submit" class="btn btn-primary">パスワードを変更</button>
+  </form>
+</div>
+
+<!-- 編集モーダル -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">プロフィール編集</h2>
+      <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="editContent"></div>
+  </div>
+</div>
+
+<script>
+
+let currentProfile = null;
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadProfile();
+
+  // パスワード変更フォーム
+  document.getElementById('passwordForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    changePassword();
+  });
+});
+
+// プロフィールを読み込み
+async function loadProfile() {
+  try {
+    const res = await fetch('/api/staff/profile', {
+      credentials: 'include',
+      });
+    currentProfile = await res.json();
+
+    const html = `
+      <div style="display: grid; gap: 1.5rem;">
+        <!-- 基本情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; color: #2c3e50;">アカウント情報</h3>
+            <button onclick="showEditModal()" class="btn btn-primary" style="padding: 0.5rem 1rem;">編集</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>ユーザーID:</strong> ${currentProfile.id}
+            </div>
+            <div>
+              <strong>役割:</strong>
+              <span class="badge badge-${currentProfile.role === 'admin' ? 'danger' : 'warning'}" style="margin-left: 0.5rem;">
+                ${currentProfile.role === 'admin' ? '管理者' : '職員'}
+              </span>
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong>名前:</strong> ${currentProfile.name || '-'}
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong>メールアドレス:</strong> ${currentProfile.email}
+            </div>
+            <div>
+              <strong>メール認証:</strong>
+              <span class="badge badge-${currentProfile.emailVerified ? 'success' : 'warning'}" style="margin-left: 0.5rem;">
+                ${currentProfile.emailVerified ? '認証済' : '未認証'}
+              </span>
+            </div>
+            <div>
+              <strong>アカウント状態:</strong>
+              <span class="badge badge-${currentProfile.isActive ? 'success' : 'danger'}" style="margin-left: 0.5rem;">
+                ${currentProfile.isActive ? 'アクティブ' : '非アクティブ'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        ${currentProfile.role === 'staff' || currentProfile.role === 'admin' ? `
+          <!-- 職員情報 -->
+          <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">職員情報</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+              <div>
+                <strong>職員コード:</strong> ${currentProfile.staffCode || '-'}
+              </div>
+              <div>
+                <strong>部署:</strong> ${currentProfile.department || '-'}
+              </div>
+              <div>
+                <strong>役職:</strong> ${currentProfile.position || '-'}
+              </div>
+              <div>
+                <strong>入職日:</strong> ${currentProfile.hireDate ? new Date(currentProfile.hireDate).toLocaleDateString('ja-JP') : '-'}
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <strong>職員ステータス:</strong>
+                ${currentProfile.staffStatus ? `
+                  <span class="badge badge-${currentProfile.staffStatus === 'active' ? 'success' : currentProfile.staffStatus === 'on_leave' ? 'warning' : 'danger'}" style="margin-left: 0.5rem;">
+                    ${currentProfile.staffStatus === 'active' ? '在職' : currentProfile.staffStatus === 'on_leave' ? '休職中' : '退職'}
+                  </span>
+                ` : '-'}
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- アカウント履歴 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">アカウント履歴</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>登録日:</strong> ${new Date(currentProfile.createdAt).toLocaleString('ja-JP')}
+            </div>
+            <div>
+              <strong>最終更新:</strong> ${new Date(currentProfile.updatedAt).toLocaleString('ja-JP')}
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong>最終ログイン:</strong> ${currentProfile.lastLoginAt ? new Date(currentProfile.lastLoginAt).toLocaleString('ja-JP') : '-'}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('profileContainer').innerHTML = html;
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    document.getElementById('profileContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">プロフィールの読み込みに失敗しました</p>';
+  }
+}
+
+// 編集モーダルを表示
+function showEditModal() {
+  if (!currentProfile) return;
+
+  const html = `
+    <form id="editForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">名前 *</label>
+        <input type="text" id="editName" value="${currentProfile.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス *</label>
+        <input type="email" id="editEmail" value="${currentProfile.email}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeEditModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('editContent').innerHTML = html;
+  document.getElementById('editModal').style.display = 'block';
+
+  // フォーム送信イベント
+  document.getElementById('editForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    updateProfile();
+  });
+}
+
+// 編集モーダルを閉じる
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// プロフィールを更新
+async function updateProfile() {
+  const data = {
+    name: document.getElementById('editName').value.trim(),
+    email: document.getElementById('editEmail').value.trim()
+  };
+
+  if (!data.name || !data.email) {
+    alert('名前とメールアドレスは必須です');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/profile', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert('プロフィールを更新しました');
+      closeEditModal();
+      loadProfile();
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// パスワードを変更
+async function changePassword() {
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    alert('すべての項目を入力してください');
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    alert('新しいパスワードは6文字以上で入力してください');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    alert('新しいパスワードと確認用パスワードが一致しません');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/profile/password', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+
+    if (res.ok) {
+      alert('パスワードを変更しました');
+      document.getElementById('passwordForm').reset();
+    } else {
+      const error = await res.json();
+      alert('変更に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error changing password:', error);
+    alert('変更に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if (e.target.id === 'editModal') {
+    closeEditModal();
+  }
+});
+</script>

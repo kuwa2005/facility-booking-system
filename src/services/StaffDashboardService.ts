@@ -142,7 +142,7 @@ export class StaffDashboardService {
          a.cancel_status,
          a.created_at,
          MIN(u.date) as first_usage_date,
-         u.user_id,
+         a.user_id,
          usr.name as user_name
        FROM applications a
        LEFT JOIN usages u ON a.id = u.application_id

@@ -1,0 +1,609 @@
+<style>
+  .drag-handle {
+    cursor: move;
+    user-select: none;
+    color: #95a5a6;
+    font-size: 1.2rem;
+  }
+  .drag-handle:hover {
+    color: #7f8c8d;
+  }
+  .dragging {
+    opacity: 0.5;
+    background-color: #ecf0f1 !important;
+  }
+  .drag-over {
+    border-top: 3px solid #3498db;
+  }
+</style>
+
+<div class="page-header">
+  <h1 class="page-title">施設管理</h1>
+  <p class="page-description">施設・部屋の登録、編集、削除（ドラッグ＆ドロップで表示順を変更できます）</p>
+</div>
+
+<!-- 部屋一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">施設一覧</h2>
+    <button onclick="showAddModal()" class="btn btn-primary">新規施設を追加</button>
+  </div>
+  <div id="roomsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 削除された施設 -->
+<div class="card" style="margin-top: 2rem;">
+  <h2 class="card-title">削除された施設</h2>
+  <p style="color: #7f8c8d; margin-bottom: 1rem;">削除（無効化）された施設の一覧です。復元すると再び有効になります。</p>
+  <div id="inactiveRoomsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 追加/編集モーダル -->
+<div id="formModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 700px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;" id="modalTitle">施設を追加</h2>
+      <button onclick="closeFormModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="formContent"></div>
+  </div>
+</div>
+
+<script>
+
+let editingRoomId = null;
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadRooms();
+  loadInactiveRooms();
+});
+
+// 部屋一覧を読み込み
+let roomsData = [];
+async function loadRooms() {
+  try {
+    const res = await fetch('/api/staff/facilities/rooms', {
+      credentials: 'include',
+      });
+
+    if (!res.ok) {
+      // レート制限やその他のHTTPエラー
+      let errorMessage = 'データの読み込みに失敗しました';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースできない場合はテキストとして取得
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const allRooms = await res.json();
+
+    // アクティブな部屋のみをフィルタリング
+    roomsData = allRooms.filter(room => room.isActive === true || room.isActive === 1);
+
+    console.log('Loaded rooms:', roomsData); // デバッグ用
+
+    if (roomsData && roomsData.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table" id="roomsTable">
+            <thead>
+              <tr>
+                <th style="width: 30px;"></th>
+                <th>ID</th>
+                <th>施設名</th>
+                <th>定員</th>
+                <th>午前料金</th>
+                <th>午後料金</th>
+                <th>夜間料金</th>
+                <th>正午延長</th>
+                <th>夕方延長</th>
+                <th>空調(時間)</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="roomsTableBody">
+              ${roomsData.map(room => `
+                <tr draggable="true" data-room-id="${room.id}" data-display-order="${room.displayOrder || 0}">
+                  <td><span class="drag-handle">⋮⋮</span></td>
+                  <td>${room.id}</td>
+                  <td><strong>${room.name}</strong></td>
+                  <td>${room.capacity}名</td>
+                  <td>¥${(room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.extensionPriceMidday || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.extensionPriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.acPricePerHour || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>
+                    <span class="badge badge-${room.isActive ? 'success' : 'danger'}">
+                      ${room.isActive ? '有効' : '無効'}
+                    </span>
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <button onclick="showEditModal(${room.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
+                    <button onclick="deleteRoom(${room.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('roomsContainer').innerHTML = html;
+      initializeDragAndDrop();
+    } else {
+      document.getElementById('roomsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">施設がありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading rooms:', error);
+    document.getElementById('roomsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 追加モーダルを表示
+function showAddModal() {
+  editingRoomId = null;
+  document.getElementById('modalTitle').textContent = '施設を追加';
+  showFormModal();
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  editingRoomId = id;
+  document.getElementById('modalTitle').textContent = '施設を編集';
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms`, {
+      credentials: 'include',
+      });
+    const rooms = await res.json();
+    const room = rooms.find(r => r.id === id);
+
+    if (!room) {
+      await alert('施設が見つかりませんでした');
+      return;
+    }
+
+    showFormModal(room);
+  } catch (error) {
+    console.error('Error loading room:', error);
+    await alert('施設情報の読み込みに失敗しました');
+  }
+}
+
+// フォームモーダルを表示
+function showFormModal(room = null) {
+  const html = `
+    <form id="roomForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">施設名 *</label>
+        <input type="text" id="roomName" value="${room?.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">定員 *</label>
+        <input type="number" id="roomCapacity" value="${room?.capacity || ''}" required min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">基本料金</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午前</label>
+            <input type="number" id="basePriceMorning" value="${room?.basePriceMorning || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午後</label>
+            <input type="number" id="basePriceAfternoon" value="${room?.basePriceAfternoon || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夜間</label>
+            <input type="number" id="basePriceEvening" value="${room?.basePriceEvening || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">延長料金</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">正午延長</label>
+            <input type="number" id="extensionPriceMidday" value="${room?.extensionPriceMidday || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夕方延長</label>
+            <input type="number" id="extensionPriceEvening" value="${room?.extensionPriceEvening || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">空調料金（時間あたり）</label>
+        <input type="number" id="acPricePerHour" value="${room?.acPricePerHour || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="isActive" ${room?.isActive !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
+          <span style="font-weight: 500;">有効な施設として表示</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeFormModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">${editingRoomId ? '更新' : '追加'}</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('formContent').innerHTML = html;
+  document.getElementById('formModal').style.display = 'block';
+
+  // フォーム送信イベント
+  document.getElementById('roomForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveRoom();
+  });
+}
+
+// フォームモーダルを閉じる
+function closeFormModal() {
+  document.getElementById('formModal').style.display = 'none';
+  editingRoomId = null;
+}
+
+// 施設を保存
+async function saveRoom() {
+  const data = {
+    name: document.getElementById('roomName').value.trim(),
+    capacity: parseInt(document.getElementById('roomCapacity').value),
+    basePriceMorning: parseInt(document.getElementById('basePriceMorning').value) || 0,
+    basePriceAfternoon: parseInt(document.getElementById('basePriceAfternoon').value) || 0,
+    basePriceEvening: parseInt(document.getElementById('basePriceEvening').value) || 0,
+    extensionPriceMidday: parseInt(document.getElementById('extensionPriceMidday').value) || 0,
+    extensionPriceEvening: parseInt(document.getElementById('extensionPriceEvening').value) || 0,
+    acPricePerHour: parseInt(document.getElementById('acPricePerHour').value) || 0,
+    isActive: document.getElementById('isActive').checked,
+  };
+
+  if (!data.name || !data.capacity) {
+    await alert('施設名と定員は必須です');
+    return;
+  }
+
+  try {
+    const url = editingRoomId
+      ? `/api/staff/facilities/rooms/${editingRoomId}`
+      : '/api/staff/facilities/rooms';
+    const method = editingRoomId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      await alert(editingRoomId ? '施設を更新しました' : '施設を追加しました');
+      closeFormModal();
+      // リストを更新（await して完了を待つ）
+      await loadRooms();
+      await loadInactiveRooms();
+    } else {
+      const error = await res.json();
+      await alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving room:', error);
+    await alert('保存に失敗しました');
+  }
+}
+
+// 施設を削除
+async function deleteRoom(id) {
+  if (!await confirm('この施設を削除しますか？\n※論理削除されるため、後で復元可能です')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      });
+
+    if (res.ok) {
+      await alert('施設を削除しました');
+      // リストを更新（await して完了を待つ）
+      await loadRooms();
+      await loadInactiveRooms();
+    } else {
+      const error = await res.json();
+      await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting room:', error);
+    await alert('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('formModal').addEventListener('click', (e) => {
+  if (e.target.id === 'formModal') {
+    closeFormModal();
+  }
+});
+
+// ドラッグ&ドロップ機能の初期化
+let draggedRow = null;
+
+function initializeDragAndDrop() {
+  const tbody = document.getElementById('roomsTableBody');
+  if (!tbody) return;
+
+  const rows = tbody.querySelectorAll('tr[draggable="true"]');
+
+  rows.forEach(row => {
+    row.addEventListener('dragstart', handleDragStart);
+    row.addEventListener('dragend', handleDragEnd);
+    row.addEventListener('dragover', handleDragOver);
+    row.addEventListener('drop', handleDrop);
+    row.addEventListener('dragleave', handleDragLeave);
+  });
+}
+
+function handleDragStart(e) {
+  draggedRow = e.currentTarget;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+}
+
+function handleDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+
+  // すべての行からdrag-overクラスを削除
+  const rows = document.querySelectorAll('#roomsTableBody tr');
+  rows.forEach(row => row.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault();
+  }
+  e.dataTransfer.dropEffect = 'move';
+  return false;
+}
+
+function handleDrop(e) {
+  if (e.stopPropagation) {
+    e.stopPropagation();
+  }
+  e.preventDefault();
+
+  const targetRow = e.currentTarget;
+
+  if (draggedRow !== targetRow) {
+    // ドラッグした行をターゲット行の前に挿入
+    const tbody = targetRow.parentNode;
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    const draggedIndex = allRows.indexOf(draggedRow);
+    const targetIndex = allRows.indexOf(targetRow);
+
+    if (draggedIndex < targetIndex) {
+      tbody.insertBefore(draggedRow, targetRow.nextSibling);
+    } else {
+      tbody.insertBefore(draggedRow, targetRow);
+    }
+
+    // 新しい順序をサーバーに保存
+    saveDisplayOrder();
+  }
+
+  targetRow.classList.remove('drag-over');
+  return false;
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+// 表示順をサーバーに保存
+async function saveDisplayOrder() {
+  const tbody = document.getElementById('roomsTableBody');
+  if (!tbody) {
+    console.error('roomsTableBody not found');
+    return;
+  }
+
+  const rows = tbody.querySelectorAll('tr[data-room-id]');
+
+  const orderUpdates = Array.from(rows).map((row, index) => {
+    const roomIdAttr = row.getAttribute('data-room-id');
+    const id = parseInt(roomIdAttr || '0', 10);
+    return {
+      id: id,
+      displayOrder: index
+    };
+  }).filter(update => !isNaN(update.id) && update.id > 0);
+
+  console.log('Display order updates:', orderUpdates); // デバッグ用
+
+  if (orderUpdates.length === 0) {
+    console.warn('No valid room IDs to update');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/facilities/rooms/display-order', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ orderUpdates })
+    });
+
+    if (!res.ok) {
+      let errorMessage = '表示順の保存に失敗しました';
+      let errorDetails = null;
+      try {
+        const error = await res.json();
+        errorMessage = error.error || errorMessage;
+        errorDetails = error.details;
+      } catch {
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      console.error('Failed to save display order:', errorMessage, errorDetails);
+      await alert(errorMessage + (errorDetails ? '\n' + errorDetails : ''));
+      // エラー時は元の順序に戻すために再読み込み
+      await loadRooms();
+    }
+  } catch (error) {
+    console.error('Error saving display order:', error);
+    const message = error instanceof Error ? error.message : '表示順の保存に失敗しました';
+    await alert(message);
+    await loadRooms();
+  }
+}
+
+// 削除された施設一覧を読み込み
+async function loadInactiveRooms() {
+  try {
+    const res = await fetch('/api/staff/facilities/rooms?includeInactive=true', {
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      // レート制限やその他のHTTPエラー
+      let errorMessage = 'データの読み込みに失敗しました';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        // JSONパースできない場合はテキストとして取得
+        const text = await res.text();
+        if (text) errorMessage = text;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const allRooms = await res.json();
+    const inactiveRooms = allRooms.filter(room => !room.isActive);
+
+    if (inactiveRooms && inactiveRooms.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>施設名</th>
+                <th>定員</th>
+                <th>午前料金</th>
+                <th>午後料金</th>
+                <th>夜間料金</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${inactiveRooms.map(room => `
+                <tr style="background-color: #f8d7da;">
+                  <td>${room.id}</td>
+                  <td><strong>${room.name}</strong></td>
+                  <td>${room.capacity}名</td>
+                  <td>¥${(room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>¥${(room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>
+                    <button onclick="restoreRoom(${room.id})" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">復元</button>
+                    <button onclick="permanentlyDeleteRoom(${room.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">完全に削除</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('inactiveRoomsContainer').innerHTML = html;
+    } else {
+      document.getElementById('inactiveRoomsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">削除された施設はありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading inactive rooms:', error);
+    document.getElementById('inactiveRoomsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 施設を復元
+async function restoreRoom(id) {
+  if (!await confirm('この施設を復元しますか？\n復元すると一般ユーザーにも表示されるようになります。')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms/${id}/restore`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (res.ok) {
+      await alert('施設を復元しました');
+      // リストを更新（await して完了を待つ）
+      await loadRooms();
+      await loadInactiveRooms();
+    } else {
+      const error = await res.json();
+      await alert('復元に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error restoring room:', error);
+    await alert('復元に失敗しました');
+  }
+}
+
+// 施設を完全に削除
+async function permanentlyDeleteRoom(id) {
+  if (!await confirm('この施設を完全に削除しますか？\n\n⚠️ この操作は取り消せません。\n関連する予約データも全て削除されます。')) {
+    return;
+  }
+
+  // 二重確認
+  if (!await confirm('本当に削除してもよろしいですか？\nこの操作は元に戻せません。')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/rooms/${id}/permanent`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (res.ok) {
+      await alert('施設を完全に削除しました');
+      // リストを更新（await して完了を待つ）
+      await loadInactiveRooms();
+    } else {
+      const error = await res.json();
+      await alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error permanently deleting room:', error);
+    await alert('削除に失敗しました');
+  }
+}
+</script>

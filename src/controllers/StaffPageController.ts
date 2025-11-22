@@ -26,6 +26,7 @@ export class StaffPageController {
       }
 
       const layoutData = {
+        ...res.locals,  // res.localsの内容を含める（isMaintenanceMode, siteNameなど）
         ...data,
         body: bodyHtml,
         user: req.user,
@@ -49,7 +50,7 @@ export class StaffPageController {
    */
   static async dashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      this.renderWithLayout('dashboard.ejs', {
+      StaffPageController.renderWithLayout('dashboard.ejs', {
         title: 'ダッシュボード',
       }, req, res);
     } catch (error) {
@@ -71,7 +72,7 @@ export class StaffPageController {
    */
   static async profile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      this.renderWithLayout('profile.ejs', {
+      StaffPageController.renderWithLayout('profile.ejs', {
         title: 'プロフィール',
       }, req, res);
     } catch (error) {
@@ -84,7 +85,7 @@ export class StaffPageController {
    */
   static async reservations(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      this.renderWithLayout('reservations.ejs', {
+      StaffPageController.renderWithLayout('reservations.ejs', {
         title: '予約管理',
       }, req, res);
     } catch (error) {
@@ -97,7 +98,7 @@ export class StaffPageController {
    */
   static async usages(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      this.renderWithLayout('usages.ejs', {
+      StaffPageController.renderWithLayout('usages.ejs', {
         title: '利用記録管理',
       }, req, res);
     } catch (error) {
@@ -110,7 +111,7 @@ export class StaffPageController {
    */
   static async users(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      this.renderWithLayout('users.ejs', {
+      StaffPageController.renderWithLayout('users.ejs', {
         title: '利用者管理',
       }, req, res);
     } catch (error) {
@@ -123,8 +124,99 @@ export class StaffPageController {
    */
   static async rooms(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      this.renderWithLayout('rooms.ejs', {
+      StaffPageController.renderWithLayout('rooms.ejs', {
         title: '部屋管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 設備管理ページ
+   */
+  static async equipment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('equipment.ejs', {
+        title: '設備管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 休館日管理ページ
+   */
+  static async closedDates(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('closed-dates.ejs', {
+        title: '休館日管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * お知らせ管理ページ
+   */
+  static async announcements(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('announcements.ejs', {
+        title: 'お知らせ管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * メッセージ管理ページ
+   */
+  static async messages(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('messages.ejs', {
+        title: 'メッセージ管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 物販管理ページ
+   */
+  static async products(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('products.ejs', {
+        title: '物販管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * 代行予約ページ
+   */
+  static async proxyReservations(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('proxy-reservations.ejs', {
+        title: '代行予約',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * レポートページ
+   */
+  static async reports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('reports.ejs', {
+        title: 'レポート',
       }, req, res);
     } catch (error) {
       next(error);
@@ -141,8 +233,44 @@ export class StaffPageController {
         return;
       }
 
-      this.renderWithLayout('staff-management.ejs', {
+      StaffPageController.renderWithLayout('staff-management.ejs', {
         title: '職員管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * システム設定ページ（管理者のみ）
+   */
+  static async settings(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        res.status(403).send('管理者権限が必要です');
+        return;
+      }
+
+      StaffPageController.renderWithLayout('settings.ejs', {
+        title: 'システム設定',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * アクティビティログページ（管理者のみ）
+   */
+  static async activityLog(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        res.status(403).send('管理者権限が必要です');
+        return;
+      }
+
+      StaffPageController.renderWithLayout('activity-log.ejs', {
+        title: 'アクティビティログ',
       }, req, res);
     } catch (error) {
       next(error);

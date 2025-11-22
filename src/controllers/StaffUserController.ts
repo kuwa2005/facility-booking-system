@@ -19,7 +19,7 @@ export class StaffUserController {
       if (includeDeleted !== undefined) filter.includeDeleted = includeDeleted === 'true';
 
       const users = await StaffUserManagementService.getUsers(filter);
-      res.json(users);
+      res.json({ users });
     } catch (error) {
       next(error);
     }

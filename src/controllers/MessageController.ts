@@ -205,6 +205,14 @@ export class MessageController {
    */
   async getUnreadCount(req: Request, res: Response): Promise<void> {
     try {
+      if (!(req as any).user || !(req as any).user.userId) {
+        res.status(401).json({
+          success: false,
+          message: '認証が必要です',
+        });
+        return;
+      }
+
       const userId = (req as any).user.userId;
       const count = await messageService.getUnreadCount(userId, 'user');
 

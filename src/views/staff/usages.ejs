@@ -1,0 +1,513 @@
+<div class="page-header">
+  <h1 class="page-title">利用記録管理</h1>
+  <p class="page-description">空調時間の入力、実績管理、摘要欄の編集</p>
+</div>
+
+<!-- クイックアクセス -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+  <button onclick="loadTodayUsages()" class="btn btn-primary" style="padding: 1rem;">
+    📅 本日の利用
+  </button>
+  <button onclick="loadMissingAcHours()" class="btn" style="padding: 1rem; background-color: #e67e22; color: white;">
+    ⚠️ AC時間未入力
+  </button>
+  <button onclick="showDateRangeSearch()" class="btn" style="padding: 1rem; background-color: #9b59b6; color: white;">
+    🔍 期間検索
+  </button>
+</div>
+
+<!-- 期間検索フォーム（初期は非表示） -->
+<div id="dateRangeForm" class="card" style="display: none;">
+  <h3 style="margin-bottom: 1rem;">期間を指定して検索</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">開始日</label>
+      <input type="date" id="rangeStartDate" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">終了日</label>
+      <input type="date" id="rangeEndDate" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div style="display: flex; align-items: flex-end;">
+      <button onclick="loadDateRangeUsages()" class="btn btn-primary" style="width: 100%;">検索</button>
+    </div>
+  </div>
+</div>
+
+<!-- 利用記録一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;" id="listTitle">利用記録一覧</h2>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div id="totalCount" style="color: #7f8c8d;"></div>
+      <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
+    </div>
+  </div>
+  <div id="usagesContainer">
+    <p style="text-align: center; color: #7f8c8d;">上のボタンから検索してください</p>
+  </div>
+</div>
+
+<!-- 利用記録編集モーダル -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 800px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">利用記録編集</h2>
+      <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="editContent"></div>
+  </div>
+</div>
+
+<script>
+
+let currentUsageId = null;
+let currentUsages = [];
+
+// 今日の日付を設定
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  document.getElementById('rangeStartDate').valueAsDate = today;
+  document.getElementById('rangeEndDate').valueAsDate = today;
+});
+
+// 本日の利用を読み込み
+async function loadTodayUsages() {
+  document.getElementById('dateRangeForm').style.display = 'none';
+  document.getElementById('listTitle').textContent = '本日の利用';
+
+  try {
+    const res = await fetch('/api/staff/usages/today/all', {
+      credentials: 'include',
+      });
+    const usages = await res.json();
+
+    displayUsages(usages);
+  } catch (error) {
+    console.error('Error loading today usages:', error);
+    document.getElementById('usagesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// AC時間未入力を読み込み
+async function loadMissingAcHours() {
+  document.getElementById('dateRangeForm').style.display = 'none';
+  document.getElementById('listTitle').textContent = 'AC時間未入力';
+
+  try {
+    const res = await fetch('/api/staff/usages/missing-ac-hours/all', {
+      credentials: 'include',
+      });
+    const usages = await res.json();
+
+    displayUsages(usages);
+  } catch (error) {
+    console.error('Error loading missing AC hours:', error);
+    document.getElementById('usagesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 期間検索フォームを表示
+function showDateRangeSearch() {
+  const form = document.getElementById('dateRangeForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+// 期間指定で読み込み
+async function loadDateRangeUsages() {
+  const startDate = document.getElementById('rangeStartDate').value;
+  const endDate = document.getElementById('rangeEndDate').value;
+
+  if (!startDate || !endDate) {
+    alert('開始日と終了日を指定してください');
+    return;
+  }
+
+  document.getElementById('listTitle').textContent = `期間: ${startDate} ～ ${endDate}`;
+
+  try {
+    const params = new URLSearchParams({ startDate, endDate });
+    const res = await fetch(`/api/staff/usages/date-range/all?${params}`, {
+      credentials: 'include',
+      });
+    const usages = await res.json();
+
+    displayUsages(usages);
+  } catch (error) {
+    console.error('Error loading date range usages:', error);
+    document.getElementById('usagesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 利用記録を表示
+function displayUsages(usages) {
+  // データをエクスポート用に保存
+  currentUsages = usages || [];
+
+  if (usages && usages.length > 0) {
+    document.getElementById('totalCount').textContent = `全 ${usages.length} 件`;
+
+    const html = `
+      <div style="overflow-x: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>施設</th>
+              <th>イベント名</th>
+              <th>時間帯</th>
+              <th>AC要否</th>
+              <th>AC時間</th>
+              <th>金額</th>
+              <th>摘要</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${usages.map(usage => {
+              const slots = [];
+              if (usage.useMorning) slots.push('午前');
+              if (usage.useMiddayExtension) slots.push('正午延長');
+              if (usage.useAfternoon) slots.push('午後');
+              if (usage.useEveningExtension) slots.push('夕方延長');
+              if (usage.useEvening) slots.push('夜間');
+
+              const acStatus = !usage.acRequested ? '-' :
+                              usage.acHours ? `${usage.acHours}時間` :
+                              '<span class="badge badge-warning">未入力</span>';
+
+              return `
+                <tr>
+                  <td>${new Date(usage.date).toLocaleDateString('ja-JP')}</td>
+                  <td>${usage.roomName || '-'}</td>
+                  <td>${usage.eventName || '-'}</td>
+                  <td style="font-size: 0.875rem;">${slots.join(', ')}</td>
+                  <td>
+                    <span class="badge badge-${usage.acRequested ? 'info' : 'secondary'}" style="${!usage.acRequested ? 'background-color: #95a5a6;' : ''}">
+                      ${usage.acRequested ? '要' : '不要'}
+                    </span>
+                  </td>
+                  <td>${acStatus}</td>
+                  <td>¥${(usage.subtotalAmount || 0).toLocaleString()}</td>
+                  <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${usage.remarks || '-'}
+                  </td>
+                  <td>
+                    <button onclick="showEditModal(${usage.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">編集</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('usagesContainer').innerHTML = html;
+  } else {
+    document.getElementById('totalCount').textContent = '';
+    document.getElementById('usagesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">利用記録がありません</p>';
+  }
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  currentUsageId = id;
+
+  try {
+    const res = await fetch(`/api/staff/usages/${id}`, {
+      credentials: 'include',
+      });
+    const usage = await res.json();
+
+    const slots = [];
+    if (usage.useMorning) slots.push('午前');
+    if (usage.useMiddayExtension) slots.push('正午延長');
+    if (usage.useAfternoon) slots.push('午後');
+    if (usage.useEveningExtension) slots.push('夕方延長');
+    if (usage.useEvening) slots.push('夜間');
+
+    const html = `
+      <div style="display: grid; gap: 1.5rem;">
+        <!-- 基本情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>利用日:</strong> ${new Date(usage.date).toLocaleDateString('ja-JP')}
+            </div>
+            <div>
+              <strong>施設:</strong> ${usage.roomName || '-'}
+            </div>
+            <div>
+              <strong>イベント名:</strong> ${usage.eventName || '-'}
+            </div>
+            <div>
+              <strong>時間帯:</strong> ${slots.join(', ')}
+            </div>
+            <div>
+              <strong>申請者:</strong> ${usage.applicantName || '-'}
+            </div>
+            <div>
+              <strong>申請ID:</strong> ${usage.applicationId}
+            </div>
+          </div>
+        </div>
+
+        <!-- 料金情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">料金情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>施設料金（乗数前）:</strong> ¥${(usage.roomBaseChargeBeforeMultiplier || 0).toLocaleString()}
+            </div>
+            <div>
+              <strong>施設料金（乗数後）:</strong> ¥${(usage.roomChargeAfterMultiplier || 0).toLocaleString()}
+            </div>
+            <div>
+              <strong>設備料金:</strong> ¥${(usage.equipmentCharge || 0).toLocaleString()}
+            </div>
+            <div>
+              <strong>空調料金:</strong> ¥${(usage.acCharge || 0).toLocaleString()}
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong style="font-size: 1.1rem;">小計:</strong>
+              <span style="font-size: 1.25rem; color: #3498db; font-weight: 600;">¥${(usage.subtotalAmount || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 空調時間入力 -->
+        ${usage.acRequested ? `
+          <div style="padding: 1rem; background-color: #fff3cd; border-radius: 4px; border: 2px solid #f39c12;">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">空調使用時間</h3>
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">空調使用時間（時間）</label>
+                <input type="number" id="acHours" value="${usage.acHours || ''}" step="0.5" min="0" placeholder="例: 3.5" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+              </div>
+              <button onclick="updateAcHours()" class="btn btn-success">AC時間を更新</button>
+            </div>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #856404;">※ 0.5時間単位で入力してください（例: 3, 3.5, 4）</p>
+          </div>
+        ` : '<div style="padding: 1rem; background-color: #d4edda; border-radius: 4px; text-align: center; color: #155724;">この利用では空調は使用されません</div>'}
+
+        <!-- 実際の利用時間 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">実際の利用時間</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">開始時刻</label>
+              <input type="time" id="actualStartTime" value="${usage.actualStartTime || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">終了時刻</label>
+              <input type="time" id="actualEndTime" value="${usage.actualEndTime || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <button onclick="updateActualTime()" class="btn btn-primary">実績を更新</button>
+          </div>
+        </div>
+
+        <!-- 摘要欄 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">摘要欄</h3>
+          <textarea id="remarks" rows="4" placeholder="備考や特記事項を入力..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${usage.remarks || ''}</textarea>
+          <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <button onclick="updateRemarks()" class="btn btn-primary">摘要を更新</button>
+          </div>
+        </div>
+
+        <!-- 閉じるボタン -->
+        <div style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+          <button onclick="closeEditModal()" class="btn" style="background-color: #95a5a6; color: white;">閉じる</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('editContent').innerHTML = html;
+    document.getElementById('editModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error loading usage detail:', error);
+    alert('利用記録の読み込みに失敗しました');
+  }
+}
+
+// 編集モーダルを閉じる
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  currentUsageId = null;
+}
+
+// AC時間を更新
+async function updateAcHours() {
+  if (!currentUsageId) return;
+
+  const acHours = parseFloat(document.getElementById('acHours').value);
+  if (isNaN(acHours) || acHours < 0) {
+    alert('有効な時間を入力してください');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/usages/${currentUsageId}/ac-hours`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ acHours })
+    });
+
+    if (res.ok) {
+      alert('空調時間を更新しました');
+      closeEditModal();
+      // 最後に表示していたリストを再読み込み（簡易実装）
+      const title = document.getElementById('listTitle').textContent;
+      if (title.includes('本日')) {
+        loadTodayUsages();
+      } else if (title.includes('未入力')) {
+        loadMissingAcHours();
+      }
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error updating AC hours:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// 実際の利用時間を更新
+async function updateActualTime() {
+  if (!currentUsageId) return;
+
+  const actualStartTime = document.getElementById('actualStartTime').value;
+  const actualEndTime = document.getElementById('actualEndTime').value;
+
+  if (!actualStartTime || !actualEndTime) {
+    alert('開始時刻と終了時刻を入力してください');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/usages/${currentUsageId}/actual-time`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ actualStartTime, actualEndTime })
+    });
+
+    if (res.ok) {
+      alert('実際の利用時間を更新しました');
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error updating actual time:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// 摘要を更新
+async function updateRemarks() {
+  if (!currentUsageId) return;
+
+  const remarks = document.getElementById('remarks').value.trim();
+
+  try {
+    const res = await fetch(`/api/staff/usages/${currentUsageId}/remarks`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ remarks })
+    });
+
+    if (res.ok) {
+      alert('摘要を更新しました');
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error updating remarks:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if (e.target.id === 'editModal') {
+    closeEditModal();
+  }
+});
+
+// CSVエクスポート
+function exportToCSV() {
+  if (!currentUsages || currentUsages.length === 0) {
+    alert('エクスポートするデータがありません');
+    return;
+  }
+
+  // CSVヘッダー
+  const headers = ['日付', '施設', 'イベント名', '時間帯', 'AC要否', 'AC時間', '金額', '摘要'];
+
+  // CSVデータ行
+  const rows = currentUsages.map(usage => {
+    const slots = [];
+    if (usage.useMorning) slots.push('午前');
+    if (usage.useMiddayExtension) slots.push('正午延長');
+    if (usage.useAfternoon) slots.push('午後');
+    if (usage.useEveningExtension) slots.push('夕方延長');
+    if (usage.useEvening) slots.push('夜間');
+
+    const acRequired = usage.acRequested ? '要' : '不要';
+    const acHours = usage.acRequested ? (usage.acHours || '未入力') : '-';
+
+    return [
+      new Date(usage.date).toLocaleDateString('ja-JP'),
+      usage.roomName || '-',
+      usage.eventName || '-',
+      slots.join(' / '),
+      acRequired,
+      acHours,
+      usage.subtotalAmount || 0,
+      usage.remarks || '-'
+    ];
+  });
+
+  // CSV形式に変換
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // セル内にカンマや改行がある場合はダブルクォートで囲む
+      const cellStr = String(cell);
+      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+        return '"' + cellStr.replace(/"/g, '""') + '"';
+      }
+      return cellStr;
+    }).join(','))
+  ].join('\n');
+
+  // BOM付きUTF-8でエンコード（Excelで文字化けしないように）
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // ダウンロードリンクを作成してクリック
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const filename = `usages_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>

@@ -1,0 +1,321 @@
+<div class="page-header">
+  <h1 class="page-title">休館日管理</h1>
+  <p class="page-description">施設の休館日の登録、削除</p>
+</div>
+
+<!-- カレンダーと追加フォーム -->
+<div style="display: grid; grid-template-columns: 1fr 400px; gap: 1.5rem;">
+  <!-- 休館日一覧 -->
+  <div class="card">
+    <h2 class="card-title">登録済み休館日</h2>
+    <div id="closedDatesContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+
+  <!-- 追加フォーム -->
+  <div class="card" style="position: sticky; top: 2rem; height: fit-content;">
+    <h2 class="card-title">休館日を追加</h2>
+    <form id="addForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">日付 *</label>
+        <input type="date" id="closedDate" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">理由</label>
+        <textarea id="reason" rows="3" placeholder="例: 年末年始、メンテナンス" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">休館日を追加</button>
+    </form>
+
+    <div style="margin-top: 1.5rem; padding: 1rem; background-color: #d1ecf1; border-radius: 4px; border-left: 4px solid #0c5460;">
+      <h3 style="font-size: 0.875rem; color: #0c5460; margin-bottom: 0.5rem;">💡 ヒント</h3>
+      <p style="font-size: 0.875rem; color: #0c5460; margin: 0;">
+        休館日に登録された日は、利用者が予約できなくなります。年末年始、祝日、メンテナンス日などを登録してください。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- 年月フィルター -->
+<div class="card" style="margin-top: 1.5rem;">
+  <div style="display: flex; gap: 1rem; align-items: center; justify-content: center;">
+    <button onclick="changeMonth(-1)" class="btn" style="background-color: #95a5a6; color: white;">
+      ← 前月
+    </button>
+    <h3 id="currentMonthDisplay" style="margin: 0; min-width: 150px; text-align: center;"></h3>
+    <button onclick="changeMonth(1)" class="btn" style="background-color: #95a5a6; color: white;">
+      次月 →
+    </button>
+    <button onclick="resetToThisMonth()" class="btn btn-primary">今月</button>
+  </div>
+
+  <div id="monthlyCalendar" style="margin-top: 1.5rem;"></div>
+</div>
+
+<script>
+
+let allClosedDates = [];
+let currentViewYear = new Date().getFullYear();
+let currentViewMonth = new Date().getMonth();
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadClosedDates();
+
+  // フォーム送信イベント
+  document.getElementById('addForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    addClosedDate();
+  });
+
+  // デフォルト日付を今日に設定
+  document.getElementById('closedDate').valueAsDate = new Date();
+});
+
+// 休館日一覧を読み込み
+async function loadClosedDates() {
+  try {
+    const res = await fetch('/api/staff/facilities/closed-dates', {
+      credentials: 'include',
+      });
+    allClosedDates = await res.json();
+    displayClosedDates();
+    renderMonthlyCalendar();
+  } catch (error) {
+    console.error('Error loading closed dates:', error);
+    document.getElementById('closedDatesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 休館日を表示
+function displayClosedDates() {
+  if (allClosedDates && allClosedDates.length > 0) {
+    // 日付順にソート
+    const sorted = [...allClosedDates].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const html = `
+      <div style="max-height: 500px; overflow-y: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>曜日</th>
+              <th>理由</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(cd => {
+              const date = new Date(cd.date);
+              const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+              const dayName = dayNames[date.getDay()];
+              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+              return `
+                <tr>
+                  <td>${date.toLocaleDateString('ja-JP')}</td>
+                  <td>
+                    <span style="color: ${isWeekend ? '#e74c3c' : '#333'}; font-weight: ${isWeekend ? '600' : 'normal'};">
+                      ${dayName}
+                    </span>
+                  </td>
+                  <td>${cd.reason || '-'}</td>
+                  <td>
+                    <button onclick="deleteClosedDate(${cd.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('closedDatesContainer').innerHTML = html;
+  } else {
+    document.getElementById('closedDatesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">休館日が登録されていません</p>';
+  }
+}
+
+// 休館日を追加
+async function addClosedDate() {
+  const date = document.getElementById('closedDate').value;
+  const reason = document.getElementById('reason').value.trim();
+
+  if (!date) {
+    alert('日付を選択してください');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/facilities/closed-dates', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ date, reason })
+    });
+
+    if (res.ok) {
+      alert('休館日を追加しました');
+      document.getElementById('reason').value = '';
+      // 次の日に日付を進める
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+      document.getElementById('closedDate').valueAsDate = nextDate;
+      loadClosedDates();
+    } else {
+      const error = await res.json();
+      alert('追加に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error adding closed date:', error);
+    alert('追加に失敗しました');
+  }
+}
+
+// 休館日を削除
+async function deleteClosedDate(id) {
+  if (!confirm('この休館日を削除しますか？')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/facilities/closed-dates/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      });
+
+    if (res.ok) {
+      alert('休館日を削除しました');
+      loadClosedDates();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting closed date:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// 月次カレンダーを表示
+function renderMonthlyCalendar() {
+  const year = currentViewYear;
+  const month = currentViewMonth;
+
+  // 月の表示名
+  document.getElementById('currentMonthDisplay').textContent = `${year}年 ${month + 1}月`;
+
+  // 月の最初の日と最後の日
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startDayOfWeek = firstDay.getDay(); // 0 = 日曜日
+
+  // カレンダーグリッドを作成
+  let calendarHTML = '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">';
+
+  // 曜日ヘッダー
+  const dayHeaders = ['日', '月', '火', '水', '木', '金', '土'];
+  dayHeaders.forEach((day, index) => {
+    const isWeekend = index === 0 || index === 6;
+    calendarHTML += `<div style="text-align: center; font-weight: 600; padding: 0.5rem; color: ${isWeekend ? '#e74c3c' : '#333'};">${day}</div>`;
+  });
+
+  // 空白セル（月の最初の日まで）
+  for (let i = 0; i < startDayOfWeek; i++) {
+    calendarHTML += '<div></div>';
+  }
+
+  // 日付セル
+  for (let day = 1; day <= daysInMonth; day++) {
+    const currentDate = new Date(year, month, day);
+    const dateString = currentDate.toISOString().split('T')[0];
+    const isClosed = allClosedDates.some(cd => cd.date.startsWith(dateString));
+    const isToday = new Date().toDateString() === currentDate.toDateString();
+    const dayOfWeek = currentDate.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    let bgColor = '#fff';
+    let textColor = '#333';
+    let border = '1px solid #ddd';
+
+    if (isClosed) {
+      bgColor = '#f8d7da';
+      textColor = '#721c24';
+      border = '2px solid #e74c3c';
+    } else if (isToday) {
+      border = '2px solid #3498db';
+    }
+
+    if (isWeekend && !isClosed) {
+      textColor = '#e74c3c';
+    }
+
+    calendarHTML += `
+      <div style="
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: ${bgColor};
+        color: ${textColor};
+        border: ${border};
+        border-radius: 4px;
+        font-weight: ${isClosed ? '700' : isToday ? '600' : 'normal'};
+        position: relative;
+        cursor: ${isClosed ? 'pointer' : 'default'};
+      " ${isClosed ? `title="休館日"` : ''}>
+        ${day}
+        ${isClosed ? '<div style="position: absolute; bottom: 2px; font-size: 0.7rem;">🔒</div>' : ''}
+      </div>
+    `;
+  }
+
+  calendarHTML += '</div>';
+
+  // 凡例
+  calendarHTML += `
+    <div style="display: flex; gap: 2rem; justify-content: center; margin-top: 1.5rem; font-size: 0.875rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="width: 20px; height: 20px; background-color: #f8d7da; border: 2px solid #e74c3c; border-radius: 4px;"></div>
+        <span>休館日</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="width: 20px; height: 20px; background-color: #fff; border: 2px solid #3498db; border-radius: 4px;"></div>
+        <span>本日</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="width: 20px; height: 20px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px; color: #e74c3c; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">日</div>
+        <span>土日</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('monthlyCalendar').innerHTML = calendarHTML;
+}
+
+// 月を変更
+function changeMonth(delta) {
+  currentViewMonth += delta;
+  if (currentViewMonth < 0) {
+    currentViewMonth = 11;
+    currentViewYear--;
+  } else if (currentViewMonth > 11) {
+    currentViewMonth = 0;
+    currentViewYear++;
+  }
+  renderMonthlyCalendar();
+}
+
+// 今月に戻る
+function resetToThisMonth() {
+  currentViewYear = new Date().getFullYear();
+  currentViewMonth = new Date().getMonth();
+  renderMonthlyCalendar();
+}
+</script>

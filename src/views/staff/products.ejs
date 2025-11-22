@@ -1,0 +1,423 @@
+<div class="page-header">
+  <h1 class="page-title">物販管理</h1>
+  <p class="page-description">商品の登録・編集と売上管理</p>
+</div>
+
+<!-- タブ -->
+<div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1;">
+  <button onclick="showTab('products')" id="tab-products" class="tab-btn active" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid #3498db; font-weight: 600;">
+    商品管理
+  </button>
+  <button onclick="showTab('sales')" id="tab-sales" class="tab-btn" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+    売上管理
+  </button>
+</div>
+
+<style>
+  .tab-btn:hover { background-color: #f8f9fa; }
+  .tab-btn.active { border-bottom-color: #3498db !important; font-weight: 600; color: #3498db; }
+</style>
+
+<!-- 商品管理タブ -->
+<div id="products-tab" class="tab-content">
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 class="card-title" style="margin: 0;">商品一覧</h2>
+      <button onclick="showAddProductModal()" class="btn btn-primary">新規商品を追加</button>
+    </div>
+    <div id="productsContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+</div>
+
+<!-- 売上管理タブ -->
+<div id="sales-tab" class="tab-content" style="display: none;">
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 class="card-title" style="margin: 0;">売上記録</h2>
+      <button onclick="showRecordSaleModal()" class="btn btn-primary">売上を記録</button>
+    </div>
+    <div id="salesContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+</div>
+
+<!-- 商品追加/編集モーダル -->
+<div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;" id="productModalTitle">商品を追加</h2>
+      <button onclick="closeProductModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="productFormContent"></div>
+  </div>
+</div>
+
+<!-- 売上記録モーダル -->
+<div id="saleModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">売上を記録</h2>
+      <button onclick="closeSaleModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <form id="saleForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">商品 *</label>
+        <select id="saleProductId" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">数量 *</label>
+        <input type="number" id="saleQuantity" value="1" required min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">購入者（任意）</label>
+        <input type="text" id="saleBuyerName" placeholder="例: 山田太郎" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeSaleModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">記録</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+let editingProductId = null;
+let allProducts = [];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadProducts();
+  loadSales();
+
+  document.getElementById('saleForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    recordSale();
+  });
+});
+
+// タブ切り替え
+function showTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+    btn.style.borderBottomColor = 'transparent';
+    btn.style.fontWeight = 'normal';
+    btn.style.color = '';
+  });
+
+  document.getElementById(`${tabName}-tab`).style.display = 'block';
+  const activeBtn = document.getElementById(`tab-${tabName}`);
+  activeBtn.classList.add('active');
+  activeBtn.style.borderBottomColor = '#3498db';
+  activeBtn.style.fontWeight = '600';
+  activeBtn.style.color = '#3498db';
+}
+
+// 商品一覧を読み込み
+async function loadProducts() {
+  try {
+    const res = await fetch('/api/staff/products', {
+      credentials: 'include',
+      });
+    allProducts = await res.json();
+
+    if (allProducts && allProducts.length > 0) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>商品名</th>
+              <th>価格</th>
+              <th>在庫数</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allProducts.map(product => `
+              <tr>
+                <td>${product.id}</td>
+                <td><strong>${product.name}</strong></td>
+                <td>¥${(product.price || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                <td>${product.stock || 0}個</td>
+                <td>
+                  <span class="badge badge-${product.isActive ? 'success' : 'danger'}">
+                    ${product.isActive ? '販売中' : '停止中'}
+                  </span>
+                </td>
+                <td style="white-space: nowrap;">
+                  <button onclick="showEditProductModal(${product.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
+                  <button onclick="deleteProduct(${product.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('productsContainer').innerHTML = html;
+    } else {
+      document.getElementById('productsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">商品がありません</p>';
+    }
+
+    // 売上記録用のセレクトボックスを更新
+    updateProductSelect();
+  } catch (error) {
+    console.error('Error loading products:', error);
+    document.getElementById('productsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 商品セレクトボックスを更新
+function updateProductSelect() {
+  const select = document.getElementById('saleProductId');
+  select.innerHTML = '<option value="">選択してください</option>' +
+    allProducts.filter(p => p.isActive).map(p =>
+      `<option value="${p.id}">${p.name} - ¥${p.price.toLocaleString('ja-JP', {maximumFractionDigits: 0})}</option>`
+    ).join('');
+}
+
+// 売上一覧を読み込み
+async function loadSales() {
+  try {
+    const res = await fetch('/api/staff/sales', {
+      credentials: 'include',
+      });
+    const sales = await res.json();
+
+    if (sales && sales.length > 0) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>商品名</th>
+              <th>数量</th>
+              <th>単価</th>
+              <th>合計</th>
+              <th>購入者</th>
+              <th>販売日時</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sales.map(sale => `
+              <tr>
+                <td>${sale.id}</td>
+                <td>${sale.productName || '-'}</td>
+                <td>${sale.quantity}個</td>
+                <td>¥${(sale.unitPrice || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                <td><strong>¥${(sale.totalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</strong></td>
+                <td>${sale.buyerName || '-'}</td>
+                <td>${new Date(sale.createdAt).toLocaleString('ja-JP')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('salesContainer').innerHTML = html;
+    } else {
+      document.getElementById('salesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">売上記録がありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading sales:', error);
+    document.getElementById('salesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 商品追加モーダルを表示
+function showAddProductModal() {
+  editingProductId = null;
+  document.getElementById('productModalTitle').textContent = '商品を追加';
+  showProductFormModal();
+}
+
+// 商品編集モーダルを表示
+function showEditProductModal(id) {
+  editingProductId = id;
+  document.getElementById('productModalTitle').textContent = '商品を編集';
+  const product = allProducts.find(p => p.id === id);
+  showProductFormModal(product);
+}
+
+// 商品フォームモーダルを表示
+function showProductFormModal(product = null) {
+  const html = `
+    <form id="productForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">商品名 *</label>
+        <input type="text" id="productName" value="${product?.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">価格（円） *</label>
+        <input type="number" id="productPrice" value="${product?.price || ''}" required min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">在庫数</label>
+        <input type="number" id="productStock" value="${product?.stock || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="productIsActive" ${product?.isActive !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
+          <span style="font-weight: 500;">販売中</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeProductModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">${editingProductId ? '更新' : '追加'}</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('productFormContent').innerHTML = html;
+  document.getElementById('productModal').style.display = 'block';
+
+  document.getElementById('productForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveProduct();
+  });
+}
+
+// 商品モーダルを閉じる
+function closeProductModal() {
+  document.getElementById('productModal').style.display = 'none';
+  editingProductId = null;
+}
+
+// 商品を保存
+async function saveProduct() {
+  const data = {
+    name: document.getElementById('productName').value.trim(),
+    price: parseInt(document.getElementById('productPrice').value),
+    stock: parseInt(document.getElementById('productStock').value) || 0,
+    isActive: document.getElementById('productIsActive').checked,
+  };
+
+  if (!data.name || !data.price) {
+    alert('商品名と価格は必須です');
+    return;
+  }
+
+  try {
+    const url = editingProductId
+      ? `/api/staff/products/${editingProductId}`
+      : '/api/staff/products';
+    const method = editingProductId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert(editingProductId ? '商品を更新しました' : '商品を追加しました');
+      closeProductModal();
+      loadProducts();
+    } else {
+      const error = await res.json();
+      alert('保存に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error saving product:', error);
+    alert('保存に失敗しました');
+  }
+}
+
+// 商品を削除
+async function deleteProduct(id) {
+  if (!confirm('この商品を削除しますか？')) return;
+
+  try {
+    const res = await fetch(`/api/staff/products/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      });
+
+    if (res.ok) {
+      alert('商品を削除しました');
+      loadProducts();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// 売上記録モーダルを表示
+function showRecordSaleModal() {
+  document.getElementById('saleModal').style.display = 'block';
+}
+
+// 売上記録モーダルを閉じる
+function closeSaleModal() {
+  document.getElementById('saleModal').style.display = 'none';
+  document.getElementById('saleForm').reset();
+}
+
+// 売上を記録
+async function recordSale() {
+  const data = {
+    productId: parseInt(document.getElementById('saleProductId').value),
+    quantity: parseInt(document.getElementById('saleQuantity').value),
+    buyerName: document.getElementById('saleBuyerName').value.trim() || null,
+  };
+
+  if (!data.productId || !data.quantity) {
+    alert('商品と数量を選択してください');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/sales', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert('売上を記録しました');
+      closeSaleModal();
+      loadSales();
+      loadProducts(); // 在庫更新のため
+    } else {
+      const error = await res.json();
+      alert('記録に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error recording sale:', error);
+    alert('記録に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+['productModal', 'saleModal'].forEach(modalId => {
+  document.getElementById(modalId).addEventListener('click', (e) => {
+    if (e.target.id === modalId) {
+      if (modalId === 'productModal') closeProductModal();
+      else closeSaleModal();
+    }
+  });
+});
+</script>

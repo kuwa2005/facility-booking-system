@@ -1,0 +1,562 @@
+<div class="page-header">
+  <h1 class="page-title">予約管理</h1>
+  <p class="page-description">予約の確認、キャンセル、決済状況の管理</p>
+</div>
+
+<!-- フィルター -->
+<div class="card">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">開始日</label>
+      <input type="date" id="startDate" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">終了日</label>
+      <input type="date" id="endDate" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">決済状況</label>
+      <select id="paymentStatus" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">すべて</option>
+        <option value="unpaid">未決済</option>
+        <option value="paid">支払済</option>
+        <option value="refunded">返金済</option>
+      </select>
+    </div>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">キャンセル状況</label>
+      <select id="cancelStatus" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">すべて</option>
+        <option value="none">有効</option>
+        <option value="cancelled">キャンセル済</option>
+      </select>
+    </div>
+  </div>
+  <div style="display: flex; gap: 1rem;">
+    <input type="text" id="searchText" placeholder="イベント名、申請者名で検索..." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+    <button onclick="loadReservations()" class="btn btn-primary">検索</button>
+    <button onclick="resetFilters()" class="btn" style="background-color: #95a5a6; color: white;">リセット</button>
+  </div>
+</div>
+
+<!-- 予約一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">予約一覧</h2>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div id="totalCount" style="color: #7f8c8d;"></div>
+      <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
+    </div>
+  </div>
+  <div id="reservationsContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 予約詳細モーダル -->
+<div id="detailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 900px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">予約詳細</h2>
+      <button onclick="closeDetailModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- メモモーダル -->
+<div id="noteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1001; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">メモ管理</h2>
+      <button onclick="closeNoteModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="noteContent"></div>
+  </div>
+</div>
+
+<script>
+
+let currentReservationId = null;
+let currentReservations = [];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  // デフォルトで今月の範囲を設定
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  document.getElementById('startDate').valueAsDate = firstDay;
+  document.getElementById('endDate').valueAsDate = lastDay;
+
+  loadReservations();
+});
+
+// 予約一覧を読み込み
+async function loadReservations() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const paymentStatus = document.getElementById('paymentStatus').value;
+  const cancelStatus = document.getElementById('cancelStatus').value;
+  const searchText = document.getElementById('searchText').value;
+
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  if (paymentStatus) params.append('paymentStatus', paymentStatus);
+  if (cancelStatus) params.append('cancelStatus', cancelStatus);
+  if (searchText) params.append('search', searchText);
+
+  try {
+    const res = await fetch(`/api/staff/reservations?${params}`, {
+      credentials: 'include',
+      });
+    const data = await res.json();
+
+    // データをエクスポート用に保存
+    currentReservations = data.reservations || [];
+
+    if (data.reservations && data.reservations.length > 0) {
+      document.getElementById('totalCount').textContent = `全 ${data.reservations.length} 件`;
+
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>イベント名</th>
+                <th>申請者</th>
+                <th>利用日</th>
+                <th>施設</th>
+                <th>金額</th>
+                <th>決済状況</th>
+                <th>キャンセル</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.reservations.map(res => `
+                <tr>
+                  <td>${res.id}</td>
+                  <td>${res.eventName || '-'}</td>
+                  <td>${res.applicantName || '-'}</td>
+                  <td>${res.usageDates ? res.usageDates.join(', ') : '-'}</td>
+                  <td>${res.rooms ? res.rooms.join(', ') : '-'}</td>
+                  <td>¥${(res.totalAmount || 0).toLocaleString()}</td>
+                  <td>
+                    <span class="badge badge-${res.paymentStatus === 'paid' ? 'success' : res.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
+                      ${res.paymentStatus === 'paid' ? '支払済' : res.paymentStatus === 'unpaid' ? '未決済' : '返金済'}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge badge-${res.cancelStatus === 'cancelled' ? 'danger' : 'success'}">
+                      ${res.cancelStatus === 'cancelled' ? 'キャンセル済' : '有効'}
+                    </span>
+                  </td>
+                  <td>
+                    <button onclick="showDetail(${res.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">詳細</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('reservationsContainer').innerHTML = html;
+    } else {
+      document.getElementById('totalCount').textContent = '';
+      document.getElementById('reservationsContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">予約がありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading reservations:', error);
+    document.getElementById('reservationsContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// フィルターリセット
+function resetFilters() {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  document.getElementById('startDate').valueAsDate = firstDay;
+  document.getElementById('endDate').valueAsDate = lastDay;
+  document.getElementById('paymentStatus').value = '';
+  document.getElementById('cancelStatus').value = '';
+  document.getElementById('searchText').value = '';
+
+  loadReservations();
+}
+
+// 予約詳細を表示
+async function showDetail(id) {
+  currentReservationId = id;
+
+  try {
+    const res = await fetch(`/api/staff/reservations/${id}`, {
+      credentials: 'include',
+      });
+    const reservation = await res.json();
+
+    const usages = reservation.usages || [];
+    const canCancel = reservation.cancelStatus !== 'cancelled';
+    const canUpdatePayment = reservation.cancelStatus !== 'cancelled';
+
+    const html = `
+      <div style="display: grid; gap: 1.5rem;">
+        <!-- 基本情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>申請ID:</strong> ${reservation.id}
+            </div>
+            <div>
+              <strong>申請日:</strong> ${new Date(reservation.createdAt).toLocaleDateString('ja-JP')}
+            </div>
+            <div>
+              <strong>イベント名:</strong> ${reservation.eventName || '-'}
+            </div>
+            <div>
+              <strong>予想参加者数:</strong> ${reservation.expectedAttendees || '-'}人
+            </div>
+            <div>
+              <strong>申請者代表:</strong> ${reservation.applicantRepresentative || '-'}
+            </div>
+            <div>
+              <strong>電話番号:</strong> ${reservation.applicantPhone || '-'}
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong>メール:</strong> ${reservation.applicantEmail || '-'}
+            </div>
+          </div>
+        </div>
+
+        <!-- 入場料情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">入場料情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>入場料区分:</strong> ${reservation.entranceFeeType === 'free' ? '無料' : '有料'}
+            </div>
+            ${reservation.entranceFeeType === 'paid' ? `
+              <div>
+                <strong>入場料金額:</strong> ¥${(reservation.entranceFeeAmount || 0).toLocaleString()}
+              </div>
+              <div>
+                <strong>料金乗数:</strong> ${reservation.ticketMultiplier || 1}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- 利用施設・日程 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">利用施設・日程</h3>
+          ${usages.length > 0 ? `
+            <table class="table" style="margin-top: 1rem;">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>施設</th>
+                  <th>時間帯</th>
+                  <th>空調</th>
+                  <th>金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${usages.map(usage => {
+                  const slots = [];
+                  if (usage.useMorning) slots.push('午前');
+                  if (usage.useMiddayExtension) slots.push('正午延長');
+                  if (usage.useAfternoon) slots.push('午後');
+                  if (usage.useEveningExtension) slots.push('夕方延長');
+                  if (usage.useEvening) slots.push('夜間');
+
+                  return `
+                    <tr>
+                      <td>${new Date(usage.date).toLocaleDateString('ja-JP')}</td>
+                      <td>${usage.roomName || '-'}</td>
+                      <td>${slots.join(', ')}</td>
+                      <td>${usage.acRequested ? (usage.acHours ? usage.acHours + '時間' : '要') : '-'}</td>
+                      <td>¥${(usage.subtotalAmount || 0).toLocaleString()}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          ` : '<p style="color: #7f8c8d;">利用情報がありません</p>'}
+        </div>
+
+        <!-- 料金情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">料金情報</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #3498db; color: white; border-radius: 4px;">
+            <span style="font-size: 1.25rem; font-weight: 600;">合計金額</span>
+            <span style="font-size: 1.75rem; font-weight: 700;">¥${(reservation.totalAmount || 0).toLocaleString()}</span>
+          </div>
+          <div style="margin-top: 1rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>決済状況:</strong>
+              <span class="badge badge-${reservation.paymentStatus === 'paid' ? 'success' : reservation.paymentStatus === 'unpaid' ? 'warning' : 'info'}" style="margin-left: 0.5rem;">
+                ${reservation.paymentStatus === 'paid' ? '支払済' : reservation.paymentStatus === 'unpaid' ? '未決済' : '返金済'}
+              </span>
+            </div>
+            <div>
+              <strong>キャンセル:</strong>
+              <span class="badge badge-${reservation.cancelStatus === 'cancelled' ? 'danger' : 'success'}" style="margin-left: 0.5rem;">
+                ${reservation.cancelStatus === 'cancelled' ? 'キャンセル済' : '有効'}
+              </span>
+            </div>
+            ${reservation.cancelStatus === 'cancelled' ? `
+              <div>
+                <strong>キャンセル日:</strong> ${reservation.cancelledAt ? new Date(reservation.cancelledAt).toLocaleDateString('ja-JP') : '-'}
+              </div>
+              <div>
+                <strong>キャンセル料:</strong> ¥${(reservation.cancellationFee || 0).toLocaleString()}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- 操作ボタン -->
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+          <button onclick="showNotes(${id})" class="btn btn-primary">メモを見る</button>
+          ${canUpdatePayment && reservation.paymentStatus === 'unpaid' ? `
+            <button onclick="updatePaymentStatus(${id}, 'paid')" class="btn btn-success">支払済にする</button>
+          ` : ''}
+          ${canUpdatePayment && reservation.paymentStatus === 'paid' ? `
+            <button onclick="updatePaymentStatus(${id}, 'refunded')" class="btn" style="background-color: #9b59b6; color: white;">返金済にする</button>
+          ` : ''}
+          ${canCancel ? `
+            <button onclick="cancelReservation(${id})" class="btn btn-danger">キャンセル</button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('detailContent').innerHTML = html;
+    document.getElementById('detailModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error loading reservation detail:', error);
+    alert('詳細情報の読み込みに失敗しました');
+  }
+}
+
+// 詳細モーダルを閉じる
+function closeDetailModal() {
+  document.getElementById('detailModal').style.display = 'none';
+  currentReservationId = null;
+}
+
+// 決済状況を更新
+async function updatePaymentStatus(id, status) {
+  if (!confirm(`決済状況を「${status === 'paid' ? '支払済' : '返金済'}」に更新しますか？`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/reservations/${id}/payment-status`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ paymentStatus: status })
+    });
+
+    if (res.ok) {
+      alert('決済状況を更新しました');
+      closeDetailModal();
+      loadReservations();
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// 予約をキャンセル
+async function cancelReservation(id) {
+  const reason = prompt('キャンセル理由を入力してください（任意）:');
+  if (reason === null) return; // キャンセル
+
+  try {
+    const res = await fetch(`/api/staff/reservations/${id}/cancel`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    if (res.ok) {
+      alert('予約をキャンセルしました');
+      closeDetailModal();
+      loadReservations();
+    } else {
+      const error = await res.json();
+      alert('キャンセルに失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error cancelling reservation:', error);
+    alert('キャンセルに失敗しました');
+  }
+}
+
+// メモを表示
+async function showNotes(id) {
+  try {
+    const res = await fetch(`/api/staff/reservations/${id}/notes`, {
+      credentials: 'include',
+      });
+    const notes = await res.json();
+
+    const html = `
+      <div style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1rem;">メモ一覧</h3>
+        <div id="notesList" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+          ${notes.length > 0 ? notes.map(note => `
+            <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px; margin-bottom: 0.5rem;">
+              <div style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                ${new Date(note.createdAt).toLocaleString('ja-JP')} - ${note.staffName || '職員'}
+              </div>
+              <div>${note.content}</div>
+            </div>
+          `).join('') : '<p style="text-align: center; color: #7f8c8d;">メモがありません</p>'}
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid #ecf0f1; padding-top: 1rem;">
+        <h3 style="margin-bottom: 1rem;">メモを追加</h3>
+        <textarea id="newNoteContent" rows="4" placeholder="メモを入力..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem; justify-content: flex-end;">
+          <button onclick="closeNoteModal()" class="btn" style="background-color: #95a5a6; color: white;">閉じる</button>
+          <button onclick="addNote(${id})" class="btn btn-primary">メモを追加</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('noteContent').innerHTML = html;
+    document.getElementById('noteModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error loading notes:', error);
+    alert('メモの読み込みに失敗しました');
+  }
+}
+
+// メモモーダルを閉じる
+function closeNoteModal() {
+  document.getElementById('noteModal').style.display = 'none';
+}
+
+// メモを追加
+async function addNote(id) {
+  const content = document.getElementById('newNoteContent').value.trim();
+  if (!content) {
+    alert('メモ内容を入力してください');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/reservations/${id}/notes`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ content })
+    });
+
+    if (res.ok) {
+      alert('メモを追加しました');
+      closeNoteModal();
+    } else {
+      const error = await res.json();
+      alert('追加に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error adding note:', error);
+    alert('追加に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target.id === 'detailModal') {
+    closeDetailModal();
+  }
+});
+
+document.getElementById('noteModal').addEventListener('click', (e) => {
+  if (e.target.id === 'noteModal') {
+    closeNoteModal();
+  }
+});
+
+// CSVエクスポート
+function exportToCSV() {
+  if (!currentReservations || currentReservations.length === 0) {
+    alert('エクスポートするデータがありません');
+    return;
+  }
+
+  // CSVヘッダー
+  const headers = ['ID', 'イベント名', '申請者', '利用日', '施設', '金額', '決済状況', 'キャンセル'];
+
+  // CSVデータ行
+  const rows = currentReservations.map(res => {
+    const usageDates = res.usageDates ? res.usageDates.join(' / ') : '-';
+    const rooms = res.rooms ? res.rooms.join(' / ') : '-';
+    const paymentStatus = res.paymentStatus === 'paid' ? '支払済' : res.paymentStatus === 'unpaid' ? '未決済' : '返金済';
+    const cancelStatus = res.cancelStatus === 'cancelled' ? 'キャンセル済' : '有効';
+
+    return [
+      res.id,
+      res.eventName || '-',
+      res.applicantName || '-',
+      usageDates,
+      rooms,
+      res.totalAmount || 0,
+      paymentStatus,
+      cancelStatus
+    ];
+  });
+
+  // CSV形式に変換
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // セル内にカンマや改行がある場合はダブルクォートで囲む
+      const cellStr = String(cell);
+      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+        return '"' + cellStr.replace(/"/g, '""') + '"';
+      }
+      return cellStr;
+    }).join(','))
+  ].join('\n');
+
+  // BOM付きUTF-8でエンコード（Excelで文字化けしないように）
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // ダウンロードリンクを作成してクリック
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const filename = `reservations_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>

@@ -12,6 +12,7 @@ import { AnnouncementController } from '../controllers/AnnouncementController';
 import { MessageController } from '../controllers/MessageController';
 import { UserNoteController } from '../controllers/UserNoteController';
 import { NotificationController, notificationController } from '../controllers/NotificationController';
+import { SystemSettingsController } from '../controllers/SystemSettingsController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -103,7 +104,10 @@ router.get('/facilities/rooms', StaffFacilityController.getRooms);
 router.post('/facilities/rooms', StaffFacilityController.createRoom);
 router.patch('/facilities/rooms/:id', StaffFacilityController.updateRoom);
 router.delete('/facilities/rooms/:id', StaffFacilityController.deleteRoom);
+router.post('/facilities/rooms/:id/restore', StaffFacilityController.restoreRoom);
+router.delete('/facilities/rooms/:id/permanent', StaffFacilityController.permanentlyDeleteRoom);
 router.get('/facilities/rooms/:id/usage-stats', StaffFacilityController.getRoomUsageStats);
+router.patch('/facilities/rooms/display-order', ExtendedFacilityController.updateRoomsDisplayOrder);
 
 // 設備管理
 router.get('/facilities/equipment', StaffFacilityController.getEquipment);
@@ -212,5 +216,12 @@ router.post('/management/staff', StaffManagementController.createStaff);
 router.patch('/management/staff/:id', StaffManagementController.updateStaff);
 router.delete('/management/staff/:id', StaffManagementController.deleteStaff);
 router.post('/management/staff/:id/reset-password', StaffManagementController.resetStaffPassword);
+
+// ===== システム設定（管理者のみ） =====
+router.get('/settings', SystemSettingsController.getAllSettings);
+router.post('/settings/basic', SystemSettingsController.updateBasicSettings);
+router.post('/settings/reservation', SystemSettingsController.updateReservationSettings);
+router.post('/settings/email', SystemSettingsController.updateEmailSettings);
+router.post('/settings/business-hours', SystemSettingsController.updateBusinessHours);
 
 export default router;

@@ -14,6 +14,33 @@ export interface UserFilter {
  */
 export class StaffUserManagementService {
   /**
+   * Convert snake_case database columns to camelCase
+   */
+  private toCamelCaseUser(user: any): any {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      organizationName: user.organization_name,
+      phone: user.phone,
+      address: user.address,
+      isActive: user.is_active,
+      role: user.role,
+      staffCode: user.staff_code,
+      department: user.department,
+      position: user.position,
+      hireDate: user.hire_date,
+      staffStatus: user.staff_status,
+      emailVerified: user.email_verified,
+      nickname: user.nickname,
+      deletedAt: user.deleted_at,
+      lastLoginAt: user.last_login_at,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    };
+  }
+
+  /**
    * ユーザー一覧を取得
    */
   async getUsers(filter: UserFilter = {}): Promise<any[]> {
@@ -77,7 +104,7 @@ export class StaffUserManagementService {
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
-    return rows;
+    return rows.map(row => this.toCamelCaseUser(row));
   }
 
   /**
@@ -211,11 +238,22 @@ export class StaffUserManagementService {
          SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admin_users,
          SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active_users,
          SUM(CASE WHEN deleted_at IS NOT NULL THEN 1 ELSE 0 END) as deleted_users,
-         SUM(CASE WHEN email_verified = TRUE THEN 1 ELSE 0 END) as verified_users
+         SUM(CASE WHEN email_verified = TRUE THEN 1 ELSE 0 END) as verified_users,
+         SUM(CASE WHEN DATE_FORMAT(created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m') THEN 1 ELSE 0 END) as new_users_this_month
        FROM users`
     );
 
-    return stats[0] || {};
+    const result = stats[0] || {};
+    return {
+      totalUsers: result.total_users || 0,
+      generalUsers: result.general_users || 0,
+      staffUsers: result.staff_users || 0,
+      adminUsers: result.admin_users || 0,
+      activeUsers: result.active_users || 0,
+      deletedUsers: result.deleted_users || 0,
+      verifiedUsers: result.verified_users || 0,
+      newUsersThisMonth: result.new_users_this_month || 0,
+    };
   }
 
   /**
@@ -239,7 +277,7 @@ export class StaffUserManagementService {
       [limit]
     );
 
-    return rows;
+    return rows.map(row => this.toCamelCaseUser(row));
   }
 
   /**

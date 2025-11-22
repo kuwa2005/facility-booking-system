@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS scheduled_notifications (
 -- =====================================================
 
 -- 予約完了通知テンプレート
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('application_created', '予約完了通知', 'ユーザーが予約を作成した時に送信',
 '【予約完了】{{facility_name}} のご予約を承りました',
 '{{user_name}} 様
@@ -130,7 +130,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 予約承認通知テンプレート
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('application_approved', '予約承認通知', '予約が承認された時に送信',
 '【予約承認】{{facility_name}} のご予約が承認されました',
 '{{user_name}} 様
@@ -153,7 +153,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 予約却下通知テンプレート
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('application_rejected', '予約却下通知', '予約が却下された時に送信',
 '【予約不可】{{facility_name}} のご予約について',
 '{{user_name}} 様
@@ -176,7 +176,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 利用日前日リマインダー
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('usage_reminder', '利用日前日リマインダー', '利用日の前日に送信',
 '【リマインダー】明日は{{facility_name}}のご利用日です',
 '{{user_name}} 様
@@ -198,7 +198,7 @@ INSERT INTO notification_templates (template_code, template_name, description, s
 TRUE);
 
 -- 支払期限リマインダー
-INSERT INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, description, subject, body_text, available_variables, is_system) VALUES
 ('payment_reminder', '支払期限リマインダー', '支払期限が近づいた時に送信',
 '【お支払いのお願い】{{facility_name}} ご利用料金について',
 '{{user_name}} 様
@@ -220,7 +220,7 @@ TRUE);
 -- =====================================================
 -- デフォルト通知設定の挿入
 -- =====================================================
-INSERT INTO notification_settings (setting_key, setting_name, description, is_enabled, template_code, send_timing) VALUES
+INSERT IGNORE INTO notification_settings (setting_key, setting_name, description, is_enabled, template_code, send_timing) VALUES
 ('notify_application_created', '予約完了通知', '予約作成時にユーザーに通知', TRUE, 'application_created', 'immediate'),
 ('notify_application_approved', '予約承認通知', '予約承認時にユーザーに通知', TRUE, 'application_approved', 'immediate'),
 ('notify_application_rejected', '予約却下通知', '予約却下時にユーザーに通知', TRUE, 'application_rejected', 'immediate'),
@@ -229,68 +229,48 @@ INSERT INTO notification_settings (setting_key, setting_name, description, is_en
 
 -- =====================================================
 -- リマインダー送信用ストアドプロシージャ
+-- ※ Node.jsのMySQLクライアントはDELIMITERをサポートしていないため、
+--    ストアドプロシージャとイベントは別途MySQLクライアントから作成するか、
+--    アプリケーション側でスケジューラを実装してください
 -- =====================================================
-DELIMITER //
 
-CREATE PROCEDURE IF NOT EXISTS schedule_usage_reminders()
-BEGIN
-    -- 明日利用予定の承認済み予約に対してリマインダーをスケジュール
-    INSERT INTO scheduled_notifications (
-        template_code,
-        recipient_type,
-        recipient_id,
-        related_entity_type,
-        related_entity_id,
-        scheduled_at,
-        notification_data
-    )
-    SELECT
-        'usage_reminder',
-        'user',
-        a.user_id,
-        'application',
-        a.id,
-        DATE_SUB(DATE(u.date), INTERVAL 1 DAY) + INTERVAL 19 HOUR,
-        JSON_OBJECT(
-            'application_id', a.id,
-            'usage_date', u.date,
-            'room_id', u.room_id
-        )
-    FROM applications a
-    INNER JOIN usages u ON a.id = u.application_id
-    WHERE a.user_id IS NOT NULL
-      AND DATE(u.date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
-      AND NOT EXISTS (
-          SELECT 1 FROM scheduled_notifications sn
-          WHERE sn.related_entity_type = 'application'
-            AND sn.related_entity_id = a.id
-            AND sn.template_code = 'usage_reminder'
-      );
-END //
+-- 以下のコマンドをMySQLコマンドラインクライアントで実行する場合:
+-- DELIMITER //
+-- CREATE PROCEDURE IF NOT EXISTS schedule_usage_reminders()
+-- BEGIN
+--     INSERT INTO scheduled_notifications (
+--         template_code, recipient_type, recipient_id,
+--         related_entity_type, related_entity_id, scheduled_at, notification_data
+--     )
+--     SELECT
+--         'usage_reminder', 'user', a.user_id, 'application', a.id,
+--         DATE_SUB(DATE(u.date), INTERVAL 1 DAY) + INTERVAL 19 HOUR,
+--         JSON_OBJECT('application_id', a.id, 'usage_date', u.date, 'room_id', u.room_id)
+--     FROM applications a
+--     INNER JOIN usages u ON a.id = u.application_id
+--     WHERE a.user_id IS NOT NULL
+--       AND DATE(u.date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+--       AND NOT EXISTS (
+--           SELECT 1 FROM scheduled_notifications sn
+--           WHERE sn.related_entity_type = 'application'
+--             AND sn.related_entity_id = a.id
+--             AND sn.template_code = 'usage_reminder'
+--       );
+-- END //
+-- DELIMITER ;
+--
+-- CREATE EVENT IF NOT EXISTS evt_schedule_reminders
+-- ON SCHEDULE EVERY 1 DAY
+-- STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY + INTERVAL 6 HOUR)
+-- DO CALL schedule_usage_reminders();
+--
+-- DELIMITER //
+-- CREATE PROCEDURE IF NOT EXISTS process_scheduled_notifications()
+-- BEGIN
+--     UPDATE scheduled_notifications
+--     SET status = 'pending'
+--     WHERE scheduled_at <= NOW() AND status = 'pending';
+-- END //
+-- DELIMITER ;
 
-DELIMITER ;
-
--- =====================================================
--- 定期実行用イベント（リマインダースケジューリング）
--- =====================================================
-CREATE EVENT IF NOT EXISTS evt_schedule_reminders
-ON SCHEDULE EVERY 1 DAY
-STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY + INTERVAL 6 HOUR)
-DO CALL schedule_usage_reminders();
-
--- =====================================================
--- スケジュール通知送信用ストアドプロシージャ
--- =====================================================
-DELIMITER //
-
-CREATE PROCEDURE IF NOT EXISTS process_scheduled_notifications()
-BEGIN
-    -- 送信時刻が来たスケジュール通知を取得して処理
-    -- 実際の送信処理はアプリケーション層で実行
-    UPDATE scheduled_notifications
-    SET status = 'pending'
-    WHERE scheduled_at <= NOW()
-      AND status = 'pending';
-END //
-
-DELIMITER ;
+-- 代わりに、アプリケーション側でNode.jsのcronジョブやスケジューラを実装することを推奨します

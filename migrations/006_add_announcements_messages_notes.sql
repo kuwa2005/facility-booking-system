@@ -74,31 +74,31 @@ INSERT IGNORE INTO announcements (title, content, announcement_type, priority, c
 
 -- =====================================================
 -- 期限切れ未読メッセージ削除用ストアドプロシージャ
+-- ※ Node.jsのMySQLクライアントはDELIMITERをサポートしていないため、
+--    ストアドプロシージャは別途MySQLクライアントから作成するか、
+--    アプリケーション側でスケジューラを実装してください
 -- =====================================================
-DROP PROCEDURE IF EXISTS cleanup_expired_unread_messages;
 
-DELIMITER //
+-- 以下のコマンドをMySQLコマンドラインクライアントで実行する場合:
+-- DROP PROCEDURE IF EXISTS cleanup_expired_unread_messages;
+-- DELIMITER //
+-- CREATE PROCEDURE cleanup_expired_unread_messages()
+-- BEGIN
+--     UPDATE messages
+--     SET deleted_at = NOW()
+--     WHERE expires_at IS NOT NULL
+--       AND expires_at < NOW()
+--       AND read_at IS NULL
+--       AND deleted_at IS NULL;
+-- END //
+-- DELIMITER ;
+--
+-- DROP EVENT IF EXISTS evt_cleanup_expired_messages;
+-- CREATE EVENT evt_cleanup_expired_messages
+-- ON SCHEDULE EVERY 1 HOUR
+-- DO CALL cleanup_expired_unread_messages();
 
-CREATE PROCEDURE cleanup_expired_unread_messages()
-BEGIN
-    -- 有効期限切れ かつ 未読のメッセージを論理削除
-    UPDATE messages
-    SET deleted_at = NOW()
-    WHERE expires_at IS NOT NULL
-      AND expires_at < NOW()
-      AND read_at IS NULL
-      AND deleted_at IS NULL;
-END //
-
-DELIMITER ;
-
--- =====================================================
--- 定期実行用イベント（期限切れメッセージの自動削除）
--- ※ MySQLのイベントスケジューラーを有効にする必要があります
--- SET GLOBAL event_scheduler = ON;
--- =====================================================
-DROP EVENT IF EXISTS evt_cleanup_expired_messages;
-
-CREATE EVENT evt_cleanup_expired_messages
-ON SCHEDULE EVERY 1 HOUR
-DO CALL cleanup_expired_unread_messages();
+-- 代わりに、アプリケーション側で定期的に以下のクエリを実行することを推奨:
+-- UPDATE messages SET deleted_at = NOW()
+-- WHERE expires_at IS NOT NULL AND expires_at < NOW()
+--   AND read_at IS NULL AND deleted_at IS NULL;

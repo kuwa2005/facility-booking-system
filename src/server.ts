@@ -24,6 +24,8 @@ import staffPageRoutes from './routes/staff-pages';
 
 // ミドルウェアのインポート
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { loadSystemSettings } from './middleware/systemSettings';
+import { checkMaintenanceMode } from './middleware/maintenanceMode';
 
 const app: Application = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -45,8 +47,15 @@ app.use(cors({
 // レート制限
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分
-  max: 100, // 各IPを15分あたり100リクエストに制限
-  message: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 開発環境では1000リクエスト、本番環境では100リクエスト
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
+      retryAfter: 900, // 15分後に再試行（秒単位）
+    });
+  },
 });
 
 app.use('/api/', limiter);
@@ -66,9 +75,17 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// システム設定ミドルウェア（すべてのビューで利用可能にする）
+app.use(loadSystemSettings);
+
 // ヘルスチェックエンドポイント
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Favicon リダイレクト
+app.get('/favicon.ico', (req, res) => {
+  res.redirect(301, '/favicon.svg');
 });
 
 // APIルート
@@ -80,7 +97,8 @@ app.use('/api/staff', staffRoutes);
 
 // ページルート
 app.use('/staff', staffPageRoutes);
-app.use('/', pageRoutes);
+// 一般利用者ページルート（メンテナンスモードチェック付き）
+app.use('/', checkMaintenanceMode, pageRoutes);
 
 // 404ハンドラー
 app.use(notFoundHandler);

@@ -1,0 +1,233 @@
+<div class="page-header">
+  <h1 class="page-title">メッセージ管理</h1>
+  <p class="page-description">利用者とのメッセージのやり取り</p>
+</div>
+
+<!-- 統計カード -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">総メッセージ数</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="totalMessages">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">未読</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #e74c3c;" id="unreadMessages">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今日</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="todayMessages">-</p>
+  </div>
+</div>
+
+<!-- メッセージ一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">メッセージ一覧</h2>
+    <button onclick="showSendModal()" class="btn btn-primary">新規メッセージを送信</button>
+  </div>
+
+  <div id="messagesContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- メッセージ送信モーダル -->
+<div id="sendModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">メッセージを送信</h2>
+      <button onclick="closeSendModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <form id="sendForm" style="display: grid; gap: 1rem;">
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">宛先ユーザーID *</label>
+        <input type="number" id="recipientUserId" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.25rem;">※ ユーザー管理画面でユーザーIDを確認してください</p>
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">件名 *</label>
+        <input type="text" id="subject" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メッセージ *</label>
+        <textarea id="messageContent" rows="6" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeSendModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-primary">送信</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadMessages();
+
+  // 送信フォーム
+  document.getElementById('sendForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+});
+
+// 統計情報を読み込み
+async function loadStats() {
+  try {
+    const res = await fetch('/api/staff/messages/stats', {
+      credentials: 'include',
+      });
+    const stats = await res.json();
+
+    document.getElementById('totalMessages').textContent = stats.totalMessages || 0;
+    document.getElementById('unreadMessages').textContent = stats.unreadMessages || 0;
+    document.getElementById('todayMessages').textContent = stats.todayMessages || 0;
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// メッセージ一覧を読み込み
+async function loadMessages() {
+  try {
+    const res = await fetch('/api/staff/messages', {
+      credentials: 'include',
+      });
+    const messages = await res.json();
+
+    if (messages && messages.length > 0) {
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>宛先</th>
+                <th>件名</th>
+                <th>メッセージ（抜粋）</th>
+                <th>送信日時</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${messages.map(msg => {
+                const contentPreview = msg.content.length > 50
+                  ? msg.content.substring(0, 50) + '...'
+                  : msg.content;
+
+                return `
+                  <tr>
+                    <td>${msg.id}</td>
+                    <td>${msg.recipientName || 'ユーザーID:' + msg.recipientUserId}</td>
+                    <td><strong>${msg.subject || '（件名なし）'}</strong></td>
+                    <td>${contentPreview}</td>
+                    <td>${new Date(msg.createdAt).toLocaleString('ja-JP')}</td>
+                    <td>
+                      <button onclick="deleteMessage(${msg.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('messagesContainer').innerHTML = html;
+    } else {
+      document.getElementById('messagesContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">メッセージがありません</p>';
+    }
+  } catch (error) {
+    console.error('Error loading messages:', error);
+    document.getElementById('messagesContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 送信モーダルを表示
+function showSendModal() {
+  document.getElementById('sendModal').style.display = 'block';
+}
+
+// 送信モーダルを閉じる
+function closeSendModal() {
+  document.getElementById('sendModal').style.display = 'none';
+  document.getElementById('sendForm').reset();
+}
+
+// メッセージを送信
+async function sendMessage() {
+  const data = {
+    recipientUserId: parseInt(document.getElementById('recipientUserId').value),
+    subject: document.getElementById('subject').value.trim(),
+    content: document.getElementById('messageContent').value.trim(),
+  };
+
+  if (!data.recipientUserId || !data.subject || !data.content) {
+    alert('すべての項目を入力してください');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/staff/messages', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      alert('メッセージを送信しました');
+      closeSendModal();
+      loadMessages();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('送信に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error sending message:', error);
+    alert('送信に失敗しました');
+  }
+}
+
+// メッセージを削除
+async function deleteMessage(id) {
+  if (!confirm('このメッセージを削除しますか？')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/messages/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      });
+
+    if (res.ok) {
+      alert('メッセージを削除しました');
+      loadMessages();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    alert('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('sendModal').addEventListener('click', (e) => {
+  if (e.target.id === 'sendModal') {
+    closeSendModal();
+  }
+});
+</script>

@@ -4,40 +4,62 @@ import { Room } from './types';
 
 export class RoomRepository {
   /**
+   * Convert snake_case database columns to camelCase
+   */
+  private toCamelCase(room: any): any {
+    return {
+      id: room.id,
+      name: room.name,
+      capacity: room.capacity,
+      basePriceMorning: room.base_price_morning,
+      basePriceAfternoon: room.base_price_afternoon,
+      basePriceEvening: room.base_price_evening,
+      extensionPriceMidday: room.extension_price_midday,
+      extensionPriceEvening: room.extension_price_evening,
+      acPricePerHour: room.ac_price_per_hour,
+      description: room.description,
+      isActive: room.is_active,
+      displayOrder: room.display_order,
+      createdAt: room.created_at,
+      updatedAt: room.updated_at,
+    };
+  }
+
+  /**
    * Find room by ID
    */
-  async findById(id: number): Promise<Room | null> {
-    const [rows] = await pool.query<(Room & RowDataPacket)[]>(
+  async findById(id: number): Promise<any> {
+    const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT * FROM rooms WHERE id = ?',
       [id]
     );
-    return rows[0] || null;
+    return rows[0] ? this.toCamelCase(rows[0]) : null;
   }
 
   /**
    * Find all active rooms
    */
-  async findAllActive(): Promise<Room[]> {
-    const [rows] = await pool.query<(Room & RowDataPacket)[]>(
-      'SELECT * FROM rooms WHERE is_active = TRUE ORDER BY name ASC'
+  async findAllActive(): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      'SELECT * FROM rooms WHERE is_active = TRUE ORDER BY display_order ASC, name ASC'
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Find all rooms (including inactive)
    */
-  async findAll(): Promise<Room[]> {
-    const [rows] = await pool.query<(Room & RowDataPacket)[]>(
-      'SELECT * FROM rooms ORDER BY name ASC'
+  async findAll(): Promise<any[]> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      'SELECT * FROM rooms ORDER BY display_order ASC, name ASC'
     );
-    return rows;
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
    * Create a new room
    */
-  async create(data: Omit<Room, 'id' | 'created_at' | 'updated_at'>): Promise<Room> {
+  async create(data: any): Promise<any> {
     const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO rooms (
         name, capacity, base_price_morning, base_price_afternoon, base_price_evening,
@@ -47,14 +69,14 @@ export class RoomRepository {
       [
         data.name,
         data.capacity || null,
-        data.base_price_morning,
-        data.base_price_afternoon,
-        data.base_price_evening,
-        data.extension_price_midday,
-        data.extension_price_evening,
-        data.ac_price_per_hour,
+        data.basePriceMorning || data.base_price_morning,
+        data.basePriceAfternoon || data.base_price_afternoon,
+        data.basePriceEvening || data.base_price_evening,
+        data.extensionPriceMidday || data.extension_price_midday,
+        data.extensionPriceEvening || data.extension_price_evening,
+        data.acPricePerHour || data.ac_price_per_hour,
         data.description || null,
-        data.is_active !== false,
+        data.isActive !== false && data.is_active !== false,
       ]
     );
 
@@ -68,13 +90,30 @@ export class RoomRepository {
   /**
    * Update room
    */
-  async update(id: number, data: Partial<Room>): Promise<Room> {
+  async update(id: number, data: any): Promise<any> {
     const fields: string[] = [];
     const values: any[] = [];
 
+    // Convert camelCase to snake_case
+    const fieldMap: { [key: string]: string } = {
+      name: 'name',
+      capacity: 'capacity',
+      basePriceMorning: 'base_price_morning',
+      basePriceAfternoon: 'base_price_afternoon',
+      basePriceEvening: 'base_price_evening',
+      extensionPriceMidday: 'extension_price_midday',
+      extensionPriceEvening: 'extension_price_evening',
+      acPricePerHour: 'ac_price_per_hour',
+      description: 'description',
+      isActive: 'is_active',
+      displayOrder: 'display_order',
+      updatedAt: 'updated_at',
+    };
+
     Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'created_at') {
-        fields.push(`${key} = ?`);
+      const dbField = fieldMap[key] || key;
+      if (dbField !== 'id' && dbField !== 'created_at') {
+        fields.push(`${dbField} = ?`);
         values.push(value);
       }
     });
@@ -103,6 +142,54 @@ export class RoomRepository {
   }
 
   /**
+   * Restore room (reactivate by setting is_active to true)
+   */
+  async restore(id: number): Promise<void> {
+    await pool.query('UPDATE rooms SET is_active = TRUE WHERE id = ?', [id]);
+  }
+
+  /**
+   * Permanently delete room (physical delete)
+   * This will cascade delete all related data
+   */
+  async permanentDelete(id: number): Promise<void> {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Delete related usage equipment first
+      await connection.query(
+        `DELETE ue FROM usage_equipment ue
+         INNER JOIN usages u ON ue.usage_id = u.id
+         WHERE u.room_id = ?`,
+        [id]
+      );
+
+      // Delete related usages
+      await connection.query('DELETE FROM usages WHERE room_id = ?', [id]);
+
+      // Delete room equipment associations
+      await connection.query('DELETE FROM room_equipment WHERE room_id = ?', [id]);
+
+      // Delete room closed dates
+      await connection.query('DELETE FROM room_closed_dates WHERE room_id = ?', [id]);
+
+      // Delete room timeslot prices
+      await connection.query('DELETE FROM room_timeslot_prices WHERE room_id = ?', [id]);
+
+      // Finally delete the room itself
+      await connection.query('DELETE FROM rooms WHERE id = ?', [id]);
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
    * Check if room has any existing reservations
    */
   async hasReservations(roomId: number): Promise<boolean> {
@@ -111,6 +198,30 @@ export class RoomRepository {
       [roomId]
     );
     return rows[0].count > 0;
+  }
+
+  /**
+   * Update display order for multiple rooms
+   */
+  async updateBulkDisplayOrder(orderUpdates: { id: number; displayOrder: number }[]): Promise<void> {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      for (const update of orderUpdates) {
+        await connection.query(
+          'UPDATE rooms SET display_order = ? WHERE id = ?',
+          [update.displayOrder, update.id]
+        );
+      }
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 }
 

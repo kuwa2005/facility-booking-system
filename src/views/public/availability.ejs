@@ -435,7 +435,7 @@
         <div class="calendar-month" id="currentMonth"></div>
         <div class="nav-buttons">
           <button class="nav-btn" onclick="previousMonth()">◀ 前月</button>
-          <button class="nav-btn" onclick="today()">今月</button>
+          <button class="nav-btn" onclick="goToToday()">今月</button>
           <button class="nav-btn" onclick="nextMonth()">次月 ▶</button>
         </div>
       </div>
@@ -672,7 +672,7 @@
       generateCalendars();
     }
 
-    function today() {
+    function goToToday() {
       currentDate = new Date();
       generateCalendars();
     }

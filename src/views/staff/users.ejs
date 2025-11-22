@@ -1,0 +1,497 @@
+<div class="page-header">
+  <h1 class="page-title">利用者管理</h1>
+  <p class="page-description">利用者の検索、詳細確認、情報編集</p>
+</div>
+
+<!-- 統計カード -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">総利用者数</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="totalUsers">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">アクティブ</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="activeUsers">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今月の新規</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #f39c12;" id="newUsersThisMonth">-</p>
+  </div>
+  <div class="card" style="text-align: center;">
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">メール認証済</h3>
+    <p style="font-size: 2.5rem; font-weight: 600; color: #9b59b6;" id="verifiedUsers">-</p>
+  </div>
+</div>
+
+<!-- 検索フィルター -->
+<div class="card">
+  <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem;">
+    <input type="text" id="searchText" placeholder="名前、メールアドレスで検索..." style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+    <div style="display: flex; gap: 1rem;">
+      <select id="statusFilter" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="">すべて</option>
+        <option value="active">アクティブのみ</option>
+        <option value="inactive">非アクティブのみ</option>
+      </select>
+      <button onclick="loadUsers()" class="btn btn-primary">検索</button>
+    </div>
+  </div>
+</div>
+
+<!-- 利用者一覧 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">利用者一覧</h2>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div id="totalCount" style="color: #7f8c8d;"></div>
+      <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
+    </div>
+  </div>
+  <div id="usersContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 利用者詳細モーダル -->
+<div id="detailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 900px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">利用者詳細</h2>
+      <button onclick="closeDetailModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- 編集モーダル -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1001; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">利用者情報編集</h2>
+      <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <div id="editContent"></div>
+  </div>
+</div>
+
+<script>
+
+let currentUserId = null;
+let currentUsers = [];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadUsers();
+});
+
+// 統計情報を読み込み
+async function loadStats() {
+  try {
+    const res = await fetch('/api/staff/users/stats/summary', {
+      credentials: 'include',
+      });
+    const stats = await res.json();
+
+    document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+    document.getElementById('activeUsers').textContent = stats.activeUsers || 0;
+    document.getElementById('newUsersThisMonth').textContent = stats.newUsersThisMonth || 0;
+    document.getElementById('verifiedUsers').textContent = stats.verifiedUsers || 0;
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// 利用者一覧を読み込み
+async function loadUsers() {
+  const search = document.getElementById('searchText').value;
+  const status = document.getElementById('statusFilter').value;
+
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  if (status) params.append('status', status);
+
+  try {
+    const res = await fetch(`/api/staff/users?${params}`, {
+      credentials: 'include',
+      });
+    const data = await res.json();
+
+    // データをエクスポート用に保存
+    currentUsers = data.users || [];
+
+    if (data.users && data.users.length > 0) {
+      document.getElementById('totalCount').textContent = `全 ${data.users.length} 件`;
+
+      const html = `
+        <div style="overflow-x: auto;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>名前</th>
+                <th>メールアドレス</th>
+                <th>役割</th>
+                <th>メール認証</th>
+                <th>状態</th>
+                <th>登録日</th>
+                <th>最終ログイン</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.users.map(user => `
+                <tr>
+                  <td>${user.id}</td>
+                  <td>${user.name || '-'}</td>
+                  <td>${user.email}</td>
+                  <td>
+                    <span class="badge badge-${user.role === 'admin' ? 'danger' : user.role === 'staff' ? 'warning' : 'info'}">
+                      ${user.role === 'admin' ? '管理者' : user.role === 'staff' ? '職員' : 'ユーザー'}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge badge-${user.emailVerified ? 'success' : 'warning'}">
+                      ${user.emailVerified ? '認証済' : '未認証'}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge badge-${user.isActive ? 'success' : 'danger'}">
+                      ${user.isActive ? 'アクティブ' : '非アクティブ'}
+                    </span>
+                  </td>
+                  <td>${new Date(user.createdAt).toLocaleDateString('ja-JP')}</td>
+                  <td>${user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ja-JP') : '-'}</td>
+                  <td>
+                    <button onclick="showDetail(${user.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">詳細</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      document.getElementById('usersContainer').innerHTML = html;
+    } else {
+      document.getElementById('totalCount').textContent = '';
+      document.getElementById('usersContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">利用者が見つかりませんでした</p>';
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+    document.getElementById('usersContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">データの読み込みに失敗しました</p>';
+  }
+}
+
+// 利用者詳細を表示
+async function showDetail(id) {
+  currentUserId = id;
+
+  try {
+    const res = await fetch(`/api/staff/users/${id}`, {
+      credentials: 'include',
+      });
+    const user = await res.json();
+
+    const html = `
+      <div style="display: grid; gap: 1.5rem;">
+        <!-- 基本情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本情報</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>ユーザーID:</strong> ${user.id}
+            </div>
+            <div>
+              <strong>役割:</strong>
+              <span class="badge badge-${user.role === 'admin' ? 'danger' : user.role === 'staff' ? 'warning' : 'info'}">
+                ${user.role === 'admin' ? '管理者' : user.role === 'staff' ? '職員' : 'ユーザー'}
+              </span>
+            </div>
+            <div>
+              <strong>名前:</strong> ${user.name || '-'}
+            </div>
+            <div>
+              <strong>ニックネーム:</strong> ${user.nickname || '-'}
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <strong>メールアドレス:</strong> ${user.email}
+            </div>
+            ${user.bio ? `
+              <div style="grid-column: 1 / -1;">
+                <strong>自己紹介:</strong>
+                <p style="margin-top: 0.5rem; padding: 0.5rem; background-color: white; border-radius: 4px;">${user.bio}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- ステータス情報 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">ステータス</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div>
+              <strong>アカウント状態:</strong>
+              <span class="badge badge-${user.isActive ? 'success' : 'danger'}" style="margin-left: 0.5rem;">
+                ${user.isActive ? 'アクティブ' : '非アクティブ'}
+              </span>
+            </div>
+            <div>
+              <strong>メール認証:</strong>
+              <span class="badge badge-${user.emailVerified ? 'success' : 'warning'}" style="margin-left: 0.5rem;">
+                ${user.emailVerified ? '認証済' : '未認証'}
+              </span>
+            </div>
+            <div>
+              <strong>登録日:</strong> ${new Date(user.createdAt).toLocaleString('ja-JP')}
+            </div>
+            <div>
+              <strong>最終ログイン:</strong> ${user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('ja-JP') : '-'}
+            </div>
+            <div>
+              <strong>更新日:</strong> ${new Date(user.updatedAt).toLocaleString('ja-JP')}
+            </div>
+          </div>
+        </div>
+
+        <!-- 利用統計 -->
+        ${user.stats ? `
+          <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+            <h3 style="margin-bottom: 1rem; color: #2c3e50;">利用統計</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+              <div style="text-align: center; padding: 1rem; background-color: white; border-radius: 4px;">
+                <div style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 0.5rem;">総予約数</div>
+                <div style="font-size: 1.75rem; font-weight: 600; color: #3498db;">${user.stats.totalReservations || 0}</div>
+              </div>
+              <div style="text-align: center; padding: 1rem; background-color: white; border-radius: 4px;">
+                <div style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 0.5rem;">総支払額</div>
+                <div style="font-size: 1.75rem; font-weight: 600; color: #27ae60;">¥${(user.stats.totalSpent || 0).toLocaleString()}</div>
+              </div>
+              <div style="text-align: center; padding: 1rem; background-color: white; border-radius: 4px;">
+                <div style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 0.5rem;">キャンセル数</div>
+                <div style="font-size: 1.75rem; font-weight: 600; color: #e74c3c;">${user.stats.cancelledReservations || 0}</div>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- 操作ボタン -->
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+          <button onclick="showEditModal(${user.id})" class="btn btn-primary">情報を編集</button>
+          ${user.role === 'user' ? `
+            <button onclick="toggleActive(${user.id}, ${user.isActive})" class="btn ${user.isActive ? 'btn-danger' : 'btn-success'}">
+              ${user.isActive ? '非アクティブにする' : 'アクティブにする'}
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    document.getElementById('detailContent').innerHTML = html;
+    document.getElementById('detailModal').style.display = 'block';
+  } catch (error) {
+    console.error('Error loading user detail:', error);
+    alert('詳細情報の読み込みに失敗しました');
+  }
+}
+
+// 詳細モーダルを閉じる
+function closeDetailModal() {
+  document.getElementById('detailModal').style.display = 'none';
+  currentUserId = null;
+}
+
+// 編集モーダルを表示
+async function showEditModal(id) {
+  try {
+    const res = await fetch(`/api/staff/users/${id}`, {
+      credentials: 'include',
+      });
+    const user = await res.json();
+
+    const html = `
+      <form id="editForm" style="display: grid; gap: 1rem;">
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">名前 *</label>
+          <input type="text" id="editName" value="${user.name || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ニックネーム</label>
+          <input type="text" id="editNickname" value="${user.nickname || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス *</label>
+          <input type="email" id="editEmail" value="${user.email}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">自己紹介</label>
+          <textarea id="editBio" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${user.bio || ''}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+          <button type="button" onclick="closeEditModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    `;
+
+    document.getElementById('editContent').innerHTML = html;
+    document.getElementById('editModal').style.display = 'block';
+
+    // フォーム送信イベント
+    document.getElementById('editForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      updateUser(id);
+    });
+  } catch (error) {
+    console.error('Error loading user for edit:', error);
+    alert('編集フォームの読み込みに失敗しました');
+  }
+}
+
+// 編集モーダルを閉じる
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// 利用者情報を更新
+async function updateUser(id) {
+  const name = document.getElementById('editName').value.trim();
+  const nickname = document.getElementById('editNickname').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const bio = document.getElementById('editBio').value.trim();
+
+  if (!name || !email) {
+    alert('名前とメールアドレスは必須です');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/users/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, nickname, email, bio })
+    });
+
+    if (res.ok) {
+      alert('利用者情報を更新しました');
+      closeEditModal();
+      closeDetailModal();
+      loadUsers();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error updating user:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// アクティブ状態を切り替え
+async function toggleActive(id, currentStatus) {
+  const action = currentStatus ? '非アクティブ' : 'アクティブ';
+  if (!confirm(`このユーザーを${action}にしますか？`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/staff/users/${id}/toggle-active`, {
+      method: 'PATCH',
+      credentials: 'include',
+      });
+
+    if (res.ok) {
+      alert(`ユーザーを${action}にしました`);
+      closeDetailModal();
+      loadUsers();
+      loadStats();
+    } else {
+      const error = await res.json();
+      alert('更新に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error toggling active status:', error);
+    alert('更新に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('detailModal').addEventListener('click', (e) => {
+  if (e.target.id === 'detailModal') {
+    closeDetailModal();
+  }
+});
+
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if (e.target.id === 'editModal') {
+    closeEditModal();
+  }
+});
+
+// CSVエクスポート
+function exportToCSV() {
+  if (!currentUsers || currentUsers.length === 0) {
+    alert('エクスポートするデータがありません');
+    return;
+  }
+
+  // CSVヘッダー
+  const headers = ['ID', '名前', 'メールアドレス', '役割', 'メール認証', '状態', '登録日', '最終ログイン'];
+
+  // CSVデータ行
+  const rows = currentUsers.map(user => {
+    const role = user.role === 'admin' ? '管理者' : user.role === 'staff' ? '職員' : 'ユーザー';
+    const emailVerified = user.emailVerified ? '認証済' : '未認証';
+    const isActive = user.isActive ? 'アクティブ' : '非アクティブ';
+    const lastLoginAt = user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ja-JP') : '-';
+
+    return [
+      user.id,
+      user.name || '-',
+      user.email,
+      role,
+      emailVerified,
+      isActive,
+      new Date(user.createdAt).toLocaleDateString('ja-JP'),
+      lastLoginAt
+    ];
+  });
+
+  // CSV形式に変換
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // セル内にカンマや改行がある場合はダブルクォートで囲む
+      const cellStr = String(cell);
+      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+        return '"' + cellStr.replace(/"/g, '""') + '"';
+      }
+      return cellStr;
+    }).join(','))
+  ].join('\n');
+
+  // BOM付きUTF-8でエンコード（Excelで文字化けしないように）
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // ダウンロードリンクを作成してクリック
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const filename = `users_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>
