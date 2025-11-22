@@ -31,6 +31,10 @@ const app: Application = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
+// Nginxリバースプロキシ対応：trust proxyを有効化
+// これにより、X-Forwarded-*ヘッダーを信頼し、正しいクライアントIPを取得できます
+app.set('trust proxy', true);
+
 // セキュリティミドルウェア
 // HTTPSが必要なヘッダーは開発環境(HTTP)では無効化
 const isProduction = process.env.NODE_ENV === 'production';
