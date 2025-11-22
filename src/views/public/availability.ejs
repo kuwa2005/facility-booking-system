@@ -235,7 +235,6 @@
       border-radius: 50%;
     }
     .slot-available { background-color: #10b981; }
-    .slot-partial { background-color: #f59e0b; }
     .slot-unavailable { background-color: #ef4444; }
 
     /* 凡例 */
@@ -449,10 +448,6 @@
             <span>予約可能</span>
           </div>
           <div class="legend-item">
-            <div class="legend-color slot-partial"></div>
-            <span>一部空きあり</span>
-          </div>
-          <div class="legend-item">
             <div class="legend-color slot-unavailable"></div>
             <span>予約不可</span>
           </div>
@@ -601,10 +596,8 @@
           slot.className = 'slot-indicator';
 
           const rand = Math.random();
-          if (rand > 0.7) {
+          if (rand > 0.5) {
             slot.classList.add('slot-available');
-          } else if (rand > 0.4) {
-            slot.classList.add('slot-partial');
           } else {
             slot.classList.add('slot-unavailable');
           }
@@ -633,7 +626,7 @@
       const timeSlots = [
         { time: '午前（9:00-12:00）', status: Math.random() > 0.5 ? 'available' : 'unavailable', label: Math.random() > 0.5 ? '予約可能' : '予約済み' },
         { time: '午後（13:00-17:00）', status: Math.random() > 0.5 ? 'available' : 'unavailable', label: Math.random() > 0.5 ? '予約可能' : '予約済み' },
-        { time: '夜間（18:00-21:30）', status: Math.random() > 0.5 ? 'available' : 'partial', label: Math.random() > 0.5 ? '予約可能' : '一部空きあり' }
+        { time: '夜間（18:00-21:30）', status: Math.random() > 0.5 ? 'available' : 'unavailable', label: Math.random() > 0.5 ? '予約可能' : '予約済み' }
       ];
 
       let html = '';
