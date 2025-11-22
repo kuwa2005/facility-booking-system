@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import pool from '../db';
+import { pool } from '../config/database';
 import { ResultSetHeader } from 'mysql2';
 
 /**
