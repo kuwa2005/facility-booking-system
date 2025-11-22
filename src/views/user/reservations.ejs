@@ -266,10 +266,10 @@
       </div>
 
       <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterReservations('all')">すべて</button>
-        <button class="filter-tab" onclick="filterReservations('upcoming')">予定</button>
+        <button class="filter-tab active" onclick="filterReservations('upcoming')">予定</button>
         <button class="filter-tab" onclick="filterReservations('past')">過去</button>
         <button class="filter-tab" onclick="filterReservations('cancelled')">キャンセル済み</button>
+        <button class="filter-tab" onclick="filterReservations('all')">すべて</button>
       </div>
 
       <div class="reservations-list" id="reservationsList">
@@ -432,6 +432,14 @@
         alert('エラー: ' + error.message);
       }
     }
+
+    // ページロード時に「予定」フィルターを適用
+    document.addEventListener('DOMContentLoaded', () => {
+      const cards = document.querySelectorAll('.reservation-card');
+      cards.forEach(card => {
+        card.style.display = card.dataset.status === 'upcoming' ? 'block' : 'none';
+      });
+    });
   </script>
 </body>
 </html>
