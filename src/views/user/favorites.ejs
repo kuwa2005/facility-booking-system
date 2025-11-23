@@ -295,8 +295,8 @@
             ${room.description ? `<p class="room-description">${escapeHtml(room.description)}</p>` : ''}
             <div class="room-info">
               ${room.capacity ? `<span class="info-tag">定員: ${room.capacity}名</span>` : ''}
-              <span class="info-tag">午前: ¥${(room.base_price_morning || 0).toLocaleString()}</span>
-              <span class="info-tag">午後: ¥${(room.base_price_afternoon || 0).toLocaleString()}</span>
+              <span class="info-tag">午前: ¥${(room.basePriceMorning || 0).toLocaleString()}</span>
+              <span class="info-tag">午後: ¥${(room.basePriceAfternoon || 0).toLocaleString()}</span>
             </div>
             <div class="room-actions">
               <a href="/rooms/${room.id}" class="btn btn-primary">詳細を見る</a>

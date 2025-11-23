@@ -269,7 +269,7 @@
               <% if (room.capacity) { %>
                 <p class="capacity">定員: <%= room.capacity %>名</p>
               <% } %>
-              <p class="price">¥<%= room.base_price_morning?.toLocaleString() || '0' %>〜</p>
+              <p class="price">¥<%= (room.basePriceMorning || 0).toLocaleString() %>〜</p>
               <a href="/rooms/<%= room.id %>" class="btn btn-outline">詳細を見る</a>
             </div>
           <% }); %>

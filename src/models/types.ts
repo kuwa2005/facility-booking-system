@@ -36,20 +36,21 @@ export interface Room {
   id: number;
   name: string;
   capacity: number | null;
-  base_price_morning: number;
-  base_price_afternoon: number;
-  base_price_evening: number;
-  extension_price_midday: number;
-  extension_price_evening: number;
-  ac_price_per_hour: number;
+  basePriceMorning: number;
+  basePriceAfternoon: number;
+  basePriceEvening: number;
+  extensionPriceMidday: number;
+  extensionPriceEvening: number;
+  acPricePerHour: number;
   description: string | null;
-  is_active: boolean;
-  is_flexible_time: boolean;
-  min_duration_minutes: number | null;
-  time_unit_minutes: number | null;
-  price_per_unit: number | null;
-  created_at: Date;
-  updated_at: Date;
+  isActive: boolean;
+  isFlexibleTime: boolean;
+  minDurationMinutes: number | null;
+  timeUnitMinutes: number | null;
+  pricePerUnit: number | null;
+  displayOrder?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Equipment {

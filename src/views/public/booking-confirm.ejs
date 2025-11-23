@@ -378,9 +378,9 @@
       let total = 0;
 
       selectedSlots.forEach(slot => {
-        if (slot === 'morning') total += room.base_price_morning || 0;
-        if (slot === 'afternoon') total += room.base_price_afternoon || 0;
-        if (slot === 'evening') total += room.base_price_evening || 0;
+        if (slot === 'morning') total += room.basePriceMorning || 0;
+        if (slot === 'afternoon') total += room.basePriceAfternoon || 0;
+        if (slot === 'evening') total += room.basePriceEvening || 0;
       });
 
       document.getElementById('basePrice').textContent = '¥' + total.toLocaleString();
