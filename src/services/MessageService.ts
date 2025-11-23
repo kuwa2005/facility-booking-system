@@ -298,7 +298,7 @@ export class MessageService {
       [userType, userId],
     );
 
-    return rows[0].count;
+    return rows[0]?.count ? Number(rows[0].count) : 0;
   }
 
   /**
