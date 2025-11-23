@@ -197,7 +197,7 @@ export class RoomRepository {
       'SELECT COUNT(*) as count FROM usages WHERE room_id = ?',
       [roomId]
     );
-    return rows[0].count > 0;
+    return Number(rows[0]?.count || 0) > 0;
   }
 
   /**

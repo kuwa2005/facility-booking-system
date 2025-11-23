@@ -342,6 +342,14 @@ export class MessageService {
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
-    return rows[0];
+    const stats = rows[0];
+
+    // BigInt を Number に変換
+    return {
+      total_messages: stats?.total_messages ? Number(stats.total_messages) : 0,
+      unread_messages: stats?.unread_messages ? Number(stats.unread_messages) : 0,
+      from_users: stats?.from_users ? Number(stats.from_users) : 0,
+      from_staff: stats?.from_staff ? Number(stats.from_staff) : 0,
+    };
   }
 }
