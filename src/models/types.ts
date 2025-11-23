@@ -44,6 +44,7 @@ export interface Room {
   acPricePerHour: number;
   description: string | null;
   isActive: boolean;
+  maxReservationCount: number;
   isFlexibleTime: boolean;
   minDurationMinutes: number | null;
   timeUnitMinutes: number | null;

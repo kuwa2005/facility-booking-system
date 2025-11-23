@@ -1,6 +1,7 @@
 import { RowDataPacket } from 'mysql2';
 import pool from '../config/database';
 import { DayAvailability } from './types';
+import RoomRepository from './RoomRepository';
 
 export class AvailabilityRepository {
   /**
@@ -48,26 +49,31 @@ export class AvailabilityRepository {
 
   /**
    * Get availability for a room for a specific month
+   * 在庫管理対応：予約数をカウントして残数を計算
    */
   async getMonthAvailability(roomId: number, year: number, month: number): Promise<DayAvailability[]> {
     const closedDates = await this.getClosedDates(year, month);
     const reservations = await this.getReservations(roomId, year, month);
 
-    // Create a map of reservations by date
-    const reservationMap = new Map<string, any>();
+    // Get room's max reservation count
+    const room = await RoomRepository.findById(roomId);
+    const maxCount = room?.maxReservationCount || 1;
+
+    // Create a map of reservation counts by date
+    const reservationCountMap = new Map<string, { morning: number; afternoon: number; evening: number }>();
     reservations.forEach((res) => {
       const dateStr = new Date(res.date).toISOString().split('T')[0];
-      if (!reservationMap.has(dateStr)) {
-        reservationMap.set(dateStr, {
-          morning: false,
-          afternoon: false,
-          evening: false,
+      if (!reservationCountMap.has(dateStr)) {
+        reservationCountMap.set(dateStr, {
+          morning: 0,
+          afternoon: 0,
+          evening: 0,
         });
       }
-      const existing = reservationMap.get(dateStr)!;
-      if (res.use_morning) existing.morning = true;
-      if (res.use_afternoon) existing.afternoon = true;
-      if (res.use_evening) existing.evening = true;
+      const existing = reservationCountMap.get(dateStr)!;
+      if (res.use_morning) existing.morning++;
+      if (res.use_afternoon) existing.afternoon++;
+      if (res.use_evening) existing.evening++;
     });
 
     // Generate calendar for the month
@@ -77,14 +83,19 @@ export class AvailabilityRepository {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const isClosed = closedDates.includes(date);
-      const reservation = reservationMap.get(date);
+      const reservationCounts = reservationCountMap.get(date) || { morning: 0, afternoon: 0, evening: 0 };
 
       availability.push({
         date,
         is_closed: isClosed,
-        morning_available: !isClosed && (!reservation || !reservation.morning),
-        afternoon_available: !isClosed && (!reservation || !reservation.afternoon),
-        evening_available: !isClosed && (!reservation || !reservation.evening),
+        morning_available: !isClosed && reservationCounts.morning < maxCount,
+        afternoon_available: !isClosed && reservationCounts.afternoon < maxCount,
+        evening_available: !isClosed && reservationCounts.evening < maxCount,
+        // 在庫情報を追加
+        morning_count: reservationCounts.morning,
+        afternoon_count: reservationCounts.afternoon,
+        evening_count: reservationCounts.evening,
+        max_count: maxCount,
       });
     }
 
