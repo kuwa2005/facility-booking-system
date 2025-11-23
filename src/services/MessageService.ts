@@ -115,11 +115,11 @@ export class MessageService {
   ): Promise<Message[]> {
     let query = `
       SELECT m.*,
-             u.name as sender_name, u.email as sender_email,
-             s.name as recipient_name, s.email as recipient_email
+             sender.name as sender_name, sender.email as sender_email,
+             recipient.name as recipient_name, recipient.email as recipient_email
       FROM messages m
-      LEFT JOIN users u ON m.sender_type = 'user' AND m.sender_id = u.id
-      LEFT JOIN staff s ON m.recipient_type = 'staff' AND m.recipient_id = s.id
+      LEFT JOIN users sender ON m.sender_id = sender.id
+      LEFT JOIN users recipient ON m.recipient_id = recipient.id
       WHERE (m.sender_type = 'user' AND m.sender_id = ?)
          OR (m.recipient_type = 'user' AND m.recipient_id = ?)
     `;
@@ -149,11 +149,11 @@ export class MessageService {
   async getStaffMessages(staffId?: number): Promise<Message[]> {
     let query = `
       SELECT m.*,
-             u.name as user_name, u.email as user_email,
-             s.name as staff_name, s.email as staff_email
+             sender.name as sender_name, sender.email as sender_email,
+             recipient.name as recipient_name, recipient.email as recipient_email
       FROM messages m
-      LEFT JOIN users u ON m.sender_type = 'user' AND m.sender_id = u.id
-      LEFT JOIN staff s ON m.sender_type = 'staff' AND m.sender_id = s.id
+      LEFT JOIN users sender ON m.sender_id = sender.id
+      LEFT JOIN users recipient ON m.recipient_id = recipient.id
       WHERE m.deleted_at IS NULL
     `;
 
@@ -190,11 +190,11 @@ export class MessageService {
   ): Promise<Message[]> {
     let query = `
       SELECT m.*,
-             u.name as user_name, u.email as user_email,
-             s.name as staff_name, s.email as staff_email
+             sender.name as sender_name, sender.email as sender_email,
+             recipient.name as recipient_name, recipient.email as recipient_email
       FROM messages m
-      LEFT JOIN users u ON m.sender_type = 'user' AND m.sender_id = u.id
-      LEFT JOIN staff s ON m.sender_type = 'staff' AND m.sender_id = s.id
+      LEFT JOIN users sender ON m.sender_id = sender.id
+      LEFT JOIN users recipient ON m.recipient_id = recipient.id
       WHERE m.deleted_at IS NULL
         AND ((m.sender_type = 'user' AND m.sender_id = ?)
           OR (m.recipient_type = 'user' AND m.recipient_id = ?))
@@ -239,11 +239,11 @@ export class MessageService {
     // ルートメッセージとすべての返信を取得
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT m.*,
-              u.name as sender_user_name, u.email as sender_user_email,
-              s.name as sender_staff_name, s.email as sender_staff_email
+              sender.name as sender_name, sender.email as sender_email,
+              recipient.name as recipient_name, recipient.email as recipient_email
        FROM messages m
-       LEFT JOIN users u ON m.sender_type = 'user' AND m.sender_id = u.id
-       LEFT JOIN staff s ON m.sender_type = 'staff' AND m.sender_id = s.id
+       LEFT JOIN users sender ON m.sender_id = sender.id
+       LEFT JOIN users recipient ON m.recipient_id = recipient.id
        WHERE (m.id = ? OR m.parent_message_id = ?)
          AND m.deleted_at IS NULL
        ORDER BY m.created_at ASC`,
