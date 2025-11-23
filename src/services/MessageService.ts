@@ -92,7 +92,16 @@ export class MessageService {
     );
 
     if (rows.length === 0) return null;
-    return rows[0] as Message;
+
+    const row: any = rows[0];
+    // BigInt を Number に変換
+    return {
+      ...row,
+      id: row.id ? Number(row.id) : row.id,
+      sender_id: row.sender_id ? Number(row.sender_id) : row.sender_id,
+      recipient_id: row.recipient_id ? Number(row.recipient_id) : row.recipient_id,
+      parent_message_id: row.parent_message_id ? Number(row.parent_message_id) : row.parent_message_id,
+    } as Message;
   }
 
   /**
@@ -122,7 +131,15 @@ export class MessageService {
     query += ` ORDER BY m.created_at DESC`;
 
     const [rows] = await pool.query<RowDataPacket[]>(query, [userId, userId]);
-    return rows as Message[];
+
+    // BigInt を Number に変換
+    return rows.map((row: any) => ({
+      ...row,
+      id: row.id ? Number(row.id) : row.id,
+      sender_id: row.sender_id ? Number(row.sender_id) : row.sender_id,
+      recipient_id: row.recipient_id ? Number(row.recipient_id) : row.recipient_id,
+      parent_message_id: row.parent_message_id ? Number(row.parent_message_id) : row.parent_message_id,
+    })) as Message[];
   }
 
   /**
@@ -151,7 +168,15 @@ export class MessageService {
     query += ` ORDER BY m.created_at DESC`;
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
-    return rows as Message[];
+
+    // BigInt を Number に変換
+    return rows.map((row: any) => ({
+      ...row,
+      id: row.id ? Number(row.id) : row.id,
+      sender_id: row.sender_id ? Number(row.sender_id) : row.sender_id,
+      recipient_id: row.recipient_id ? Number(row.recipient_id) : row.recipient_id,
+      parent_message_id: row.parent_message_id ? Number(row.parent_message_id) : row.parent_message_id,
+    })) as Message[];
   }
 
   /**
@@ -186,7 +211,15 @@ export class MessageService {
     query += ` ORDER BY m.created_at ASC`;
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
-    return rows as Message[];
+
+    // BigInt を Number に変換
+    return rows.map((row: any) => ({
+      ...row,
+      id: row.id ? Number(row.id) : row.id,
+      sender_id: row.sender_id ? Number(row.sender_id) : row.sender_id,
+      recipient_id: row.recipient_id ? Number(row.recipient_id) : row.recipient_id,
+      parent_message_id: row.parent_message_id ? Number(row.parent_message_id) : row.parent_message_id,
+    })) as Message[];
   }
 
   /**
@@ -217,7 +250,14 @@ export class MessageService {
       [rootMessageId, rootMessageId],
     );
 
-    return rows as Message[];
+    // BigInt を Number に変換
+    return rows.map((row: any) => ({
+      ...row,
+      id: row.id ? Number(row.id) : row.id,
+      sender_id: row.sender_id ? Number(row.sender_id) : row.sender_id,
+      recipient_id: row.recipient_id ? Number(row.recipient_id) : row.recipient_id,
+      parent_message_id: row.parent_message_id ? Number(row.parent_message_id) : row.parent_message_id,
+    })) as Message[];
   }
 
   /**
@@ -298,7 +338,7 @@ export class MessageService {
       [userType, userId],
     );
 
-    return rows[0].count;
+    return rows[0]?.count ? Number(rows[0].count) : 0;
   }
 
   /**
@@ -342,6 +382,14 @@ export class MessageService {
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
-    return rows[0];
+    const stats = rows[0];
+
+    // BigInt を Number に変換
+    return {
+      total_messages: stats?.total_messages ? Number(stats.total_messages) : 0,
+      unread_messages: stats?.unread_messages ? Number(stats.unread_messages) : 0,
+      from_users: stats?.from_users ? Number(stats.from_users) : 0,
+      from_staff: stats?.from_staff ? Number(stats.from_staff) : 0,
+    };
   }
 }

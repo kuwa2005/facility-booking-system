@@ -171,7 +171,7 @@ export class UserProfileService {
        WHERE user_id = ? AND cancel_status = 'none' AND payment_status != 'refunded'`,
       [userId]
     );
-    return rows[0].count > 0;
+    return Number(rows[0]?.count || 0) > 0;
   }
 
   /**

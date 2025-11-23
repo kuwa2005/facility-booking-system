@@ -12,12 +12,12 @@
 export interface Room {
   id: number;
   name: string;
-  base_price_morning: number;      // 午前の基本料金
-  base_price_afternoon: number;    // 午後の基本料金
-  base_price_evening: number;      // 夜間の基本料金
-  extension_price_midday: number;  // 正午延長料金
-  extension_price_evening: number; // 夕方延長料金
-  ac_price_per_hour: number;       // 空調の時間単価
+  basePriceMorning: number;      // 午前の基本料金
+  basePriceAfternoon: number;    // 午後の基本料金
+  basePriceEvening: number;      // 夜間の基本料金
+  extensionPriceMidday: number;  // 正午延長料金
+  extensionPriceEvening: number; // 夕方延長料金
+  acPricePerHour: number;       // 空調の時間単価
 }
 
 export interface UsageInput {
@@ -97,15 +97,15 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
 
   // 基本枠の料金を追加
   if (usage.useMorning) {
-    charge += room.base_price_morning;
+    charge += room.basePriceMorning;
   }
 
   if (usage.useAfternoon) {
-    charge += room.base_price_afternoon;
+    charge += room.basePriceAfternoon;
   }
 
   if (usage.useEvening) {
-    charge += room.base_price_evening;
+    charge += room.basePriceEvening;
   }
 
   // 正午延長（12:00-13:00、午前と午後の間）を処理
@@ -113,7 +113,7 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
     // 午前と午後の両方が予約されている場合は無料
     const isFree = usage.useMorning && usage.useAfternoon;
     if (!isFree) {
-      charge += room.extension_price_midday;
+      charge += room.extensionPriceMidday;
     }
   }
 
@@ -122,7 +122,7 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
     // 午後と夜間の両方が予約されている場合は無料
     const isFree = usage.useAfternoon && usage.useEvening;
     if (!isFree) {
-      charge += room.extension_price_evening;
+      charge += room.extensionPriceEvening;
     }
   }
 
@@ -162,7 +162,7 @@ function calculateAcCharge(room: Room, usage: UsageInput): number {
     return 0;
   }
 
-  return Math.round(usage.acHours * room.ac_price_per_hour);
+  return Math.round(usage.acHours * room.acPricePerHour);
 }
 
 /**

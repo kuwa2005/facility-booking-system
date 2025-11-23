@@ -129,6 +129,72 @@
       padding: 2rem;
       color: #6b7280;
     }
+    /* モーダルポップアップのスタイル */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      text-align: center;
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .modal-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.75rem;
+    }
+    .modal-message {
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    .modal-button {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .modal-button:hover {
+      background-color: #1d4ed8;
+    }
   </style>
 </head>
 <body>
@@ -223,7 +289,74 @@
     <p>&copy; 2025 施設予約システム. All rights reserved.</p>
   </footer>
 
+  <!-- モーダルポップアップ -->
+  <div id="successModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-icon">✅</div>
+      <div class="modal-title">送信完了</div>
+      <div class="modal-message" id="modalMessage"></div>
+      <button class="modal-button" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+
+  <div id="errorModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-icon" style="color: #ef4444;">⚠️</div>
+      <div class="modal-title">エラー</div>
+      <div class="modal-message" id="errorMessage"></div>
+      <button class="modal-button" onclick="closeErrorModal()">閉じる</button>
+    </div>
+  </div>
+
   <script>
+    // モーダル表示関数
+    function showSuccessModal(message, redirectUrl = null) {
+      const modal = document.getElementById('successModal');
+      const messageEl = document.getElementById('modalMessage');
+      messageEl.innerHTML = message.replace(/\n/g, '<br>');
+      modal.classList.add('active');
+
+      if (redirectUrl) {
+        // リダイレクトURLが指定されている場合、モーダルを閉じた時にリダイレクト
+        window.successModalRedirect = redirectUrl;
+      } else {
+        window.successModalRedirect = null;
+      }
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('successModal');
+      modal.classList.remove('active');
+
+      if (window.successModalRedirect) {
+        window.location.href = window.successModalRedirect;
+      }
+    }
+
+    function showErrorModal(message) {
+      const modal = document.getElementById('errorModal');
+      const messageEl = document.getElementById('errorMessage');
+      messageEl.innerHTML = message.replace(/\n/g, '<br>');
+      modal.classList.add('active');
+    }
+
+    function closeErrorModal() {
+      document.getElementById('errorModal').classList.remove('active');
+    }
+
+    // モーダル背景クリックで閉じる
+    document.getElementById('successModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+
+    document.getElementById('errorModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeErrorModal();
+      }
+    });
+
     // ページロード時にログイン中の場合はユーザー情報を取得して自動入力
     <% if (user) { %>
     async function loadUserProfile() {
@@ -291,11 +424,10 @@
         const result = await response.json();
 
         if (response.ok && result.success) {
-          alert('お問い合わせを送信しました。\n担当者からの返信をお待ちください。\nマイページのメッセージ欄でご確認いただけます。');
           this.reset();
-          window.location.href = '/my-page/messages';
+          showSuccessModal('お問い合わせを送信しました。\n担当者からの返信をお待ちください。\nマイページのメッセージ欄でご確認いただけます。', '/my-page/messages');
         } else {
-          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+          showErrorModal('送信に失敗しました: ' + (result.message || '不明なエラー'));
         }
         <% } else { %>
         // 非ログイン時の場合は公開お問い合わせAPIを使用
@@ -310,15 +442,15 @@
         const result = await response.json();
 
         if (response.ok && result.success) {
-          alert('お問い合わせを送信しました。\nご記入いただいたメールアドレス宛に受付確認メールをお送りしております。\n担当者からの返信をお待ちください。');
           this.reset();
+          showSuccessModal('お問い合わせを送信しました。\nご記入いただいたメールアドレス宛に受付確認メールをお送りしております。\n担当者からの返信をお待ちください。');
         } else {
-          alert('送信に失敗しました: ' + (result.message || '不明なエラー'));
+          showErrorModal('送信に失敗しました: ' + (result.message || '不明なエラー'));
         }
         <% } %>
       } catch (error) {
         console.error('Error sending contact:', error);
-        alert('送信中にエラーが発生しました。\nしばらく時間をおいて再度お試しください。');
+        showErrorModal('送信中にエラーが発生しました。\nしばらく時間をおいて再度お試しください。');
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = '送信する';

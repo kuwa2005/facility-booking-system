@@ -41,8 +41,13 @@
     <form id="sendForm" style="display: grid; gap: 1rem;">
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">宛先ユーザーID *</label>
-        <input type="number" id="recipientUserId" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
-        <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.25rem;">※ ユーザー管理画面でユーザーIDを確認してください</p>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+          <div style="flex: 1;">
+            <input type="number" id="recipientUserId" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            <div id="selectedUserInfo" style="font-size: 0.875rem; color: #27ae60; margin-top: 0.5rem; display: none;"></div>
+          </div>
+          <button type="button" onclick="showUserSearchModal('recipientUserId')" class="btn" style="background-color: #3498db; color: white; white-space: nowrap;">🔍 ID検索</button>
+        </div>
       </div>
 
       <div>
@@ -60,6 +65,53 @@
         <button type="submit" class="btn btn-primary">送信</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ユーザー検索モーダル -->
+<div id="userSearchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1001; overflow-y: auto;">
+  <div style="background-color: white; max-width: 900px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0;">ユーザー検索</h2>
+      <button onclick="closeUserSearchModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+
+    <!-- 検索フォーム -->
+    <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 4px; margin-bottom: 1.5rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">名前</label>
+          <input type="text" id="searchUserName" placeholder="山田 太郎" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス</label>
+          <input type="text" id="searchUserEmail" placeholder="example@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">電話番号</label>
+          <input type="text" id="searchUserPhone" placeholder="090-1234-5678" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">団体名</label>
+          <input type="text" id="searchUserOrganization" placeholder="〇〇団体" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ユーザーID</label>
+          <input type="number" id="searchUserId" placeholder="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <button onclick="searchUsers()" class="btn btn-primary" style="flex: 1;">🔍 検索</button>
+        <button onclick="clearUserSearch()" class="btn" style="background-color: #95a5a6; color: white;">クリア</button>
+      </div>
+    </div>
+
+    <!-- 検索結果 -->
+    <div id="userSearchResults" style="min-height: 300px;">
+      <p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">検索条件を入力して検索ボタンをクリックしてください</p>
+    </div>
   </div>
 </div>
 
@@ -228,6 +280,150 @@ async function deleteMessage(id) {
 document.getElementById('sendModal').addEventListener('click', (e) => {
   if (e.target.id === 'sendModal') {
     closeSendModal();
+  }
+});
+
+// ユーザー検索モーダル関連
+let userSearchTargetInputId = null;
+
+function showUserSearchModal(targetInputId) {
+  userSearchTargetInputId = targetInputId;
+  document.getElementById('userSearchModal').style.display = 'block';
+  clearUserSearch();
+}
+
+function closeUserSearchModal() {
+  document.getElementById('userSearchModal').style.display = 'none';
+  userSearchTargetInputId = null;
+}
+
+function clearUserSearch() {
+  document.getElementById('searchUserName').value = '';
+  document.getElementById('searchUserEmail').value = '';
+  document.getElementById('searchUserPhone').value = '';
+  document.getElementById('searchUserOrganization').value = '';
+  document.getElementById('searchUserId').value = '';
+  document.getElementById('userSearchResults').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">検索条件を入力して検索ボタンをクリックしてください</p>';
+}
+
+async function searchUsers() {
+  const name = document.getElementById('searchUserName').value.trim();
+  const email = document.getElementById('searchUserEmail').value.trim();
+  const phone = document.getElementById('searchUserPhone').value.trim();
+  const organization = document.getElementById('searchUserOrganization').value.trim();
+  const userId = document.getElementById('searchUserId').value.trim();
+
+  // 検索条件が1つも入力されていない場合
+  if (!name && !email && !phone && !organization && !userId) {
+    alert('検索条件を最低1つ入力してください');
+    return;
+  }
+
+  document.getElementById('userSearchResults').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">検索中...</p>';
+
+  try {
+    const params = new URLSearchParams();
+    if (name) params.append('name', name);
+    if (email) params.append('email', email);
+    if (phone) params.append('phone', phone);
+    if (organization) params.append('organization', organization);
+    if (userId) params.append('userId', userId);
+
+    const res = await fetch(`/api/staff/users/search?${params.toString()}`, {
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      throw new Error('検索に失敗しました');
+    }
+
+    const data = await res.json();
+    displayUserSearchResults(data.users || []);
+  } catch (error) {
+    console.error('Error searching users:', error);
+    document.getElementById('userSearchResults').innerHTML = '<p style="text-align: center; color: #e74c3c; padding: 3rem 0;">検索中にエラーが発生しました</p>';
+  }
+}
+
+function displayUserSearchResults(users) {
+  const container = document.getElementById('userSearchResults');
+
+  if (users.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">該当するユーザーが見つかりませんでした</p>';
+    return;
+  }
+
+  let html = `
+    <div style="margin-bottom: 1rem; font-weight: 500; color: #2c3e50;">検索結果: ${users.length}件</div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+            <th style="padding: 0.75rem; text-align: left;">ID</th>
+            <th style="padding: 0.75rem; text-align: left;">名前</th>
+            <th style="padding: 0.75rem; text-align: left;">メール</th>
+            <th style="padding: 0.75rem; text-align: left;">電話番号</th>
+            <th style="padding: 0.75rem; text-align: left;">団体名</th>
+            <th style="padding: 0.75rem; text-align: center;">アクション</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  users.forEach(user => {
+    html += `
+      <tr style="border-bottom: 1px solid #dee2e6;">
+        <td style="padding: 0.75rem;">${user.id}</td>
+        <td style="padding: 0.75rem;">${escapeHtml(user.name || '-')}</td>
+        <td style="padding: 0.75rem;">${escapeHtml(user.email || '-')}</td>
+        <td style="padding: 0.75rem;">${escapeHtml(user.phone || '-')}</td>
+        <td style="padding: 0.75rem;">${escapeHtml(user.organization_name || '-')}</td>
+        <td style="padding: 0.75rem; text-align: center;">
+          <button onclick="selectUser(${user.id}, '${escapeHtml(user.name || '')}', '${escapeHtml(user.email || '')}')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">選択</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function selectUser(userId, userName, userEmail) {
+  if (!userSearchTargetInputId) {
+    alert('エラー: 対象の入力フィールドが見つかりません');
+    return;
+  }
+
+  // ユーザーIDを入力フィールドに設定
+  document.getElementById(userSearchTargetInputId).value = userId;
+
+  // 選択したユーザー情報を表示
+  const infoDiv = document.getElementById('selectedUserInfo');
+  if (infoDiv) {
+    infoDiv.textContent = `✓ 選択中: ${userName} (${userEmail})`;
+    infoDiv.style.display = 'block';
+  }
+
+  // モーダルを閉じる
+  closeUserSearchModal();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ユーザー検索モーダル外クリックで閉じる
+document.getElementById('userSearchModal').addEventListener('click', (e) => {
+  if (e.target.id === 'userSearchModal') {
+    closeUserSearchModal();
   }
 });
 </script>

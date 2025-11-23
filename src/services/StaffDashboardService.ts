@@ -86,7 +86,7 @@ export class StaffDashboardService {
        WHERE payment_status = 'unpaid'
          AND cancel_status = 'none'`
     );
-    return rows[0]?.count || 0;
+    return Number(rows[0]?.count || 0);
   }
 
   /**
@@ -108,8 +108,8 @@ export class StaffDashboardService {
     );
 
     return {
-      total: totalRows[0]?.total || 0,
-      monthly: monthlyRows[0]?.monthly || 0,
+      total: Number(totalRows[0]?.total || 0),
+      monthly: Number(monthlyRows[0]?.monthly || 0),
     };
   }
 
@@ -124,7 +124,7 @@ export class StaffDashboardService {
          AND role = 'user'
          AND deleted_at IS NULL`
     );
-    return rows[0]?.count || 0;
+    return Number(rows[0]?.count || 0);
   }
 
   /**

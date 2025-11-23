@@ -503,20 +503,20 @@
           <% } %>
           <div class="info-item">
             <span class="info-label">午前料金（9:00-12:00）</span>
-            <span class="info-value">¥<%= room.base_price_morning?.toLocaleString() || '0' %></span>
+            <span class="info-value">¥<%= (room.basePriceMorning || 0).toLocaleString() %></span>
           </div>
           <div class="info-item">
             <span class="info-label">午後料金（13:00-17:00）</span>
-            <span class="info-value">¥<%= room.base_price_afternoon?.toLocaleString() || '0' %></span>
+            <span class="info-value">¥<%= (room.basePriceAfternoon || 0).toLocaleString() %></span>
           </div>
           <div class="info-item">
             <span class="info-label">夜間料金（18:00-21:30）</span>
-            <span class="info-value">¥<%= room.base_price_evening?.toLocaleString() || '0' %></span>
+            <span class="info-value">¥<%= (room.basePriceEvening || 0).toLocaleString() %></span>
           </div>
-          <% if (room.ac_price_per_hour > 0) { %>
+          <% if (room.acPricePerHour > 0) { %>
             <div class="info-item">
               <span class="info-label">エアコン</span>
-              <span class="info-value">¥<%= room.ac_price_per_hour %>/時間</span>
+              <span class="info-value">¥<%= room.acPricePerHour %>/時間</span>
             </div>
           <% } %>
         </div>
@@ -565,24 +565,24 @@
                 <div class="checkbox-group">
                   <label>
                     <input type="checkbox" name="slot" value="morning" onchange="calculatePrice()">
-                    午前（9:00-12:00） - ¥<%= room.base_price_morning?.toLocaleString() || '0' %>
+                    午前（9:00-12:00） - ¥<%= (room.basePriceMorning || 0).toLocaleString() %>
                   </label>
                   <label>
                     <input type="checkbox" name="slot" value="afternoon" onchange="calculatePrice()">
-                    午後（13:00-17:00） - ¥<%= room.base_price_afternoon?.toLocaleString() || '0' %>
+                    午後（13:00-17:00） - ¥<%= (room.basePriceAfternoon || 0).toLocaleString() %>
                   </label>
                   <label>
                     <input type="checkbox" name="slot" value="evening" onchange="calculatePrice()">
-                    夜間（18:00-21:30） - ¥<%= room.base_price_evening?.toLocaleString() || '0' %>
+                    夜間（18:00-21:30） - ¥<%= (room.basePriceEvening || 0).toLocaleString() %>
                   </label>
                 </div>
               </div>
 
-              <% if (room.ac_price_per_hour > 0) { %>
+              <% if (room.acPricePerHour > 0) { %>
                 <div class="form-group">
                   <label>
                     <input type="checkbox" name="ac" onchange="calculatePrice()">
-                    エアコンを使用する（¥<%= room.ac_price_per_hour %>/時間）
+                    エアコンを使用する（¥<%= room.acPricePerHour %>/時間）
                   </label>
                 </div>
               <% } %>
@@ -781,9 +781,9 @@
       let total = 0;
 
       slots.forEach(slot => {
-        if (slot.value === 'morning') total += <%= room.base_price_morning || 0 %>;
-        if (slot.value === 'afternoon') total += <%= room.base_price_afternoon || 0 %>;
-        if (slot.value === 'evening') total += <%= room.base_price_evening || 0 %>;
+        if (slot.value === 'morning') total += <%= room.basePriceMorning || 0 %>;
+        if (slot.value === 'afternoon') total += <%= room.basePriceAfternoon || 0 %>;
+        if (slot.value === 'evening') total += <%= room.basePriceEvening || 0 %>;
       });
 
       document.getElementById('basePrice').textContent = '¥' + total.toLocaleString();
