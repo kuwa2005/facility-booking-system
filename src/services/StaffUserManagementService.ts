@@ -432,6 +432,82 @@ export class StaffUserManagementService {
       [staffId, actionType, targetType, targetId, description]
     );
   }
+
+  /**
+   * ユーザーを検索（複数条件対応）
+   */
+  async searchUsers(searchParams: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    organization?: string;
+    userId?: number;
+  }): Promise<any[]> {
+    let query = `
+      SELECT
+        id,
+        email,
+        name,
+        nickname,
+        organization_name,
+        phone,
+        address,
+        is_active,
+        role,
+        staff_code,
+        department,
+        position,
+        email_verified,
+        profile_image_path,
+        created_at
+      FROM users
+      WHERE deleted_at IS NULL
+    `;
+
+    const params: any[] = [];
+    const conditions: string[] = [];
+
+    // ID検索（完全一致）
+    if (searchParams.userId) {
+      conditions.push('id = ?');
+      params.push(searchParams.userId);
+    }
+
+    // 名前検索（部分一致）
+    if (searchParams.name) {
+      conditions.push('(name LIKE ? OR nickname LIKE ?)');
+      params.push(`%${searchParams.name}%`, `%${searchParams.name}%`);
+    }
+
+    // メールアドレス検索（部分一致）
+    if (searchParams.email) {
+      conditions.push('email LIKE ?');
+      params.push(`%${searchParams.email}%`);
+    }
+
+    // 電話番号検索（部分一致）
+    if (searchParams.phone) {
+      conditions.push('phone LIKE ?');
+      params.push(`%${searchParams.phone}%`);
+    }
+
+    // 組織名検索（部分一致）
+    if (searchParams.organization) {
+      conditions.push('organization_name LIKE ?');
+      params.push(`%${searchParams.organization}%`);
+    }
+
+    // 条件を追加
+    if (conditions.length > 0) {
+      query += ' AND (' + conditions.join(' OR ') + ')';
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT 50';
+
+    const [rows] = await pool.query<RowDataPacket[]>(query, params);
+
+    return rows.map((user: any) => this.toCamelCaseUser(user));
+  }
 }
 
 export default new StaffUserManagementService();

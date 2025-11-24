@@ -90,6 +90,7 @@ router.get('/usages/date-range/all', StaffUsageController.getUsagesByDateRange);
 router.get('/usages/missing-ac-hours/all', StaffUsageController.getUsagesWithMissingAcHours);
 
 // ===== 利用者管理 =====
+router.get('/users/search', StaffUserController.searchUsers);
 router.get('/users', StaffUserController.getUsers);
 router.get('/users/stats/summary', StaffUserController.getUserStatsSummary);
 router.get('/users/recent/all', StaffUserController.getRecentUsers);
