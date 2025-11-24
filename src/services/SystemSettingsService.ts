@@ -192,7 +192,8 @@ export class SystemSettingsService {
       'require_approval',
       'contact_email',
       'business_hours',
-      'maintenance_mode'  // 職員画面での警告バナー表示に必要
+      'maintenance_mode',  // 職員画面での警告バナー表示に必要
+      'admin_staff_id'  // 一般ユーザーのメッセージ送信先として使用
     ];
 
     const publicSettings: { [key: string]: any } = {};

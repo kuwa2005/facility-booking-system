@@ -60,7 +60,7 @@ export class SystemSettingsController {
         return;
       }
 
-      const { siteName, adminEmail, contactPhone, maintenanceMode } = req.body;
+      const { siteName, adminEmail, contactPhone, maintenanceMode, adminStaffId } = req.body;
       const staffId = req.user.userId;
 
       const updates = [];
@@ -75,6 +75,9 @@ export class SystemSettingsController {
       }
       if (maintenanceMode !== undefined) {
         updates.push({ key: 'maintenance_mode', value: maintenanceMode, type: 'boolean' as const });
+      }
+      if (adminStaffId !== undefined) {
+        updates.push({ key: 'admin_staff_id', value: String(adminStaffId), type: 'number' as const });
       }
 
       console.log('[SystemSettingsController] Updates:', updates);

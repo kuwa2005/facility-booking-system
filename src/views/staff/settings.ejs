@@ -22,6 +22,11 @@
         <input type="tel" id="contactPhone" value="03-1234-5678" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">管理者スタッフID（メッセージ送信先）</label>
+        <input type="number" id="adminStaffId" value="2" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">一般ユーザーからのメッセージを受信するスタッフのIDを指定します</p>
+      </div>
+      <div>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
           <input type="checkbox" id="maintenanceMode">
           <span>メンテナンスモード（利用者のアクセスを制限）</span>
@@ -215,6 +220,9 @@ async function loadSettings() {
     if (settings.contact_phone) {
       document.getElementById('contactPhone').value = settings.contact_phone.value;
     }
+    if (settings.admin_staff_id) {
+      document.getElementById('adminStaffId').value = settings.admin_staff_id.value;
+    }
     if (settings.maintenance_mode) {
       document.getElementById('maintenanceMode').checked = settings.maintenance_mode.value;
     }
@@ -341,6 +349,7 @@ async function saveBasicSettings() {
     siteName: document.getElementById('siteName').value,
     adminEmail: document.getElementById('adminEmail').value,
     contactPhone: document.getElementById('contactPhone').value,
+    adminStaffId: parseInt(document.getElementById('adminStaffId').value) || 2,
     maintenanceMode: document.getElementById('maintenanceMode').checked
   };
 

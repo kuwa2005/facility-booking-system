@@ -240,6 +240,26 @@
     const successMessage = document.getElementById('successMessage');
     const errorMessage = document.getElementById('errorMessage');
 
+    // 管理者スタッフIDを取得
+    let adminStaffId = 2; // デフォルト値
+
+    async function loadAdminStaffId() {
+      try {
+        const response = await fetch('/api/public/settings');
+        if (response.ok) {
+          const settings = await response.json();
+          if (settings.admin_staff_id) {
+            adminStaffId = settings.admin_staff_id;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load admin staff ID:', error);
+      }
+    }
+
+    // ページ読み込み時に管理者IDを取得
+    loadAdminStaffId();
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -249,7 +269,7 @@
 
       const formData = new FormData(form);
       const data = {
-        recipient_id: 1, // 常に施設管理者へ送信
+        recipient_id: adminStaffId, // システム設定から取得した管理者へ送信
         recipient_type: 'staff',
         subject: formData.get('subject'),
         content: formData.get('content')
