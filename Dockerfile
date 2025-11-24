@@ -4,6 +4,14 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /usr/src/app
 
+# Install build dependencies for native modules (sharp, bcrypt, etc.)
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    vips-dev \
+    pkgconfig
+
 # Copy package files
 COPY package*.json ./
 
@@ -23,6 +31,9 @@ RUN cp -r src/views dist/views
 
 # Production stage
 FROM node:20-alpine
+
+# Install runtime dependencies for native modules (sharp needs vips)
+RUN apk add --no-cache vips
 
 # Create app user for security
 RUN addgroup -g 1001 -S appuser && \
