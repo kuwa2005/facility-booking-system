@@ -71,6 +71,34 @@ async function loadProfile() {
 
     const html = `
       <div style="display: grid; gap: 1.5rem;">
+        <!-- プロフィール画像 -->
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">プロフィール画像</h3>
+          <div style="display: flex; align-items: center; gap: 2rem;">
+            <div style="flex-shrink: 0;">
+              ${currentProfile.profileImagePath
+                ? `<img src="/${currentProfile.profileImagePath}" alt="プロフィール画像" style="width: 128px; height: 128px; border-radius: 50%; object-fit: cover; border: 3px solid #3498db;">`
+                : `<div style="width: 128px; height: 128px; border-radius: 50%; background-color: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 3rem; border: 3px solid #95a5a6;">👤</div>`
+              }
+            </div>
+            <div style="flex: 1;">
+              <p style="margin-bottom: 1rem; color: #7f8c8d; font-size: 0.9rem;">
+                JPEGまたはPNG形式、最大10MBまで。アップロード後、512x512のJPEG画像に自動変換されます。
+              </p>
+              <div style="display: flex; gap: 1rem;">
+                <label class="btn btn-primary" style="cursor: pointer; margin-bottom: 0;">
+                  <input type="file" id="profileImageInput" accept="image/jpeg,image/png" style="display: none;" onchange="uploadProfileImage()">
+                  画像をアップロード
+                </label>
+                ${currentProfile.profileImagePath
+                  ? `<button onclick="deleteProfileImage()" class="btn btn-danger">画像を削除</button>`
+                  : ''
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 基本情報 -->
         <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -277,6 +305,83 @@ async function changePassword() {
   } catch (error) {
     console.error('Error changing password:', error);
     alert('変更に失敗しました');
+  }
+}
+
+// プロフィール画像をアップロード
+async function uploadProfileImage() {
+  const fileInput = document.getElementById('profileImageInput');
+  const file = fileInput.files[0];
+
+  if (!file) return;
+
+  // ファイルサイズチェック (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('ファイルサイズは10MB以下にしてください');
+    fileInput.value = '';
+    return;
+  }
+
+  // ファイルタイプチェック
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    alert('JPEG または PNG 形式のファイルのみアップロードできます');
+    fileInput.value = '';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const res = await fetch('/api/staff/profile/image', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+
+    if (res.ok) {
+      await showSuccess('プロフィール画像をアップロードしました');
+      fileInput.value = '';
+      loadProfile();
+      // ヘッダーのプロフィール画像も更新
+      if (typeof loadUserProfile === 'function') {
+        loadUserProfile();
+      }
+    } else {
+      const error = await res.json();
+      await showError('アップロードに失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error uploading profile image:', error);
+    await showError('アップロードに失敗しました');
+  }
+}
+
+// プロフィール画像を削除
+async function deleteProfileImage() {
+  const confirmed = await confirm('プロフィール画像を削除してもよろしいですか？');
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/staff/profile/image', {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      await showSuccess('プロフィール画像を削除しました');
+      loadProfile();
+      // ヘッダーのプロフィール画像も更新
+      if (typeof loadUserProfile === 'function') {
+        loadUserProfile();
+      }
+    } else {
+      const error = await res.json();
+      await showError('削除に失敗しました: ' + (error.error || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting profile image:', error);
+    await showError('削除に失敗しました');
   }
 }
 
