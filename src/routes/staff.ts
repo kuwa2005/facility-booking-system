@@ -236,6 +236,7 @@ router.get('/activity-logs/stats', ActivityLogController.getStats);
 router.get('/holidays', HolidayController.getAllHolidays);
 router.get('/holidays/:id', HolidayController.getHolidayById);
 router.post('/holidays', HolidayController.createHoliday);
+router.post('/holidays/bulk-register', HolidayController.bulkRegisterYearHolidays);
 router.patch('/holidays/:id', HolidayController.updateHoliday);
 router.delete('/holidays/:id', HolidayController.deleteHoliday);
 router.get('/holidays/check/date', HolidayController.checkHoliday);

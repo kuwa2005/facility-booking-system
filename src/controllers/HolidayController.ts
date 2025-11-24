@@ -182,4 +182,30 @@ export class HolidayController {
       next(error);
     }
   }
+
+  /**
+   * 指定した年の祝日を一括登録
+   */
+  static async bulkRegisterYearHolidays(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { year } = req.body;
+
+      if (!year || typeof year !== 'number') {
+        res.status(400).json({ error: 'Year is required and must be a number' });
+        return;
+      }
+
+      const result = await HolidayService.bulkRegisterYearHolidays(year);
+
+      res.json({
+        success: true,
+        message: `${result.created}件の祝日を登録しました`,
+        created: result.created,
+        skipped: result.skipped,
+        errors: result.errors
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 }

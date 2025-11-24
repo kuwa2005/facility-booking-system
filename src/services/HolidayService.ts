@@ -190,6 +190,135 @@ class HolidayService {
 
     return result;
   }
+
+  /**
+   * 指定した年の日本の祝日を生成
+   */
+  generateJapaneseHolidays(year: number): Array<{ date: string; name: string }> {
+    const holidays: Array<{ date: string; name: string }> = [];
+
+    // 固定祝日
+    holidays.push({ date: `${year}-01-01`, name: '元日' });
+    holidays.push({ date: `${year}-02-11`, name: '建国記念の日' });
+    holidays.push({ date: `${year}-02-23`, name: '天皇誕生日' });
+    holidays.push({ date: `${year}-04-29`, name: '昭和の日' });
+    holidays.push({ date: `${year}-05-03`, name: '憲法記念日' });
+    holidays.push({ date: `${year}-05-04`, name: 'みどりの日' });
+    holidays.push({ date: `${year}-05-05`, name: 'こどもの日' });
+    holidays.push({ date: `${year}-08-11`, name: '山の日' });
+    holidays.push({ date: `${year}-11-03`, name: '文化の日' });
+    holidays.push({ date: `${year}-11-23`, name: '勤労感謝の日' });
+
+    // 移動祝日（ハッピーマンデー）
+    holidays.push({ date: this.getNthMonday(year, 1, 2), name: '成人の日' }); // 1月第2月曜日
+    holidays.push({ date: this.getNthMonday(year, 7, 3), name: '海の日' }); // 7月第3月曜日
+    holidays.push({ date: this.getNthMonday(year, 9, 3), name: '敬老の日' }); // 9月第3月曜日
+    holidays.push({ date: this.getNthMonday(year, 10, 2), name: 'スポーツの日' }); // 10月第2月曜日
+
+    // 春分の日・秋分の日（簡易計算）
+    holidays.push({ date: this.getVernalEquinoxDay(year), name: '春分の日' });
+    holidays.push({ date: this.getAutumnalEquinoxDay(year), name: '秋分の日' });
+
+    return holidays.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  /**
+   * 指定月のn番目の月曜日を取得
+   */
+  private getNthMonday(year: number, month: number, nth: number): string {
+    let count = 0;
+    for (let day = 1; day <= 31; day++) {
+      const date = new Date(year, month - 1, day);
+      if (date.getMonth() !== month - 1) break;
+
+      if (date.getDay() === 1) { // Monday
+        count++;
+        if (count === nth) {
+          return this.formatDate(date);
+        }
+      }
+    }
+    return '';
+  }
+
+  /**
+   * 春分の日を計算（簡易式）
+   */
+  private getVernalEquinoxDay(year: number): string {
+    let day: number;
+    if (year >= 2000 && year <= 2099) {
+      day = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    } else if (year >= 1900 && year <= 1999) {
+      day = Math.floor(20.8357 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    } else {
+      day = 20; // デフォルト
+    }
+    return `${year}-03-${String(day).padStart(2, '0')}`;
+  }
+
+  /**
+   * 秋分の日を計算（簡易式）
+   */
+  private getAutumnalEquinoxDay(year: number): string {
+    let day: number;
+    if (year >= 2000 && year <= 2099) {
+      day = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    } else if (year >= 1900 && year <= 1999) {
+      day = Math.floor(23.2588 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    } else {
+      day = 23; // デフォルト
+    }
+    return `${year}-09-${String(day).padStart(2, '0')}`;
+  }
+
+  /**
+   * DateオブジェクトをYYYY-MM-DD形式に変換
+   */
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * 指定した年の祝日を一括登録
+   */
+  async bulkRegisterYearHolidays(year: number): Promise<{ created: number; skipped: number; errors: string[] }> {
+    if (year < 1900 || year > 2100) {
+      throw new Error('Invalid year (must be between 1900 and 2100)');
+    }
+
+    const holidays = this.generateJapaneseHolidays(year);
+    const result = {
+      created: 0,
+      skipped: 0,
+      errors: [] as string[]
+    };
+
+    for (const holiday of holidays) {
+      try {
+        // 既存チェック
+        const existing = await HolidayRepository.findByDate(holiday.date);
+        if (existing) {
+          result.skipped++;
+          continue;
+        }
+
+        // 登録
+        await HolidayRepository.create({
+          date: holiday.date,
+          name: holiday.name,
+          isRecurring: false
+        });
+        result.created++;
+      } catch (error: any) {
+        result.errors.push(`${holiday.date} (${holiday.name}): ${error.message}`);
+      }
+    }
+
+    return result;
+  }
 }
 
 export default new HolidayService();

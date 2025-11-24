@@ -13,7 +13,10 @@
       </select>
       <button onclick="loadHolidays()" class="btn btn-primary" style="padding: 0.5rem 1rem;">更新</button>
     </div>
-    <button onclick="showCreateModal()" class="btn btn-success">+ 新規祝日登録</button>
+    <div style="display: flex; gap: 0.5rem;">
+      <button onclick="bulkRegisterHolidays()" class="btn btn-info" style="background: #17a2b8;">📅 1年分一括登録</button>
+      <button onclick="showCreateModal()" class="btn btn-success">+ 新規祝日登録</button>
+    </div>
   </div>
 </div>
 
@@ -254,4 +257,44 @@ document.getElementById('holidayModal').addEventListener('click', (e) => {
     closeHolidayModal();
   }
 });
+
+// 1年分の祝日を一括登録
+async function bulkRegisterHolidays() {
+  const year = parseInt(document.getElementById('yearSelect').value);
+
+  const confirmed = await confirm(`${year}年の日本の祝日を一括登録しますか？\n\n以下の祝日が登録されます：\n- 元日、建国記念の日、天皇誕生日\n- 春分の日、昭和の日\n- 憲法記念日、みどりの日、こどもの日\n- 海の日、山の日\n- 敬老の日、秋分の日\n- スポーツの日、文化の日、勤労感謝の日\n- 成人の日（ハッピーマンデー）\n\n※既に登録済みの祝日はスキップされます`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/staff/holidays/bulk-register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ year }),
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      await showError(data.error || '一括登録に失敗しました');
+      return;
+    }
+
+    let message = `${data.created}件の祝日を登録しました`;
+    if (data.skipped > 0) {
+      message += `\n（${data.skipped}件は既に登録済みのためスキップしました）`;
+    }
+    if (data.errors && data.errors.length > 0) {
+      message += `\n\nエラー:\n${data.errors.join('\n')}`;
+    }
+
+    await showSuccess(message);
+    loadHolidays();
+  } catch (error) {
+    console.error('Error bulk registering holidays:', error);
+    await showError('一括登録に失敗しました');
+  }
+}
 </script>
