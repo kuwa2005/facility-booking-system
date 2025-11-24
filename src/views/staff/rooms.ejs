@@ -109,18 +109,18 @@ async function loadRooms() {
                 <th>ID</th>
                 <th>施設名</th>
                 <th>定員</th>
-                <th>午前料金</th>
-                <th>午後料金</th>
-                <th>夜間料金</th>
-                <th>正午延長</th>
-                <th>夕方延長</th>
-                <th>空調(時間)</th>
+                <th>平日午前</th>
+                <th>平日午後</th>
+                <th>平日夜間</th>
+                <th>土日祝</th>
                 <th>状態</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody id="roomsTableBody">
-              ${roomsData.map(room => `
+              ${roomsData.map(room => {
+                const hasWeekendPricing = room.weekendPriceMorning !== null || room.weekendPriceAfternoon !== null || room.weekendPriceEvening !== null;
+                return `
                 <tr draggable="true" data-room-id="${room.id}" data-display-order="${room.displayOrder || 0}">
                   <td><span class="drag-handle">⋮⋮</span></td>
                   <td>${room.id}</td>
@@ -129,9 +129,12 @@ async function loadRooms() {
                   <td>¥${(room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>¥${(room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>¥${(room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
-                  <td>¥${(room.extensionPriceMidday || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
-                  <td>¥${(room.extensionPriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
-                  <td>¥${(room.acPricePerHour || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
+                  <td>
+                    ${hasWeekendPricing
+                      ? `<span class="badge badge-warning" title="土日祝日料金設定済&#10;午前: ¥${(room.weekendPriceMorning || room.basePriceMorning || 0).toLocaleString('ja-JP')}&#10;午後: ¥${(room.weekendPriceAfternoon || room.basePriceAfternoon || 0).toLocaleString('ja-JP')}&#10;夜間: ¥${(room.weekendPriceEvening || room.basePriceEvening || 0).toLocaleString('ja-JP')}" style="cursor: help;">設定済</span>`
+                      : `<span class="badge badge-secondary" title="土日祝日料金未設定&#10;平日料金が適用されます" style="cursor: help;">未設定</span>`
+                    }
+                  </td>
                   <td>
                     <span class="badge badge-${room.isActive ? 'success' : 'danger'}">
                       ${room.isActive ? '有効' : '無効'}
@@ -142,7 +145,7 @@ async function loadRooms() {
                     <button onclick="deleteRoom(${room.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
                   </td>
                 </tr>
-              `).join('')}
+              `}).join('')}
             </tbody>
           </table>
         </div>
@@ -219,7 +222,7 @@ function showFormModal(room = null) {
       </div>
 
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
-        <h3 style="margin-bottom: 1rem; font-size: 1rem;">基本料金</h3>
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">平日料金</h3>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午前</label>
@@ -236,8 +239,27 @@ function showFormModal(room = null) {
         </div>
       </div>
 
+      <div style="padding: 1rem; background-color: #fff3cd; border-radius: 4px; border: 1px solid #ffc107;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #856404;">土日祝日料金</h3>
+        <p style="font-size: 0.875rem; color: #856404; margin-bottom: 1rem;">※ 未設定の場合は平日料金が適用されます</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午前</label>
+            <input type="number" id="weekendPriceMorning" value="${room?.weekendPriceMorning || ''}" min="0" placeholder="平日と同額" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">午後</label>
+            <input type="number" id="weekendPriceAfternoon" value="${room?.weekendPriceAfternoon || ''}" min="0" placeholder="平日と同額" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夜間</label>
+            <input type="number" id="weekendPriceEvening" value="${room?.weekendPriceEvening || ''}" min="0" placeholder="平日と同額" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
-        <h3 style="margin-bottom: 1rem; font-size: 1rem;">延長料金</h3>
+        <h3 style="margin-bottom: 1rem; font-size: 1rem;">平日延長料金</h3>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">正午延長</label>
@@ -246,6 +268,21 @@ function showFormModal(room = null) {
           <div>
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夕方延長</label>
             <input type="number" id="extensionPriceEvening" value="${room?.extensionPriceEvening || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 1rem; background-color: #fff3cd; border-radius: 4px; border: 1px solid #ffc107;">
+        <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #856404;">土日祝日延長料金</h3>
+        <p style="font-size: 0.875rem; color: #856404; margin-bottom: 1rem;">※ 未設定の場合は平日延長料金が適用されます</p>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">正午延長</label>
+            <input type="number" id="weekendExtensionPriceMidday" value="${room?.weekendExtensionPriceMidday || ''}" min="0" placeholder="平日と同額" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">夕方延長</label>
+            <input type="number" id="weekendExtensionPriceEvening" value="${room?.weekendExtensionPriceEvening || ''}" min="0" placeholder="平日と同額" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
           </div>
         </div>
       </div>
@@ -287,6 +324,12 @@ function closeFormModal() {
 
 // 施設を保存
 async function saveRoom() {
+  const weekendPriceMorningValue = document.getElementById('weekendPriceMorning').value.trim();
+  const weekendPriceAfternoonValue = document.getElementById('weekendPriceAfternoon').value.trim();
+  const weekendPriceEveningValue = document.getElementById('weekendPriceEvening').value.trim();
+  const weekendExtensionPriceMiddayValue = document.getElementById('weekendExtensionPriceMidday').value.trim();
+  const weekendExtensionPriceEveningValue = document.getElementById('weekendExtensionPriceEvening').value.trim();
+
   const data = {
     name: document.getElementById('roomName').value.trim(),
     capacity: parseInt(document.getElementById('roomCapacity').value),
@@ -295,6 +338,11 @@ async function saveRoom() {
     basePriceEvening: parseInt(document.getElementById('basePriceEvening').value) || 0,
     extensionPriceMidday: parseInt(document.getElementById('extensionPriceMidday').value) || 0,
     extensionPriceEvening: parseInt(document.getElementById('extensionPriceEvening').value) || 0,
+    weekendPriceMorning: weekendPriceMorningValue ? parseInt(weekendPriceMorningValue) : null,
+    weekendPriceAfternoon: weekendPriceAfternoonValue ? parseInt(weekendPriceAfternoonValue) : null,
+    weekendPriceEvening: weekendPriceEveningValue ? parseInt(weekendPriceEveningValue) : null,
+    weekendExtensionPriceMidday: weekendExtensionPriceMiddayValue ? parseInt(weekendExtensionPriceMiddayValue) : null,
+    weekendExtensionPriceEvening: weekendExtensionPriceEveningValue ? parseInt(weekendExtensionPriceEveningValue) : null,
     acPricePerHour: parseInt(document.getElementById('acPricePerHour').value) || 0,
     isActive: document.getElementById('isActive').checked,
   };

@@ -136,7 +136,7 @@ export class ApplicationController {
         }
 
         // Calculate charges for this usage
-        const charges = calculateUsageCharges(
+        const charges = await calculateUsageCharges(
           room,
           {
             useMorning: usageDto.use_morning,
@@ -148,7 +148,8 @@ export class ApplicationController {
             acHours: undefined, // Will be filled by staff later
           },
           equipmentUsages,
-          ticketMultiplier
+          ticketMultiplier,
+          usageDto.date
         );
 
         totalAmount += charges.subtotalAmount;
