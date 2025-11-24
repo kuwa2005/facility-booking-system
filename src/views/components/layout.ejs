@@ -541,6 +541,17 @@
           }
         });
       }
+
+      // ログアウト確認ダイアログ
+      const logoutLinks = document.querySelectorAll('a[href="/logout"]');
+      logoutLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (confirm('ログアウトしてもよろしいですか？')) {
+            window.location.href = '/logout';
+          }
+        });
+      });
     });
   </script>
 </body>

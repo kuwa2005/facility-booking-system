@@ -28,7 +28,7 @@ import { loadSystemSettings } from './middleware/systemSettings';
 import { checkMaintenanceMode } from './middleware/maintenanceMode';
 
 const app: Application = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || '18080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Nginxリバースプロキシ対応：trust proxyを有効化
@@ -52,7 +52,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? process.env.APP_URL
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    : ['http://localhost:18080', 'http://127.0.0.1:18080'],
   credentials: true,
 }));
 
