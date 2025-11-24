@@ -14,6 +14,7 @@ import { UserNoteController } from '../controllers/UserNoteController';
 import { NotificationController, notificationController } from '../controllers/NotificationController';
 import { SystemSettingsController } from '../controllers/SystemSettingsController';
 import { ActivityLogController } from '../controllers/ActivityLogController';
+import { HolidayController } from '../controllers/HolidayController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -230,5 +231,14 @@ router.post('/settings/business-hours', SystemSettingsController.updateBusinessH
 // ===== アクティビティログ（管理者のみ） =====
 router.get('/activity-logs', ActivityLogController.getLogs);
 router.get('/activity-logs/stats', ActivityLogController.getStats);
+
+// ===== 祝日管理 =====
+router.get('/holidays', HolidayController.getAllHolidays);
+router.get('/holidays/:id', HolidayController.getHolidayById);
+router.post('/holidays', HolidayController.createHoliday);
+router.patch('/holidays/:id', HolidayController.updateHoliday);
+router.delete('/holidays/:id', HolidayController.deleteHoliday);
+router.get('/holidays/check/date', HolidayController.checkHoliday);
+router.post('/holidays/check/weekend-or-holidays', HolidayController.checkWeekendOrHolidays);
 
 export default router;

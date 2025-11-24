@@ -276,4 +276,17 @@ export class StaffPageController {
       next(error);
     }
   }
+
+  /**
+   * 祝日管理ページ
+   */
+  static async holidays(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      StaffPageController.renderWithLayout('holidays.ejs', {
+        title: '祝日管理',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

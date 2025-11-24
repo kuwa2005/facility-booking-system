@@ -49,4 +49,7 @@ router.get('/settings', requireAdmin, StaffPageController.settings);
 // アクティビティログ（管理者のみ）
 router.get('/activity-log', requireAdmin, StaffPageController.activityLog);
 
+// 祝日管理
+router.get('/holidays', StaffPageController.holidays);
+
 export default router;
