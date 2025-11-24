@@ -329,6 +329,10 @@ export interface DayAvailability {
   morning_available: boolean;
   afternoon_available: boolean;
   evening_available: boolean;
+  morning_count?: number;
+  afternoon_count?: number;
+  evening_count?: number;
+  max_count?: number;
 }
 
 // お知らせ機能

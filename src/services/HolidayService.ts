@@ -91,7 +91,8 @@ class HolidayService {
       }
 
       // 日付変更時の重複チェック
-      if (data.date !== existing.date) {
+      const existingDateStr = existing.date.toISOString().split('T')[0];
+      if (data.date !== existingDateStr) {
         const duplicate = await HolidayRepository.findByDate(data.date);
         if (duplicate) {
           throw new Error('Holiday already exists for this date');
