@@ -40,15 +40,12 @@
         <option value="">すべて</option>
         <option value="login">ログイン</option>
         <option value="logout">ログアウト</option>
-        <option value="reservation_create">予約作成</option>
-        <option value="reservation_update">予約更新</option>
-        <option value="reservation_cancel">予約キャンセル</option>
-        <option value="user_create">ユーザー作成</option>
-        <option value="user_update">ユーザー更新</option>
-        <option value="user_delete">ユーザー削除</option>
-        <option value="staff_create">職員作成</option>
-        <option value="staff_update">職員更新</option>
-        <option value="settings_update">設定変更</option>
+        <option value="create">作成</option>
+        <option value="update">更新</option>
+        <option value="delete">削除</option>
+        <option value="approve">承認</option>
+        <option value="reject">拒否</option>
+        <option value="access_denied">アクセス拒否</option>
       </select>
     </div>
     <div>
@@ -123,72 +120,91 @@ function formatDateTimeLocal(date) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-// 統計情報を読み込み（デモデータ）
-function loadStats() {
-  document.getElementById('todayActivities').textContent = '42';
-  document.getElementById('weekActivities').textContent = '267';
-  document.getElementById('monthActivities').textContent = '1,234';
-  document.getElementById('totalActivities').textContent = '15,678';
+// 統計情報を読み込み
+async function loadStats() {
+  try {
+    const response = await fetch('/api/staff/activity-logs/stats');
+    const data = await response.json();
+
+    if (data.success && data.stats) {
+      document.getElementById('todayActivities').textContent = data.stats.today.toLocaleString();
+      document.getElementById('weekActivities').textContent = data.stats.week.toLocaleString();
+      document.getElementById('monthActivities').textContent = data.stats.month.toLocaleString();
+      document.getElementById('totalActivities').textContent = data.stats.total.toLocaleString();
+    }
+  } catch (error) {
+    console.error('Failed to load stats:', error);
+    document.getElementById('todayActivities').textContent = '0';
+    document.getElementById('weekActivities').textContent = '0';
+    document.getElementById('monthActivities').textContent = '0';
+    document.getElementById('totalActivities').textContent = '0';
+  }
 }
 
-// アクティビティログを読み込み（デモデータ）
-function loadActivityLog() {
+// アクティビティログを読み込み
+async function loadActivityLog() {
   const startDateTime = document.getElementById('startDateTime').value;
   const endDateTime = document.getElementById('endDateTime').value;
   const actionType = document.getElementById('actionType').value;
   const actorSearch = document.getElementById('actorSearch').value;
 
-  // デモデータ
-  const demoLogs = generateDemoLogs();
+  try {
+    // クエリパラメータを構築
+    const params = new URLSearchParams();
+    if (startDateTime) params.append('startDate', startDateTime);
+    if (endDateTime) params.append('endDate', endDateTime);
+    if (actionType) params.append('actionType', actionType);
+    params.append('limit', '100');
 
-  // フィルタリング
-  let filteredLogs = demoLogs;
-  if (actionType) {
-    filteredLogs = filteredLogs.filter(log => log.action === actionType);
-  }
-  if (actorSearch) {
-    filteredLogs = filteredLogs.filter(log => log.actor.includes(actorSearch));
-  }
+    const response = await fetch(`/api/staff/activity-logs?${params.toString()}`);
+    const data = await response.json();
 
-  currentLogs = filteredLogs;
-  displayLogs(filteredLogs);
+    if (data.success && data.logs) {
+      let filteredLogs = data.logs;
+
+      // アクター名でフィルタリング（クライアント側）
+      if (actorSearch) {
+        filteredLogs = filteredLogs.filter(log =>
+          log.staffName && log.staffName.includes(actorSearch)
+        );
+      }
+
+      currentLogs = filteredLogs;
+      displayLogs(filteredLogs);
+    } else {
+      currentLogs = [];
+      displayLogs([]);
+    }
+  } catch (error) {
+    console.error('Failed to load activity logs:', error);
+    currentLogs = [];
+    displayLogs([]);
+  }
 }
 
-// デモログデータを生成
-function generateDemoLogs() {
-  const actions = [
-    { action: 'login', label: 'ログイン', icon: '🔐', color: '#3498db' },
-    { action: 'logout', label: 'ログアウト', icon: '🚪', color: '#95a5a6' },
-    { action: 'reservation_create', label: '予約作成', icon: '➕', color: '#27ae60' },
-    { action: 'reservation_update', label: '予約更新', icon: '✏️', color: '#f39c12' },
-    { action: 'reservation_cancel', label: '予約キャンセル', icon: '❌', color: '#e74c3c' },
-    { action: 'user_update', label: 'ユーザー更新', icon: '👤', color: '#9b59b6' },
-    { action: 'settings_update', label: '設定変更', icon: '⚙️', color: '#16a085' },
-  ];
+// アクションタイプから表示情報を取得
+function getActionTypeInfo(actionType) {
+  const actionMap = {
+    'login': { label: 'ログイン', icon: '🔐', color: '#3498db' },
+    'logout': { label: 'ログアウト', icon: '🚪', color: '#95a5a6' },
+    'create': { label: '作成', icon: '➕', color: '#27ae60' },
+    'update': { label: '更新', icon: '✏️', color: '#f39c12' },
+    'delete': { label: '削除', icon: '🗑️', color: '#e74c3c' },
+    'approve': { label: '承認', icon: '✅', color: '#27ae60' },
+    'reject': { label: '拒否', icon: '❌', color: '#e74c3c' },
+    'access_denied': { label: 'アクセス拒否', icon: '🚫', color: '#c0392b' },
+    'reservation_create': { label: '予約作成', icon: '➕', color: '#27ae60' },
+    'reservation_update': { label: '予約更新', icon: '✏️', color: '#f39c12' },
+    'reservation_cancel': { label: '予約キャンセル', icon: '❌', color: '#e74c3c' },
+    'user_create': { label: 'ユーザー作成', icon: '👤', color: '#9b59b6' },
+    'user_update': { label: 'ユーザー更新', icon: '👤', color: '#9b59b6' },
+    'user_delete': { label: 'ユーザー削除', icon: '🗑️', color: '#e74c3c' },
+    'staff_create': { label: '職員作成', icon: '👥', color: '#16a085' },
+    'staff_update': { label: '職員更新', icon: '👥', color: '#16a085' },
+    'settings_update': { label: '設定変更', icon: '⚙️', color: '#16a085' },
+  };
 
-  const actors = ['管理者 太郎', '職員 花子', '職員 次郎', 'システム'];
-  const logs = [];
-
-  for (let i = 0; i < 50; i++) {
-    const actionData = actions[Math.floor(Math.random() * actions.length)];
-    const timestamp = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
-
-    logs.push({
-      id: i + 1,
-      action: actionData.action,
-      label: actionData.label,
-      icon: actionData.icon,
-      color: actionData.color,
-      actor: actors[Math.floor(Math.random() * actors.length)],
-      timestamp: timestamp.toISOString(),
-      ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
-      details: `詳細情報: ${actionData.label}の操作を実行しました`,
-      targetType: 'reservation',
-      targetId: Math.floor(Math.random() * 1000)
-    });
-  }
-
-  return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return actionMap[actionType] || { label: actionType, icon: '📝', color: '#7f8c8d' };
 }
 
 // ログを表示
@@ -209,22 +225,25 @@ function displayLogs(logs) {
             </tr>
           </thead>
           <tbody>
-            ${logs.map(log => `
-              <tr>
-                <td>${new Date(log.timestamp).toLocaleString('ja-JP')}</td>
-                <td>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="font-size: 1.25rem;">${log.icon}</span>
-                    <span class="badge" style="background-color: ${log.color};">${log.label}</span>
-                  </div>
-                </td>
-                <td>${log.actor}</td>
-                <td style="font-family: monospace; font-size: 0.875rem;">${log.ipAddress}</td>
-                <td>
-                  <button onclick="showDetail(${log.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">詳細</button>
-                </td>
-              </tr>
-            `).join('')}
+            ${logs.map(log => {
+              const actionInfo = getActionTypeInfo(log.actionType);
+              return `
+                <tr>
+                  <td>${new Date(log.createdAt).toLocaleString('ja-JP')}</td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <span style="font-size: 1.25rem;">${actionInfo.icon}</span>
+                      <span class="badge" style="background-color: ${actionInfo.color};">${actionInfo.label}</span>
+                    </div>
+                  </td>
+                  <td>${log.staffName || 'システム'}</td>
+                  <td style="font-family: monospace; font-size: 0.875rem;">${log.ipAddress || '-'}</td>
+                  <td>
+                    <button onclick="showDetail(${log.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">詳細</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -241,31 +260,41 @@ function showDetail(id) {
   const log = currentLogs.find(l => l.id === id);
   if (!log) return;
 
+  const actionInfo = getActionTypeInfo(log.actionType);
+
   const html = `
     <div style="display: grid; gap: 1.5rem;">
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
         <h3 style="margin-bottom: 1rem; color: #2c3e50;">基本情報</h3>
         <div style="display: grid; gap: 0.75rem;">
           <div><strong>ログID:</strong> ${log.id}</div>
-          <div><strong>日時:</strong> ${new Date(log.timestamp).toLocaleString('ja-JP')}</div>
-          <div><strong>アクション:</strong> ${log.icon} ${log.label}</div>
-          <div><strong>実行者:</strong> ${log.actor}</div>
-          <div><strong>IPアドレス:</strong> ${log.ipAddress}</div>
+          <div><strong>日時:</strong> ${new Date(log.createdAt).toLocaleString('ja-JP')}</div>
+          <div><strong>アクション:</strong> ${actionInfo.icon} ${actionInfo.label}</div>
+          <div><strong>実行者:</strong> ${log.staffName || 'システム'}</div>
+          <div><strong>メールアドレス:</strong> ${log.staffEmail || '-'}</div>
+          <div><strong>IPアドレス:</strong> ${log.ipAddress || '-'}</div>
         </div>
       </div>
 
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
         <h3 style="margin-bottom: 1rem; color: #2c3e50;">対象情報</h3>
         <div style="display: grid; gap: 0.75rem;">
-          <div><strong>対象種別:</strong> ${log.targetType}</div>
-          <div><strong>対象ID:</strong> ${log.targetId}</div>
+          <div><strong>対象種別:</strong> ${log.targetType || '-'}</div>
+          <div><strong>対象ID:</strong> ${log.targetId || '-'}</div>
         </div>
       </div>
 
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
         <h3 style="margin-bottom: 1rem; color: #2c3e50;">詳細</h3>
-        <div>${log.details}</div>
+        <div>${log.description || 'なし'}</div>
       </div>
+
+      ${log.userAgent ? `
+        <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+          <h3 style="margin-bottom: 1rem; color: #2c3e50;">ユーザーエージェント</h3>
+          <div style="word-break: break-all; font-size: 0.875rem; font-family: monospace;">${log.userAgent}</div>
+        </div>
+      ` : ''}
 
       <div style="display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
         <button onclick="closeDetailModal()" class="btn" style="background-color: #95a5a6; color: white;">閉じる</button>
@@ -322,18 +351,22 @@ function exportToCSV() {
     return;
   }
 
-  const headers = ['ID', '日時', 'アクション', '実行者', 'IPアドレス', '対象種別', '対象ID', '詳細'];
+  const headers = ['ID', '日時', 'アクション', '実行者', 'メールアドレス', 'IPアドレス', '対象種別', '対象ID', '詳細'];
 
-  const rows = currentLogs.map(log => [
-    log.id,
-    new Date(log.timestamp).toLocaleString('ja-JP'),
-    log.label,
-    log.actor,
-    log.ipAddress,
-    log.targetType,
-    log.targetId,
-    log.details
-  ]);
+  const rows = currentLogs.map(log => {
+    const actionInfo = getActionTypeInfo(log.actionType);
+    return [
+      log.id,
+      new Date(log.createdAt).toLocaleString('ja-JP'),
+      actionInfo.label,
+      log.staffName || 'システム',
+      log.staffEmail || '-',
+      log.ipAddress || '-',
+      log.targetType || '-',
+      log.targetId || '-',
+      log.description || 'なし'
+    ];
+  });
 
   const csvContent = [
     headers.join(','),

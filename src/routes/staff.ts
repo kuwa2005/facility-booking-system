@@ -13,6 +13,7 @@ import { MessageController } from '../controllers/MessageController';
 import { UserNoteController } from '../controllers/UserNoteController';
 import { NotificationController, notificationController } from '../controllers/NotificationController';
 import { SystemSettingsController } from '../controllers/SystemSettingsController';
+import { ActivityLogController } from '../controllers/ActivityLogController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -225,5 +226,9 @@ router.post('/settings/basic', SystemSettingsController.updateBasicSettings);
 router.post('/settings/reservation', SystemSettingsController.updateReservationSettings);
 router.post('/settings/email', SystemSettingsController.updateEmailSettings);
 router.post('/settings/business-hours', SystemSettingsController.updateBusinessHours);
+
+// ===== アクティビティログ（管理者のみ） =====
+router.get('/activity-logs', ActivityLogController.getLogs);
+router.get('/activity-logs/stats', ActivityLogController.getStats);
 
 export default router;
