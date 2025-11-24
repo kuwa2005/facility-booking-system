@@ -41,6 +41,11 @@ export interface Room {
   basePriceEvening: number;
   extensionPriceMidday: number;
   extensionPriceEvening: number;
+  weekendPriceMorning: number | null;
+  weekendPriceAfternoon: number | null;
+  weekendPriceEvening: number | null;
+  weekendExtensionPriceMidday: number | null;
+  weekendExtensionPriceEvening: number | null;
   acPricePerHour: number;
   description: string | null;
   isActive: boolean;
@@ -143,6 +148,15 @@ export interface ClosedDate {
   affected_rooms: number[] | null;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface Holiday {
+  id: number;
+  date: Date;
+  name: string;
+  isRecurring: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface TimeSlot {
