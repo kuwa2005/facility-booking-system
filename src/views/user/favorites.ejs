@@ -220,6 +220,11 @@
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
+        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
         <a href="/logout">ログアウト</a>

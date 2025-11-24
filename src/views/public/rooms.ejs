@@ -260,6 +260,9 @@
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
         <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
           <a href="/my-page">マイページ</a>
           <a href="/my-reservations">予約一覧</a>
           <a href="/logout">ログアウト</a>
@@ -305,12 +308,32 @@
               </div>
 
               <div class="price-section">
-                <h4>利用料金</h4>
+                <h4>利用料金（平日）</h4>
                 <ul class="price-list">
                   <li>午前（9:00-12:00）: ¥<%= (room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
                   <li>午後（13:00-17:00）: ¥<%= (room.basePriceAfternoon || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
                   <li>夜間（18:00-21:30）: ¥<%= (room.basePriceEvening || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
                 </ul>
+                <% if (room.weekendPriceMorning !== null || room.weekendPriceAfternoon !== null || room.weekendPriceEvening !== null) { %>
+                  <h4 style="margin-top: 1rem; color: #dc2626;">利用料金（土日祝）</h4>
+                  <ul class="price-list" style="color: #dc2626;">
+                    <% if (room.weekendPriceMorning !== null && room.weekendPriceMorning !== undefined) { %>
+                      <li>午前（9:00-12:00）: ¥<%= room.weekendPriceMorning.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                    <% } else { %>
+                      <li style="color: #6b7280;">午前: 平日と同額</li>
+                    <% } %>
+                    <% if (room.weekendPriceAfternoon !== null && room.weekendPriceAfternoon !== undefined) { %>
+                      <li>午後（13:00-17:00）: ¥<%= room.weekendPriceAfternoon.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                    <% } else { %>
+                      <li style="color: #6b7280;">午後: 平日と同額</li>
+                    <% } %>
+                    <% if (room.weekendPriceEvening !== null && room.weekendPriceEvening !== undefined) { %>
+                      <li>夜間（18:00-21:30）: ¥<%= room.weekendPriceEvening.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></li>
+                    <% } else { %>
+                      <li style="color: #6b7280;">夜間: 平日と同額</li>
+                    <% } %>
+                  </ul>
+                <% } %>
                 <% if (room.extensionPriceMidday > 0 || room.extensionPriceEvening > 0) { %>
                   <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
                     ※延長料金あり

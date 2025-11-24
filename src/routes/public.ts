@@ -5,6 +5,7 @@ import { ReviewController } from '../controllers/ReviewController';
 import { AnnouncementController } from '../controllers/AnnouncementController';
 import { MessageController } from '../controllers/MessageController';
 import { SystemSettingsController } from '../controllers/SystemSettingsController';
+import { HolidayController } from '../controllers/HolidayController';
 import { authenticate, optionalAuth } from '../middleware/auth';
 
 const router = express.Router();
@@ -47,5 +48,8 @@ router.post(
 
 // System settings (public - no authentication required)
 router.get('/settings/public', SystemSettingsController.getPublicSettings);
+
+// Holidays (public - no authentication required)
+router.get('/holidays', HolidayController.getAllHolidays);
 
 export default router;

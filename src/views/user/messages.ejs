@@ -212,6 +212,62 @@
       overflow-y: auto;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
+    .confirm-modal-content {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    .confirm-modal-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .confirm-modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .confirm-modal-message {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .btn-cancel {
+      background-color: #f3f4f6;
+      color: #374151;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-cancel:hover {
+      background-color: #e5e7eb;
+    }
+    .btn-confirm {
+      background-color: #ef4444;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-confirm:hover {
+      background-color: #dc2626;
+    }
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -380,6 +436,11 @@
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
+        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
         <a href="/logout">ログアウト</a>
@@ -446,6 +507,19 @@
     </div>
   </div>
 
+  <!-- 削除確認モーダル -->
+  <div id="confirmModal" class="modal">
+    <div class="confirm-modal-content">
+      <div class="confirm-modal-icon">⚠️</div>
+      <div class="confirm-modal-title">メッセージの削除</div>
+      <div class="confirm-modal-message">このメッセージを削除してもよろしいですか？<br>この操作は取り消せません。</div>
+      <div class="confirm-modal-actions">
+        <button class="btn-cancel" onclick="closeConfirmModal()">キャンセル</button>
+        <button class="btn-confirm" onclick="confirmDelete()">削除する</button>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div class="container">
       <p>&copy; 2025 施設予約システム. All rights reserved.</p>
@@ -455,6 +529,7 @@
   <script>
     let currentMessages = [];
     let currentMessageId = null;
+    let messageIdToDelete = null;
 
     async function loadMessages() {
       try {
@@ -631,17 +706,26 @@
       }
     }
 
-    async function deleteMessage(messageId) {
-      if (!confirm('このメッセージを削除しますか？')) {
-        return;
-      }
+    function deleteMessage(messageId) {
+      messageIdToDelete = messageId;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.remove('active');
+      messageIdToDelete = null;
+    }
+
+    async function confirmDelete() {
+      if (!messageIdToDelete) return;
 
       try {
-        const response = await fetch(`/api/user/messages/${messageId}`, {
+        const response = await fetch(`/api/user/messages/${messageIdToDelete}`, {
           method: 'DELETE'
         });
 
         if (response.ok) {
+          closeConfirmModal();
           alert('メッセージを削除しました');
           loadMessages(); // 再読み込み
         } else {

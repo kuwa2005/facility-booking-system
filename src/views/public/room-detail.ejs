@@ -461,6 +461,9 @@
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
         <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
           <a href="/my-page">マイページ</a>
           <a href="/my-reservations">予約一覧</a>
           <a href="/logout">ログアウト</a>
@@ -503,15 +506,30 @@
           <% } %>
           <div class="info-item">
             <span class="info-label">午前料金（9:00-12:00）</span>
-            <span class="info-value">¥<%= (room.basePriceMorning || 0).toLocaleString() %></span>
+            <span class="info-value">
+              平日 ¥<%= (room.basePriceMorning || 0).toLocaleString() %>
+              <% if (room.weekendPriceMorning !== null && room.weekendPriceMorning !== undefined) { %>
+                <br><span style="color: #dc2626;">土日祝 ¥<%= room.weekendPriceMorning.toLocaleString() %></span>
+              <% } %>
+            </span>
           </div>
           <div class="info-item">
             <span class="info-label">午後料金（13:00-17:00）</span>
-            <span class="info-value">¥<%= (room.basePriceAfternoon || 0).toLocaleString() %></span>
+            <span class="info-value">
+              平日 ¥<%= (room.basePriceAfternoon || 0).toLocaleString() %>
+              <% if (room.weekendPriceAfternoon !== null && room.weekendPriceAfternoon !== undefined) { %>
+                <br><span style="color: #dc2626;">土日祝 ¥<%= room.weekendPriceAfternoon.toLocaleString() %></span>
+              <% } %>
+            </span>
           </div>
           <div class="info-item">
             <span class="info-label">夜間料金（18:00-21:30）</span>
-            <span class="info-value">¥<%= (room.basePriceEvening || 0).toLocaleString() %></span>
+            <span class="info-value">
+              平日 ¥<%= (room.basePriceEvening || 0).toLocaleString() %>
+              <% if (room.weekendPriceEvening !== null && room.weekendPriceEvening !== undefined) { %>
+                <br><span style="color: #dc2626;">土日祝 ¥<%= room.weekendPriceEvening.toLocaleString() %></span>
+              <% } %>
+            </span>
           </div>
           <% if (room.acPricePerHour > 0) { %>
             <div class="info-item">
@@ -565,15 +583,15 @@
                 <div class="checkbox-group">
                   <label>
                     <input type="checkbox" name="slot" value="morning" onchange="calculatePrice()">
-                    午前（9:00-12:00） - ¥<%= (room.basePriceMorning || 0).toLocaleString() %>
+                    <span id="morningLabel">午前（9:00-12:00） - ¥<%= (room.basePriceMorning || 0).toLocaleString() %></span>
                   </label>
                   <label>
                     <input type="checkbox" name="slot" value="afternoon" onchange="calculatePrice()">
-                    午後（13:00-17:00） - ¥<%= (room.basePriceAfternoon || 0).toLocaleString() %>
+                    <span id="afternoonLabel">午後（13:00-17:00） - ¥<%= (room.basePriceAfternoon || 0).toLocaleString() %></span>
                   </label>
                   <label>
                     <input type="checkbox" name="slot" value="evening" onchange="calculatePrice()">
-                    夜間（18:00-21:30） - ¥<%= (room.basePriceEvening || 0).toLocaleString() %>
+                    <span id="eveningLabel">夜間（18:00-21:30） - ¥<%= (room.basePriceEvening || 0).toLocaleString() %></span>
                   </label>
                 </div>
               </div>
@@ -647,13 +665,45 @@
     const room = <%- JSON.stringify(room) %>;
     let currentDate = new Date();
     let selectedDate = null;
+    let isSelectedDateWeekendOrHoliday = false;
+    let holidays = new Set(); // Store holiday dates
+    let availabilityData = {}; // Store availability data
+
+    // Format date as ISO string (YYYY-MM-DD)
+    function formatDateISO(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Load availability data for a specific month
+    async function loadAvailability(year, month) {
+      try {
+        const response = await fetch(`/api/rooms/${room.id}/availability?year=${year}&month=${month + 1}`);
+        if (response.ok) {
+          const data = await response.json();
+          availabilityData = {};
+          if (data.availability) {
+            data.availability.forEach(item => {
+              availabilityData[item.date] = item;
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load availability:', error);
+      }
+    }
 
     // カレンダー生成
-    function generateCalendar(year, month) {
+    async function generateCalendar(year, month) {
       const calendar = document.getElementById('calendar');
       const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
       document.getElementById('currentMonth').textContent = year + '年 ' + monthNames[month];
+
+      // Fetch availability data for this month
+      await loadAvailability(year, month);
 
       calendar.innerHTML = '';
 
@@ -714,14 +764,32 @@
       if (date < today) {
         day.classList.add('unavailable');
       } else {
-        // ランダムに空き状況を表示（実際はAPIから取得）
-        const rand = Math.random();
-        if (rand > 0.7) {
-          day.classList.add('available');
-        } else if (rand > 0.4) {
-          day.classList.add('partially-available');
+        // 実際の空き状況を表示
+        const dateStr = formatDateISO(date);
+        const availability = availabilityData[dateStr];
+
+        if (availability) {
+          if (availability.is_closed) {
+            day.classList.add('unavailable');
+          } else {
+            // 空き状況を判定
+            const availableSlots = [
+              availability.morning_available,
+              availability.afternoon_available,
+              availability.evening_available
+            ].filter(Boolean).length;
+
+            if (availableSlots === 3) {
+              day.classList.add('available');
+            } else if (availableSlots > 0) {
+              day.classList.add('partially-available');
+            } else {
+              day.classList.add('unavailable');
+            }
+          }
         } else {
-          day.classList.add('unavailable');
+          // データがない場合は予約可能と仮定
+          day.classList.add('available');
         }
       }
 
@@ -749,7 +817,7 @@
       document.getElementById('calendar').appendChild(day);
     }
 
-    function selectDate(date, element) {
+    async function selectDate(date, element) {
       // 以前の選択を解除
       document.querySelectorAll('.calendar-day.selected').forEach(el => {
         el.classList.remove('selected');
@@ -761,8 +829,19 @@
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
       document.getElementById('selectedDate').value = `${year}年${month}月${day}日`;
 
+      // Check if selected date is weekend or holiday
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isHoliday = holidays.has(dateStr);
+      isSelectedDateWeekendOrHoliday = isWeekend || isHoliday;
+
+      // Update price labels based on selected date
+      updatePriceLabels();
+      calculatePrice();
       updateSubmitButton();
     }
 
@@ -776,14 +855,48 @@
       generateCalendar(currentDate.getFullYear(), currentDate.getMonth());
     }
 
+    function updatePriceLabels() {
+      // Get the appropriate prices based on whether the selected date is weekend/holiday
+      const morningPrice = isSelectedDateWeekendOrHoliday && room.weekendPriceMorning !== null
+        ? room.weekendPriceMorning
+        : room.basePriceMorning || 0;
+      const afternoonPrice = isSelectedDateWeekendOrHoliday && room.weekendPriceAfternoon !== null
+        ? room.weekendPriceAfternoon
+        : room.basePriceAfternoon || 0;
+      const eveningPrice = isSelectedDateWeekendOrHoliday && room.weekendPriceEvening !== null
+        ? room.weekendPriceEvening
+        : room.basePriceEvening || 0;
+
+      // Update labels
+      const dateType = isSelectedDateWeekendOrHoliday ? '土日祝料金' : '平日料金';
+      document.getElementById('morningLabel').innerHTML = `午前（9:00-12:00） - ¥${morningPrice.toLocaleString()} <span style="color: #6b7280; font-size: 0.875rem;">(${dateType})</span>`;
+      document.getElementById('afternoonLabel').innerHTML = `午後（13:00-17:00） - ¥${afternoonPrice.toLocaleString()} <span style="color: #6b7280; font-size: 0.875rem;">(${dateType})</span>`;
+      document.getElementById('eveningLabel').innerHTML = `夜間（18:00-21:30） - ¥${eveningPrice.toLocaleString()} <span style="color: #6b7280; font-size: 0.875rem;">(${dateType})</span>`;
+    }
+
     function calculatePrice() {
       const slots = document.querySelectorAll('input[name="slot"]:checked');
       let total = 0;
 
       slots.forEach(slot => {
-        if (slot.value === 'morning') total += <%= room.basePriceMorning || 0 %>;
-        if (slot.value === 'afternoon') total += <%= room.basePriceAfternoon || 0 %>;
-        if (slot.value === 'evening') total += <%= room.basePriceEvening || 0 %>;
+        if (slot.value === 'morning') {
+          const price = isSelectedDateWeekendOrHoliday && room.weekendPriceMorning !== null
+            ? room.weekendPriceMorning
+            : room.basePriceMorning || 0;
+          total += price;
+        }
+        if (slot.value === 'afternoon') {
+          const price = isSelectedDateWeekendOrHoliday && room.weekendPriceAfternoon !== null
+            ? room.weekendPriceAfternoon
+            : room.basePriceAfternoon || 0;
+          total += price;
+        }
+        if (slot.value === 'evening') {
+          const price = isSelectedDateWeekendOrHoliday && room.weekendPriceEvening !== null
+            ? room.weekendPriceEvening
+            : room.basePriceEvening || 0;
+          total += price;
+        }
       });
 
       document.getElementById('basePrice').textContent = '¥' + total.toLocaleString();
@@ -1017,9 +1130,27 @@
       }
     }
 
-    // ページロード時にレビューとお気に入り状態を取得
+    // Load holidays for pricing calculations
+    async function loadHolidays() {
+      try {
+        const response = await fetch('/api/holidays');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.holidays) {
+            data.holidays.forEach(holiday => {
+              holidays.add(holiday.date);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load holidays:', error);
+      }
+    }
+
+    // ページロード時にレビューとお気に入り状態、祝日を取得
     loadReviews();
     checkFavoriteStatus();
+    loadHolidays();
   </script>
 </body>
 </html>
