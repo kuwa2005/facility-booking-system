@@ -245,7 +245,7 @@
 
     async function loadAdminStaffId() {
       try {
-        const response = await fetch('/api/public/settings');
+        const response = await fetch('/api/settings/public');
         if (response.ok) {
           const settings = await response.json();
           if (settings.admin_staff_id) {
