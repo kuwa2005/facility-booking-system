@@ -22,6 +22,18 @@ export class ProxyReservationService {
     data: any,
     notes?: string
   ): Promise<any> {
+    // ユーザー情報を取得
+    const [userRows] = await pool.query<RowDataPacket[]>(
+      'SELECT name, organization_name, phone, email, address FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    const user = userRows[0];
+
     // チケット倍率を計算
     const ticketMultiplier = calculateTicketMultiplier(
       data.entrance_fee_type,
@@ -36,6 +48,12 @@ export class ProxyReservationService {
         ...applicationData,
         user_id: userId,
         ticket_multiplier: ticketMultiplier,
+        // ユーザー情報から申請者情報を自動設定
+        applicant_representative: user.name || '',
+        applicant_group_name: user.organization_name || null,
+        applicant_phone: user.phone || '',
+        applicant_email: user.email || '',
+        applicant_address: user.address || null,
       },
       usages || [],
       equipment || []
