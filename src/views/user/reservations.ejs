@@ -278,6 +278,30 @@
         <h2>予約一覧</h2>
       </div>
 
+      <!-- デバッグ情報 -->
+      <% if (reservations && reservations.length > 0) { %>
+        <div style="background: #e3f2fd; padding: 10px; border-radius: 4px; margin-bottom: 1rem; font-size: 14px;">
+          📊 取得データ: 全<%= reservations.length %>件の予約
+          <%
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let upcomingCount = 0;
+            let pastCount = 0;
+            let cancelledCount = 0;
+            reservations.forEach(function(r) {
+              const firstDate = r.first_date ? new Date(r.first_date) : null;
+              const isCancelled = r.cancel_status === 'cancelled';
+              const isPast = firstDate && firstDate < today && !isCancelled;
+              const isUpcoming = firstDate && firstDate >= today && !isCancelled;
+              if (isCancelled) cancelledCount++;
+              else if (isPast) pastCount++;
+              else if (isUpcoming) upcomingCount++;
+            });
+          %>
+          （予定: <%= upcomingCount %>件 / 過去: <%= pastCount %>件 / キャンセル済み: <%= cancelledCount %>件）
+        </div>
+      <% } %>
+
       <div class="filter-tabs">
         <button class="filter-tab active" onclick="filterReservations('upcoming')">予定</button>
         <button class="filter-tab" onclick="filterReservations('past')">過去</button>
