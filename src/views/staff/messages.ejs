@@ -214,16 +214,21 @@ function closeSendModal() {
 
 // メッセージを送信
 async function sendMessage() {
-  const data = {
-    recipientUserId: parseInt(document.getElementById('recipientUserId').value),
-    subject: document.getElementById('subject').value.trim(),
-    content: document.getElementById('messageContent').value.trim(),
-  };
+  const recipientUserId = parseInt(document.getElementById('recipientUserId').value);
+  const subject = document.getElementById('subject').value.trim();
+  const content = document.getElementById('messageContent').value.trim();
 
-  if (!data.recipientUserId || !data.subject || !data.content) {
+  if (!recipientUserId || !subject || !content) {
     alert('すべての項目を入力してください');
     return;
   }
+
+  const data = {
+    recipient_id: recipientUserId,
+    recipient_type: 'user',
+    subject: subject,
+    content: content,
+  };
 
   try {
     const res = await fetch('/api/staff/messages', {

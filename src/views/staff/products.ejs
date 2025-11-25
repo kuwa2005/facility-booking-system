@@ -258,6 +258,11 @@ function showProductFormModal(product = null) {
       </div>
 
       <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">カテゴリ *</label>
+        <input type="text" id="productCategory" value="${product?.category || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;" placeholder="例: 飲料、食品、グッズ">
+      </div>
+
+      <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">価格（円） *</label>
         <input type="number" id="productPrice" value="${product?.price || ''}" required min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
@@ -300,13 +305,14 @@ function closeProductModal() {
 async function saveProduct() {
   const data = {
     name: document.getElementById('productName').value.trim(),
+    category: document.getElementById('productCategory').value.trim(),
     price: parseInt(document.getElementById('productPrice').value),
     stock: parseInt(document.getElementById('productStock').value) || 0,
     isActive: document.getElementById('productIsActive').checked,
   };
 
-  if (!data.name || !data.price) {
-    alert('商品名と価格は必須です');
+  if (!data.name || !data.category || !data.price) {
+    alert('商品名、カテゴリ、価格は必須です');
     return;
   }
 
