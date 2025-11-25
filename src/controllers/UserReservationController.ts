@@ -342,4 +342,70 @@ export class UserReservationController {
       next(createError(error.message, 500));
     }
   }
+
+  /**
+   * 予約の決済処理
+   */
+  static async processPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        next(createError('認証が必要です', 401));
+        return;
+      }
+
+      const { id } = req.params;
+      const result = await ApplicationRepository.findByIdWithDetails(parseInt(id, 10));
+
+      if (!result) {
+        next(createError('予約が見つかりません', 404));
+        return;
+      }
+
+      // 自分の予約かチェック
+      if (result.application.user_id !== req.user.userId) {
+        next(createError('アクセス権限がありません', 403));
+        return;
+      }
+
+      // 既にキャンセル済みかチェック
+      if (result.application.cancel_status === 'cancelled') {
+        next(createError('キャンセル済みの予約は決済できません', 400));
+        return;
+      }
+
+      // 既に決済済みかチェック
+      if (result.application.payment_status === 'paid') {
+        next(createError('この予約は既に決済済みです', 400));
+        return;
+      }
+
+      // デモシステムのため、決済プロバイダーIDを自動生成
+      const paymentProviderId = `demo_payment_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+      // 決済ステータスを更新
+      await ApplicationRepository.updatePaymentStatus(
+        parseInt(id, 10),
+        'paid',
+        paymentProviderId
+      );
+
+      // 決済完了通知メールを送信
+      await emailService.sendPaymentConfirmation(
+        result.application.applicant_email,
+        result.application.applicant_representative,
+        result.application.id,
+        result.application.event_name,
+        result.application.total_amount
+      );
+
+      res.json({
+        success: true,
+        message: '決済が完了しました',
+        amount: result.application.total_amount,
+        payment_provider_id: paymentProviderId,
+      });
+    } catch (error: any) {
+      next(createError(error.message, 400));
+    }
+  }
 }

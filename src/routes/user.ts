@@ -44,6 +44,7 @@ router.get('/reservations', UserReservationController.getMyReservations);
 router.get('/reservations/:id', UserReservationController.getReservationDetail);
 router.get('/reservations/:id/check-modifiable', UserReservationController.checkModifiable);
 router.post('/reservations/:id/cancel', UserReservationController.cancelReservation);
+router.post('/reservations/:id/payment', UserReservationController.processPayment);
 router.patch('/reservations/:id', UserReservationController.modifyReservation);
 
 // レビュー・評価

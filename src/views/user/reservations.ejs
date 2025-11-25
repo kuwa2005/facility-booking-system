@@ -369,6 +369,11 @@
 
             <div class="reservation-actions">
               <a href="/my-reservations/<%= reservation.id %>" class="btn btn-primary">詳細を見る</a>
+              <% if (reservation.payment_status === 'unpaid' && !isCancelled) { %>
+                <button class="btn btn-primary" onclick="confirmPayment(<%= reservation.id %>)" style="background-color: #10b981;">
+                  💳 決済する
+                </button>
+              <% } %>
               <% if (isUpcoming) { %>
                 <button class="btn btn-danger" onclick="confirmCancel(<%= reservation.id %>)">
                   キャンセル
@@ -413,6 +418,34 @@
           card.style.display = card.dataset.status === status ? 'block' : 'none';
         }
       });
+    }
+
+    function confirmPayment(reservationId) {
+      if (confirm('この予約の決済を行いますか？\n\n※ デモシステムのため、実際の決済は行われません。')) {
+        processPayment(reservationId);
+      }
+    }
+
+    async function processPayment(reservationId) {
+      try {
+        const response = await fetch(`/api/user/reservations/${reservationId}/payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || '決済に失敗しました');
+        }
+
+        alert('✅ 決済が完了しました！\n\n請求金額: ¥' + (result.amount || 0).toLocaleString() + '\n\n※ デモシステムのため、実際の決済は行われていません。');
+        location.reload();
+      } catch (error) {
+        alert('エラー: ' + error.message);
+      }
     }
 
     function confirmCancel(reservationId) {
