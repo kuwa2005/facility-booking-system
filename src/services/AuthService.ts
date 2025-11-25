@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import UserRepository from '../models/UserRepository';
 import { User, CreateUserDto } from '../models/types';
 import { emailService } from './EmailService';
+import { pool } from '../config/database';
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -143,7 +144,7 @@ export class AuthService {
   /**
    * Login
    */
-  async login(email: string, password: string): Promise<AuthResult> {
+  async login(email: string, password: string, ipAddress?: string, userAgent?: string): Promise<AuthResult> {
     const user = await UserRepository.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
@@ -168,10 +169,43 @@ export class AuthService {
     // Update last login time
     await UserRepository.update(user.id, { last_login_at: new Date() });
 
+    // Record activity log for staff/admin users
+    if (user.role === 'staff' || user.role === 'admin') {
+      await pool.query(
+        `INSERT INTO staff_activity_logs (staff_id, action_type, description, ip_address, user_agent)
+         VALUES (?, 'login', ?, ?, ?)`,
+        [
+          user.id,
+          `${user.name} (${user.email}) がログインしました`,
+          ipAddress || null,
+          userAgent || null,
+        ]
+      );
+    }
+
     return {
       user: this.sanitizeUser(user),
       token,
     };
+  }
+
+  /**
+   * Logout and record activity
+   */
+  async logout(userId: number, userRole: string, userName: string, userEmail: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    // Record activity log for staff/admin users
+    if (userRole === 'staff' || userRole === 'admin') {
+      await pool.query(
+        `INSERT INTO staff_activity_logs (staff_id, action_type, description, ip_address, user_agent)
+         VALUES (?, 'logout', ?, ?, ?)`,
+        [
+          userId,
+          `${userName} (${userEmail}) がログアウトしました`,
+          ipAddress || null,
+          userAgent || null,
+        ]
+      );
+    }
   }
 
   /**
