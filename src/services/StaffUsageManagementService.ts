@@ -208,6 +208,11 @@ export class StaffUsageManagementService {
         basePriceEvening: usage.base_price_evening,
         extensionPriceMidday: usage.extension_price_midday,
         extensionPriceEvening: usage.extension_price_evening,
+        weekendPriceMorning: usage.weekend_price_morning,
+        weekendPriceAfternoon: usage.weekend_price_afternoon,
+        weekendPriceEvening: usage.weekend_price_evening,
+        weekendExtensionPriceMidday: usage.weekend_extension_price_midday,
+        weekendExtensionPriceEvening: usage.weekend_extension_price_evening,
         acPricePerHour: usage.ac_price_per_hour,
         description: usage.description,
         isActive: usage.is_active,
@@ -215,11 +220,12 @@ export class StaffUsageManagementService {
         updatedAt: usage.updated_at,
       };
 
-      const charges = calculateUsageCharges(
+      const charges = await calculateUsageCharges(
         room,
         usageInput,
         equipmentUsages as any,
-        application.ticket_multiplier
+        application.ticket_multiplier,
+        usage.date
       ) as any;
 
       totalAmount += charges.totalCharge || charges.subtotal || 0;

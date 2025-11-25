@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メッセージ送信 - 施設予約システム</title>
+  <title>メッセージ送信 - 施設予約システム（DEMO）</title>
   <style>
     * {
       margin: 0;
@@ -196,26 +196,29 @@
     <div id="successMessage" class="message success"></div>
     <div id="errorMessage" class="message error"></div>
 
+    <div style="background-color: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+        <span style="font-size: 20px;">👤</span>
+        <strong style="color: #333; font-size: 14px;">宛先</strong>
+      </div>
+      <div id="recipientInfo" style="color: #666; font-size: 14px; margin-left: 30px;">
+        施設管理者 (読み込み中...)
+      </div>
+    </div>
+
     <form id="messageForm">
       <div class="form-group">
-        <label for="recipient">宛先 <span class="required">*</span></label>
-        <select id="recipient" name="recipient_id" required>
-          <option value="">選択してください</option>
-          <option value="1">施設管理者</option>
-        </select>
-        <p class="help-text">お問い合わせ先を選択してください</p>
-      </div>
-
-      <div class="form-group">
         <label for="subject">件名 <span class="required">*</span></label>
-        <input
-          type="text"
-          id="subject"
-          name="subject"
-          required
-          maxlength="200"
-          placeholder="例: 予約に関するお問い合わせ"
-        >
+        <select id="subject" name="subject" required>
+          <option value="">選択してください</option>
+          <option value="予約に関するお問い合わせ">予約に関するお問い合わせ</option>
+          <option value="キャンセルについて">キャンセルについて</option>
+          <option value="料金について">料金について</option>
+          <option value="施設利用について">施設利用について</option>
+          <option value="設備について">設備について</option>
+          <option value="その他のお問い合わせ">その他のお問い合わせ</option>
+        </select>
+        <p class="help-text">お問い合わせ内容に最も近い件名を選択してください</p>
       </div>
 
       <div class="form-group">
@@ -246,6 +249,44 @@
     const submitBtn = document.getElementById('submitBtn');
     const successMessage = document.getElementById('successMessage');
     const errorMessage = document.getElementById('errorMessage');
+    const recipientInfo = document.getElementById('recipientInfo');
+
+    // 管理者スタッフIDと情報を取得
+    let adminStaffId = 2; // デフォルト値
+    let adminStaffName = '施設管理者';
+
+    async function loadAdminStaffInfo() {
+      try {
+        // システム設定から管理者スタッフ情報を取得
+        const settingsResponse = await fetch('/api/settings/public');
+        if (settingsResponse.ok) {
+          const settings = await settingsResponse.json();
+
+          if (settings.admin_staff_id) {
+            adminStaffId = settings.admin_staff_id;
+
+            // 管理者名が取得できた場合は名前を表示
+            if (settings.admin_staff_name) {
+              adminStaffName = settings.admin_staff_name;
+              const roleText = settings.admin_staff_role === 'admin' ? '管理者' : 'スタッフ';
+              recipientInfo.textContent = `${adminStaffName} (${roleText} - ID: ${adminStaffId})`;
+            } else {
+              recipientInfo.textContent = `施設管理者 (スタッフID: ${adminStaffId})`;
+            }
+          } else {
+            recipientInfo.textContent = '施設管理者';
+          }
+        } else {
+          recipientInfo.textContent = '施設管理者 (設定取得エラー)';
+        }
+      } catch (error) {
+        console.error('Failed to load admin staff info:', error);
+        recipientInfo.textContent = '施設管理者 (通信エラー)';
+      }
+    }
+
+    // ページ読み込み時に管理者情報を取得
+    loadAdminStaffInfo();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -256,22 +297,34 @@
 
       const formData = new FormData(form);
       const data = {
-        recipient_id: parseInt(formData.get('recipient_id')),
+        recipient_id: adminStaffId, // システム設定から取得した管理者へ送信
         recipient_type: 'staff',
         subject: formData.get('subject'),
         content: formData.get('content')
       };
 
       // バリデーション
-      if (!data.recipient_id || !data.subject || !data.content) {
+      if (!data.subject || !data.content) {
         errorMessage.textContent = 'すべての必須項目を入力してください';
         errorMessage.classList.add('show');
+        return;
+      }
+
+      // 送信確認
+      const confirmMessage = `以下の内容で${adminStaffName}宛にメッセージを送信します。よろしいですか？\n\n件名: ${data.subject}\n宛先: ${adminStaffName} (ID: ${adminStaffId})`;
+      if (!confirm(confirmMessage)) {
         return;
       }
 
       try {
         submitBtn.disabled = true;
         submitBtn.textContent = '送信中...';
+
+        console.log('Sending message to admin staff:', {
+          recipient_id: adminStaffId,
+          recipient_name: adminStaffName,
+          subject: data.subject
+        });
 
         const response = await fetch('/api/user/messages', {
           method: 'POST',
@@ -284,7 +337,7 @@
         const result = await response.json();
 
         if (response.ok && result.success) {
-          successMessage.textContent = 'メッセージを送信しました。メッセージ一覧に戻ります...';
+          successMessage.textContent = `✅ ${adminStaffName}へメッセージを送信しました。メッセージ一覧に戻ります...`;
           successMessage.classList.add('show');
 
           setTimeout(() => {

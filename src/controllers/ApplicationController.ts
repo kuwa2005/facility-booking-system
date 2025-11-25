@@ -75,14 +75,17 @@ export class ApplicationController {
           return;
         }
 
-        // Check for conflicts
-        const hasConflict = await ApplicationRepository.checkConflict(
+        // Check for inventory availability (在庫チェック)
+        const isAvailable = await RoomRepository.checkAvailability(
           usageDto.room_id,
-          usageDto.date
+          usageDto.date,
+          usageDto.use_morning,
+          usageDto.use_afternoon,
+          usageDto.use_evening
         );
 
-        if (hasConflict) {
-          next(createError(`Room "${room.name}" is not available on ${usageDto.date}`, 409));
+        if (!isAvailable) {
+          next(createError(`Room "${room.name}" is not available on ${usageDto.date} for the requested time slots (満室です)`, 409));
           return;
         }
 
@@ -133,7 +136,7 @@ export class ApplicationController {
         }
 
         // Calculate charges for this usage
-        const charges = calculateUsageCharges(
+        const charges = await calculateUsageCharges(
           room,
           {
             useMorning: usageDto.use_morning,
@@ -145,7 +148,8 @@ export class ApplicationController {
             acHours: undefined, // Will be filled by staff later
           },
           equipmentUsages,
-          ticketMultiplier
+          ticketMultiplier,
+          usageDto.date
         );
 
         totalAmount += charges.subtotalAmount;

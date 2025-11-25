@@ -11,15 +11,20 @@
     <form id="basicSettingsForm" style="display: grid; gap: 1rem;">
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">サイト名</label>
-        <input type="text" id="siteName" value="施設予約システム" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="siteName" value="施設予約システム（DEMO）" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">管理者メールアドレス</label>
-        <input type="email" id="adminEmail" value="admin@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="adminEmail" value="admin@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">お問い合わせ電話番号</label>
         <input type="tel" id="contactPhone" value="03-1234-5678" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">管理者スタッフID（メッセージ送信先）</label>
+        <input type="number" id="adminStaffId" value="2" min="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">一般ユーザーからのメッセージを受信するスタッフのIDを指定します</p>
       </div>
       <div>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -75,11 +80,11 @@
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">送信者名</label>
-        <input type="text" id="emailFromName" value="施設予約システム" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="emailFromName" value="施設予約システム（DEMO）" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">送信者アドレス</label>
-        <input type="email" id="emailFromAddress" value="noreply@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="emailFromAddress" value="noreply@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -215,6 +220,9 @@ async function loadSettings() {
     if (settings.contact_phone) {
       document.getElementById('contactPhone').value = settings.contact_phone.value;
     }
+    if (settings.admin_staff_id) {
+      document.getElementById('adminStaffId').value = settings.admin_staff_id.value;
+    }
     if (settings.maintenance_mode) {
       document.getElementById('maintenanceMode').checked = settings.maintenance_mode.value;
     }
@@ -341,6 +349,7 @@ async function saveBasicSettings() {
     siteName: document.getElementById('siteName').value,
     adminEmail: document.getElementById('adminEmail').value,
     contactPhone: document.getElementById('contactPhone').value,
+    adminStaffId: parseInt(document.getElementById('adminStaffId').value) || 2,
     maintenanceMode: document.getElementById('maintenanceMode').checked
   };
 
@@ -480,14 +489,14 @@ function sendTestEmail() {
     emailFromName,
     emailFromAddress,
     to: 'test@example.com',
-    subject: 'テストメール - 施設予約システム',
+    subject: 'テストメール - 施設予約システム（DEMO）',
     body: 'これはメール設定のテストメールです。'
   });
 
   // 成功メッセージ
   alert('✅ テストメールを送信しました\n\n' +
         '送信先: test@example.com\n' +
-        '件名: テストメール - 施設予約システム\n\n' +
+        '件名: テストメール - 施設予約システム（DEMO）\n\n' +
         '※ デモサイトのため、実際にはメールは送信されていません。\n' +
         '本番環境では、設定したSMTPサーバーを通じてメールが送信されます。');
 }

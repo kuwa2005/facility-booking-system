@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %> - 施設予約システム</title>
+  <title><%= title %> - 施設予約システム（DEMO）</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -212,6 +212,62 @@
       overflow-y: auto;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
+    .confirm-modal-content {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    .confirm-modal-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .confirm-modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    .confirm-modal-message {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .btn-cancel {
+      background-color: #f3f4f6;
+      color: #374151;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-cancel:hover {
+      background-color: #e5e7eb;
+    }
+    .btn-confirm {
+      background-color: #ef4444;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-confirm:hover {
+      background-color: #dc2626;
+    }
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -374,18 +430,31 @@
   <header>
     <div class="container">
       <h1>
-        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
       </h1>
       <nav>
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
+        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
-        <a href="/logout">ログアウト</a>
+        <a href="#" onclick="return confirmLogout();">ログアウト</a>
       </nav>
     </div>
   </header>
+  <script>
+    function confirmLogout() {
+      if (confirm('ログアウトしてもよろしいですか？')) {
+        window.location.href = '/logout';
+      }
+      return false;
+    }
+  </script>
 
   <main>
     <div class="container">
@@ -446,15 +515,29 @@
     </div>
   </div>
 
+  <!-- 削除確認モーダル -->
+  <div id="confirmModal" class="modal">
+    <div class="confirm-modal-content">
+      <div class="confirm-modal-icon">⚠️</div>
+      <div class="confirm-modal-title">メッセージの削除</div>
+      <div class="confirm-modal-message">このメッセージを削除してもよろしいですか？<br>この操作は取り消せません。</div>
+      <div class="confirm-modal-actions">
+        <button class="btn-cancel" onclick="closeConfirmModal()">キャンセル</button>
+        <button class="btn-confirm" onclick="confirmDelete()">削除する</button>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div class="container">
-      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+      <p>&copy; 2025 施設予約システム（DEMO）. All rights reserved.</p>
     </div>
   </footer>
 
   <script>
     let currentMessages = [];
     let currentMessageId = null;
+    let messageIdToDelete = null;
 
     async function loadMessages() {
       try {
@@ -483,7 +566,7 @@
 
       messages.forEach(message => {
         const item = document.createElement('div');
-        item.className = 'message-item' + (!message.is_read ? ' unread' : '');
+        item.className = 'message-item' + (!message.read_at ? ' unread' : '');
 
         const createdDate = new Date(message.created_at).toLocaleDateString('ja-JP', {
           year: 'numeric',
@@ -501,7 +584,7 @@
         item.innerHTML = `
           <div class="message-content" onclick="viewMessage(${message.id})">
             <div class="message-header">
-              ${!message.is_read ? '<span class="unread-badge">未読</span>' : ''}
+              ${!message.read_at ? '<span class="unread-badge">未読</span>' : ''}
               <span class="message-subject">${escapeHtml(message.subject)}</span>
             </div>
             <p class="message-preview">${escapeHtml(preview)}</p>
@@ -551,8 +634,8 @@
       // モーダルを表示
       document.getElementById('messageModal').classList.add('active');
 
-      // 未読の場合、既読にする
-      if (!message.is_read) {
+      // 未読の場合、既読にする（受信メッセージのみ）
+      if (!message.read_at && message.recipient_type === 'user') {
         markAsRead(messageId);
       }
     }
@@ -631,26 +714,46 @@
       }
     }
 
-    async function deleteMessage(messageId) {
-      if (!confirm('このメッセージを削除しますか？')) {
-        return;
-      }
+    function deleteMessage(messageId) {
+      messageIdToDelete = messageId;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.remove('active');
+      messageIdToDelete = null;
+    }
+
+    async function confirmDelete() {
+      if (!messageIdToDelete) return;
 
       try {
-        const response = await fetch(`/api/user/messages/${messageId}`, {
-          method: 'DELETE'
+        const response = await fetch(`/api/user/messages/${messageIdToDelete}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
 
-        if (response.ok) {
-          alert('メッセージを削除しました');
-          loadMessages(); // 再読み込み
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          closeConfirmModal();
+          // メッセージ一覧を再読み込み
+          await loadMessages();
+          // 成功通知を表示
+          const notification = document.createElement('div');
+          notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 1rem 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999;';
+          notification.textContent = 'メッセージを削除しました';
+          document.body.appendChild(notification);
+          setTimeout(() => notification.remove(), 3000);
         } else {
-          const result = await response.json();
           alert('削除に失敗しました: ' + (result.message || '不明なエラー'));
+          console.error('Delete failed:', result);
         }
       } catch (error) {
         console.error('Failed to delete message:', error);
-        alert('削除に失敗しました');
+        alert('エラーが発生しました。もう一度お試しください。');
       }
     }
 

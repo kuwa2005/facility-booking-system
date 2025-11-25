@@ -122,4 +122,31 @@ export class StaffUserController {
       next(error);
     }
   }
+
+  /**
+   * ユーザーを検索（複数条件対応）
+   */
+  static async searchUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { name, email, phone, organization, userId } = req.query;
+
+      // 検索条件の構築
+      const searchParams: any = {};
+      if (name) searchParams.name = name as string;
+      if (email) searchParams.email = email as string;
+      if (phone) searchParams.phone = phone as string;
+      if (organization) searchParams.organization = organization as string;
+      if (userId) {
+        const userIdNum = parseInt(userId as string);
+        if (!isNaN(userIdNum)) {
+          searchParams.userId = userIdNum;
+        }
+      }
+
+      const users = await StaffUserManagementService.searchUsers(searchParams);
+      res.json({ success: true, users });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

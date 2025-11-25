@@ -246,24 +246,61 @@
   <header>
     <div class="container">
       <h1>
-        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
       </h1>
       <nav>
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
+        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
-        <a href="/logout">ログアウト</a>
+        <a href="#" onclick="return confirmLogout();">ログアウト</a>
       </nav>
     </div>
   </header>
+  <script>
+    function confirmLogout() {
+      if (confirm('ログアウトしてもよろしいですか？')) {
+        window.location.href = '/logout';
+      }
+      return false;
+    }
+  </script>
 
   <main>
     <div class="container">
       <div class="page-header">
         <h2>予約一覧</h2>
       </div>
+
+      <!-- デバッグ情報 -->
+      <% if (reservations && reservations.length > 0) { %>
+        <div style="background: #e3f2fd; padding: 10px; border-radius: 4px; margin-bottom: 1rem; font-size: 14px;">
+          📊 取得データ: 全<%= reservations.length %>件の予約
+          <%
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let upcomingCount = 0;
+            let pastCount = 0;
+            let cancelledCount = 0;
+            reservations.forEach(function(r) {
+              const firstDate = r.first_date ? new Date(r.first_date) : null;
+              const isCancelled = r.cancel_status === 'cancelled';
+              const isPast = firstDate && firstDate < today && !isCancelled;
+              const isUpcoming = firstDate && firstDate >= today && !isCancelled;
+              if (isCancelled) cancelledCount++;
+              else if (isPast) pastCount++;
+              else if (isUpcoming) upcomingCount++;
+            });
+          %>
+          （予定: <%= upcomingCount %>件 / 過去: <%= pastCount %>件 / キャンセル済み: <%= cancelledCount %>件）
+        </div>
+      <% } %>
 
       <div class="filter-tabs">
         <button class="filter-tab active" onclick="filterReservations('upcoming')">予定</button>
@@ -356,6 +393,11 @@
 
             <div class="reservation-actions">
               <a href="/my-reservations/<%= reservation.id %>" class="btn btn-primary">詳細を見る</a>
+              <% if (reservation.payment_status === 'unpaid' && !isCancelled) { %>
+                <button class="btn btn-primary" onclick="confirmPayment(<%= reservation.id %>)" style="background-color: #10b981;">
+                  💳 決済する
+                </button>
+              <% } %>
               <% if (isUpcoming) { %>
                 <button class="btn btn-danger" onclick="confirmCancel(<%= reservation.id %>)">
                   キャンセル
@@ -380,7 +422,7 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+      <p>&copy; 2025 施設予約システム（DEMO）. All rights reserved.</p>
     </div>
   </footer>
 
@@ -400,6 +442,34 @@
           card.style.display = card.dataset.status === status ? 'block' : 'none';
         }
       });
+    }
+
+    function confirmPayment(reservationId) {
+      if (confirm('この予約の決済を行いますか？\n\n※ デモシステムのため、実際の決済は行われません。')) {
+        processPayment(reservationId);
+      }
+    }
+
+    async function processPayment(reservationId) {
+      try {
+        const response = await fetch(`/api/user/reservations/${reservationId}/payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || '決済に失敗しました');
+        }
+
+        alert('✅ 決済が完了しました！\n\n請求金額: ¥' + (result.amount || 0).toLocaleString() + '\n\n※ デモシステムのため、実際の決済は行われていません。');
+        location.reload();
+      } catch (error) {
+        alert('エラー: ' + error.message);
+      }
     }
 
     function confirmCancel(reservationId) {

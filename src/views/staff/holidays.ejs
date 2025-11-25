@@ -1,0 +1,283 @@
+<div class="page-header">
+  <h1 class="page-title">祝日管理</h1>
+  <p class="page-description">祝日の登録と管理（施設利用料金（土日祝）の判定のみに使われます）</p>
+</div>
+
+<!-- 年度選択と新規登録 -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <label style="font-weight: 500;">表示年度:</label>
+      <select id="yearSelect" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" onchange="loadHolidays()">
+        <!-- JavaScript で動的に生成 -->
+      </select>
+      <button onclick="loadHolidays()" class="btn btn-primary" style="padding: 0.5rem 1rem;">更新</button>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button onclick="bulkRegisterHolidays()" class="btn btn-info" style="background: #17a2b8;">📅 1年分一括登録</button>
+      <button onclick="showCreateModal()" class="btn btn-success">+ 新規祝日登録</button>
+    </div>
+  </div>
+</div>
+
+<!-- 祝日一覧 -->
+<div class="card">
+  <h2 class="card-title">祝日一覧</h2>
+  <div id="holidayContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- 新規登録/編集モーダル -->
+<div id="holidayModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 600px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 id="modalTitle" style="margin: 0;">祝日登録</h2>
+      <button onclick="closeHolidayModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    </div>
+    <form id="holidayForm" style="display: grid; gap: 1rem;">
+      <input type="hidden" id="holidayId">
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">日付 *</label>
+        <input type="date" id="holidayDate" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">祝日名 *</label>
+        <input type="text" id="holidayName" required maxlength="255" placeholder="例: 元日、成人の日" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+        <button type="button" onclick="closeHolidayModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
+        <button type="submit" class="btn btn-success" id="submitButton">登録</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+
+let currentYear = new Date().getFullYear();
+let allHolidays = [];
+
+// 初期ロード
+document.addEventListener('DOMContentLoaded', () => {
+  initYearSelect();
+  loadHolidays();
+});
+
+// 年度選択を初期化
+function initYearSelect() {
+  const yearSelect = document.getElementById('yearSelect');
+  const currentYear = new Date().getFullYear();
+
+  for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = `${year}年`;
+    if (year === currentYear) {
+      option.selected = true;
+    }
+    yearSelect.appendChild(option);
+  }
+}
+
+// 祝日を読み込み
+async function loadHolidays() {
+  const year = document.getElementById('yearSelect').value;
+
+  try {
+    const res = await fetch(`/api/staff/holidays?year=${year}`, {
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to load holidays');
+    }
+
+    const data = await res.json();
+    allHolidays = data.holidays || [];
+    displayHolidays();
+  } catch (error) {
+    console.error('Error loading holidays:', error);
+    document.getElementById('holidayContainer').innerHTML = '<p style="text-align: center; color: #e74c3c;">祝日の読み込みに失敗しました</p>';
+  }
+}
+
+// 祝日を表示
+function displayHolidays() {
+  if (allHolidays.length === 0) {
+    document.getElementById('holidayContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d;">登録されている祝日がありません</p>';
+    return;
+  }
+
+  const html = `
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>祝日名</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allHolidays.map(holiday => `
+            <tr>
+              <td>${new Date(holiday.date).toLocaleDateString('ja-JP')}</td>
+              <td><strong>${holiday.name}</strong></td>
+              <td>
+                <button onclick="showEditModal(${holiday.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
+                <button onclick="deleteHoliday(${holiday.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('holidayContainer').innerHTML = html;
+}
+
+// 新規登録モーダルを表示
+function showCreateModal() {
+  document.getElementById('modalTitle').textContent = '祝日登録';
+  document.getElementById('submitButton').textContent = '登録';
+  document.getElementById('holidayForm').reset();
+  document.getElementById('holidayId').value = '';
+  document.getElementById('holidayModal').style.display = 'block';
+}
+
+// 編集モーダルを表示
+function showEditModal(id) {
+  const holiday = allHolidays.find(h => h.id === id);
+  if (!holiday) return;
+
+  document.getElementById('modalTitle').textContent = '祝日編集';
+  document.getElementById('submitButton').textContent = '更新';
+  document.getElementById('holidayId').value = holiday.id;
+  document.getElementById('holidayDate').value = holiday.date;
+  document.getElementById('holidayName').value = holiday.name;
+  document.getElementById('holidayModal').style.display = 'block';
+}
+
+// モーダルを閉じる
+function closeHolidayModal() {
+  document.getElementById('holidayModal').style.display = 'none';
+}
+
+// フォーム送信
+document.getElementById('holidayForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const id = document.getElementById('holidayId').value;
+  const data = {
+    date: document.getElementById('holidayDate').value,
+    name: document.getElementById('holidayName').value.trim(),
+  };
+
+  try {
+    const url = id ? `/api/staff/holidays/${id}` : '/api/staff/holidays';
+    const method = id ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      await showError(error.error || '保存に失敗しました');
+      return;
+    }
+
+    await showSuccess(id ? '祝日を更新しました' : '祝日を登録しました');
+    closeHolidayModal();
+    await loadHolidays();
+  } catch (error) {
+    console.error('Error saving holiday:', error);
+    await showError('保存に失敗しました');
+  }
+});
+
+// 祝日を削除
+async function deleteHoliday(id) {
+  const holiday = allHolidays.find(h => h.id === id);
+  if (!holiday) return;
+
+  const confirmed = await confirm(`「${holiday.name}」を削除してもよろしいですか？`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`/api/staff/holidays/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      await showError(error.error || '削除に失敗しました');
+      return;
+    }
+
+    await showSuccess('祝日を削除しました');
+    await loadHolidays();
+  } catch (error) {
+    console.error('Error deleting holiday:', error);
+    await showError('削除に失敗しました');
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('holidayModal').addEventListener('click', (e) => {
+  if (e.target.id === 'holidayModal') {
+    closeHolidayModal();
+  }
+});
+
+// 1年分の祝日を一括登録
+async function bulkRegisterHolidays() {
+  const year = parseInt(document.getElementById('yearSelect').value);
+
+  const confirmed = await confirm(`${year}年の日本の祝日を一括登録しますか？\n\n以下の祝日が登録されます：\n- 元日、建国記念の日、天皇誕生日\n- 春分の日、昭和の日\n- 憲法記念日、みどりの日、こどもの日\n- 海の日、山の日\n- 敬老の日、秋分の日\n- スポーツの日、文化の日、勤労感謝の日\n- 成人の日（ハッピーマンデー）\n\n※既に登録済みの祝日はスキップされます`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/staff/holidays/bulk-register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ year }),
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      await showError(data.error || '一括登録に失敗しました');
+      return;
+    }
+
+    let message = `${data.created}件の祝日を登録しました`;
+    if (data.skipped > 0) {
+      message += `\n（${data.skipped}件は既に登録済みのためスキップしました）`;
+    }
+    if (data.errors && data.errors.length > 0) {
+      message += `\n\nエラー:\n${data.errors.join('\n')}`;
+    }
+
+    await showSuccess(message);
+    await loadHolidays();
+  } catch (error) {
+    console.error('Error bulk registering holidays:', error);
+    await showError('一括登録に失敗しました');
+  }
+}
+</script>

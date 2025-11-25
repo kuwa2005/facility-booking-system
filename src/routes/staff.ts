@@ -13,6 +13,8 @@ import { MessageController } from '../controllers/MessageController';
 import { UserNoteController } from '../controllers/UserNoteController';
 import { NotificationController, notificationController } from '../controllers/NotificationController';
 import { SystemSettingsController } from '../controllers/SystemSettingsController';
+import { ActivityLogController } from '../controllers/ActivityLogController';
+import { HolidayController } from '../controllers/HolidayController';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,13 +42,13 @@ const profileImageStorage = multer.diskStorage({
 
 const profileImageUpload = multer({
   storage: profileImageStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+      cb(new Error('Invalid file type. Only JPEG and PNG are allowed.'));
     }
   },
 });
@@ -90,6 +92,7 @@ router.get('/usages/date-range/all', StaffUsageController.getUsagesByDateRange);
 router.get('/usages/missing-ac-hours/all', StaffUsageController.getUsagesWithMissingAcHours);
 
 // ===== 利用者管理 =====
+router.get('/users/search', StaffUserController.searchUsers);
 router.get('/users', StaffUserController.getUsers);
 router.get('/users/stats/summary', StaffUserController.getUserStatsSummary);
 router.get('/users/recent/all', StaffUserController.getRecentUsers);
@@ -224,5 +227,19 @@ router.post('/settings/basic', SystemSettingsController.updateBasicSettings);
 router.post('/settings/reservation', SystemSettingsController.updateReservationSettings);
 router.post('/settings/email', SystemSettingsController.updateEmailSettings);
 router.post('/settings/business-hours', SystemSettingsController.updateBusinessHours);
+
+// ===== アクティビティログ（管理者のみ） =====
+router.get('/activity-logs', ActivityLogController.getLogs);
+router.get('/activity-logs/stats', ActivityLogController.getStats);
+
+// ===== 祝日管理 =====
+router.get('/holidays', HolidayController.getAllHolidays);
+router.get('/holidays/:id', HolidayController.getHolidayById);
+router.post('/holidays', HolidayController.createHoliday);
+router.post('/holidays/bulk-register', HolidayController.bulkRegisterYearHolidays);
+router.patch('/holidays/:id', HolidayController.updateHoliday);
+router.delete('/holidays/:id', HolidayController.deleteHoliday);
+router.get('/holidays/check/date', HolidayController.checkHoliday);
+router.post('/holidays/check/weekend-or-holidays', HolidayController.checkWeekendOrHolidays);
 
 export default router;

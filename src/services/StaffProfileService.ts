@@ -2,6 +2,7 @@ import UserRepository from '../models/UserRepository';
 import { User } from '../models/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import sharp from 'sharp';
 
 export interface UpdateStaffProfileDto {
   name?: string;
@@ -63,28 +64,61 @@ export class StaffProfileService {
 
   /**
    * プロフィール画像更新
+   * アップロードされた画像を512x512のJPEGに変換
    */
-  async updateProfileImage(staffId: number, imagePath: string): Promise<Omit<User, 'password_hash'>> {
+  async updateProfileImage(staffId: number, uploadedImagePath: string): Promise<Omit<User, 'password_hash'>> {
     const user = await UserRepository.findById(staffId);
     if (!user) {
       throw new Error('Staff member not found');
     }
 
-    // 既存の画像を削除
-    if (user.profile_image_path) {
-      await this.deleteImageFile(user.profile_image_path);
+    try {
+      // アップロードされた画像のフルパス
+      const uploadedFullPath = path.join(__dirname, '../../', uploadedImagePath);
+
+      // リサイズ後の画像を保存するパス (JPEGに変換)
+      const fileName = `profile_${staffId}_${Date.now()}.jpg`;
+      const resizedImagePath = `uploads/profiles/${fileName}`;
+      const resizedFullPath = path.join(__dirname, '../../', resizedImagePath);
+
+      // 画像を512x512にリサイズしてJPEGに変換
+      await sharp(uploadedFullPath)
+        .resize(512, 512, {
+          fit: 'cover', // アスペクト比を維持しつつ、指定サイズに収める
+          position: 'center',
+        })
+        .jpeg({
+          quality: 85, // JPEG品質設定
+        })
+        .toFile(resizedFullPath);
+
+      // 元のアップロードファイルを削除（リサイズ後のファイルと異なる場合）
+      if (uploadedFullPath !== resizedFullPath) {
+        await fs.unlink(uploadedFullPath).catch(() => {
+          // ファイルが存在しない場合は無視
+        });
+      }
+
+      // 既存の画像を削除
+      if (user.profile_image_path) {
+        await this.deleteImageFile(user.profile_image_path);
+      }
+
+      // 新しい画像パスを保存
+      await UserRepository.update(staffId, { profile_image_path: resizedImagePath });
+
+      const updatedUser = await UserRepository.findById(staffId);
+      if (!updatedUser) {
+        throw new Error('Failed to update profile image');
+      }
+
+      const { password_hash, ...profile } = updatedUser;
+      return profile;
+    } catch (error) {
+      // エラーが発生した場合、アップロードされたファイルを削除
+      await this.deleteImageFile(uploadedImagePath);
+      throw error;
     }
-
-    // 新しい画像パスを保存
-    await UserRepository.update(staffId, { profile_image_path: imagePath });
-
-    const updatedUser = await UserRepository.findById(staffId);
-    if (!updatedUser) {
-      throw new Error('Failed to update profile image');
-    }
-
-    const { password_hash, ...profile } = updatedUser;
-    return profile;
   }
 
   /**

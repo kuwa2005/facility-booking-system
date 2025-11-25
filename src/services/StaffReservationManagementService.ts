@@ -6,6 +6,7 @@ import PaymentService from './PaymentService';
 export interface ReservationFilter {
   status?: 'all' | 'upcoming' | 'past' | 'cancelled';
   paymentStatus?: 'all' | 'unpaid' | 'paid' | 'refunded';
+  cancelStatus?: 'none' | 'cancelled';
   roomId?: number;
   userId?: number;
   startDate?: Date;
@@ -28,6 +29,8 @@ export interface ReservationListItem {
   roomNames: string;
   userId: number | null;
   userName: string | null;
+  usageDates?: string[];
+  rooms?: string[];
 }
 
 /**
@@ -72,6 +75,12 @@ export class StaffReservationManagementService {
       query += ' AND a.cancel_status = "none"';
     } else if (filter.status === 'cancelled') {
       query += ' AND a.cancel_status = "cancelled"';
+    }
+
+    // キャンセルステータスフィルタ（statusと独立して使用可能）
+    if (filter.cancelStatus) {
+      query += ' AND a.cancel_status = ?';
+      params.push(filter.cancelStatus);
     }
 
     // 決済ステータスフィルタ
@@ -122,22 +131,45 @@ export class StaffReservationManagementService {
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
-    return rows.map(row => ({
-      id: row.id,
-      eventName: row.event_name,
-      applicantName: row.applicant_representative,
-      applicantEmail: row.applicant_email,
-      applicantPhone: row.applicant_phone,
-      totalAmount: row.total_amount,
-      paymentStatus: row.payment_status,
-      cancelStatus: row.cancel_status,
-      createdAt: row.created_at,
-      firstUsageDate: row.first_usage_date,
-      lastUsageDate: row.last_usage_date,
-      roomNames: row.room_names || '',
-      userId: row.user_id,
-      userName: row.user_name,
-    }));
+    return rows.map(row => {
+      // Format usage dates for display
+      const usageDates: string[] = [];
+      if (row.first_usage_date) {
+        const firstDate = new Date(row.first_usage_date);
+        if (row.last_usage_date) {
+          const lastDate = new Date(row.last_usage_date);
+          if (firstDate.getTime() === lastDate.getTime()) {
+            usageDates.push(firstDate.toLocaleDateString('ja-JP'));
+          } else {
+            usageDates.push(`${firstDate.toLocaleDateString('ja-JP')} 〜 ${lastDate.toLocaleDateString('ja-JP')}`);
+          }
+        } else {
+          usageDates.push(firstDate.toLocaleDateString('ja-JP'));
+        }
+      }
+
+      // Format room names into array
+      const rooms = row.room_names ? row.room_names.split(', ') : [];
+
+      return {
+        id: row.id,
+        eventName: row.event_name,
+        applicantName: row.applicant_representative,
+        applicantEmail: row.applicant_email,
+        applicantPhone: row.applicant_phone,
+        totalAmount: row.total_amount,
+        paymentStatus: row.payment_status,
+        cancelStatus: row.cancel_status,
+        createdAt: row.created_at,
+        firstUsageDate: row.first_usage_date,
+        lastUsageDate: row.last_usage_date,
+        roomNames: row.room_names || '',
+        userId: row.user_id,
+        userName: row.user_name,
+        usageDates,
+        rooms,
+      };
+    });
   }
 
   /**

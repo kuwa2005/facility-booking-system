@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title || '職員ページ' %> - 施設予約システム</title>
+  <title><%= title || '職員ページ' %> - 施設予約システム（DEMO）</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
     * {
@@ -31,7 +31,8 @@
       max-width: 1400px;
       margin: 0 auto;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 0.75rem;
       align-items: center;
       padding: 1rem 2rem;
     }
@@ -45,6 +46,8 @@
       display: flex;
       gap: 2rem;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .header-nav a {
@@ -63,6 +66,51 @@
       display: flex;
       align-items: center;
       gap: 1rem;
+    }
+
+    .user-profile-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 4px;
+    }
+
+    .user-profile-image {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+    }
+
+    .user-profile-default {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      border: 2px solid white;
+    }
+
+    .user-profile-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .user-profile-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .user-profile-role {
+      font-size: 0.8rem;
+      opacity: 0.9;
     }
 
     /* サイドバー */
@@ -302,13 +350,21 @@
   <!-- ヘッダー -->
   <header class="header">
     <div class="header-content">
-      <h1>施設予約システム - 職員管理画面</h1>
+      <h1><a href="/staff" style="color: inherit; text-decoration: none;">施設予約システム（DEMO） - 職員管理画面</a></h1>
       <nav class="header-nav">
         <div class="header-user">
           <% if (user) { %>
-            <span><%= user.name %> (<%= user.role === 'admin' ? '管理者' : '職員' %>)</span>
+            <div class="user-profile-container">
+              <div id="userProfileImageContainer">
+                <div class="user-profile-default">👤</div>
+              </div>
+              <div class="user-profile-info">
+                <div class="user-profile-name" id="userProfileName">読み込み中...</div>
+                <div class="user-profile-role"><%= user.role === 'admin' ? '管理者' : '職員' %></div>
+              </div>
+            </div>
             <a href="/staff/profile">プロフィール</a>
-            <a href="/logout">ログアウト</a>
+            <a href="#" onclick="return confirmLogout();">ログアウト</a>
           <% } %>
         </div>
       </nav>
@@ -333,6 +389,7 @@
           <a href="/staff/facilities/rooms" class="<%= currentPath === '/staff/facilities/rooms' ? 'active' : '' %>">施設管理</a>
           <a href="/staff/facilities/equipment" class="<%= currentPath === '/staff/facilities/equipment' ? 'active' : '' %>">設備管理</a>
           <a href="/staff/facilities/closed-dates" class="<%= currentPath === '/staff/facilities/closed-dates' ? 'active' : '' %>">休館日管理</a>
+          <a href="/staff/holidays" class="<%= currentPath === '/staff/holidays' ? 'active' : '' %>">祝日管理</a>
         </div>
 
         <div class="sidebar-section">
@@ -367,7 +424,7 @@
 
   <!-- フッター -->
   <footer class="footer">
-    <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+    <p>&copy; 2025 施設予約システム（DEMO）. All rights reserved.</p>
   </footer>
 
   <!-- カスタムダイアログ -->
@@ -495,6 +552,46 @@
     window.showError = function(message, title) {
       return showCustomDialog('error', message, title);
     };
+
+    // プロフィール情報を読み込み
+    async function loadUserProfile() {
+      try {
+        const response = await fetch('/api/staff/profile');
+        if (!response.ok) return;
+
+        const profile = await response.json();
+
+        // プロフィール名を更新 (ID:名前 または ID:ニックネーム)
+        const displayName = profile.nickname || profile.name;
+        const profileNameEl = document.getElementById('userProfileName');
+        if (profileNameEl) {
+          profileNameEl.textContent = `${profile.id}:${displayName}`;
+        }
+
+        // プロフィール画像を更新
+        const imageContainer = document.getElementById('userProfileImageContainer');
+        if (imageContainer && profile.profileImagePath) {
+          imageContainer.innerHTML = `<img src="/${profile.profileImagePath}" alt="プロフィール画像" class="user-profile-image" onerror="this.parentElement.innerHTML='<div class=\\'user-profile-default\\'>👤</div>'">`;
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+        // エラーの場合はデフォルト表示のまま
+      }
+    }
+
+    // ページロード時にプロフィールを読み込み
+    <% if (user) { %>
+    document.addEventListener('DOMContentLoaded', loadUserProfile);
+    <% } %>
+
+    // ログアウト確認関数
+    async function confirmLogout() {
+      const confirmed = await showCustomDialog('confirm', 'ログアウトしてもよろしいですか？', 'ログアウト確認');
+      if (confirmed) {
+        window.location.href = '/logout';
+      }
+      return false;
+    }
   </script>
 
   <%- typeof additionalScripts !== 'undefined' ? additionalScripts : '' %>

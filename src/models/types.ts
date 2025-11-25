@@ -41,9 +41,15 @@ export interface Room {
   basePriceEvening: number;
   extensionPriceMidday: number;
   extensionPriceEvening: number;
+  weekendPriceMorning: number | null;
+  weekendPriceAfternoon: number | null;
+  weekendPriceEvening: number | null;
+  weekendExtensionPriceMidday: number | null;
+  weekendExtensionPriceEvening: number | null;
   acPricePerHour: number;
   description: string | null;
   isActive: boolean;
+  maxReservationCount: number;
   isFlexibleTime: boolean;
   minDurationMinutes: number | null;
   timeUnitMinutes: number | null;
@@ -142,6 +148,14 @@ export interface ClosedDate {
   affected_rooms: number[] | null;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface Holiday {
+  id: number;
+  date: Date;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface TimeSlot {
@@ -314,6 +328,10 @@ export interface DayAvailability {
   morning_available: boolean;
   afternoon_available: boolean;
   evening_available: boolean;
+  morning_count?: number;
+  afternoon_count?: number;
+  evening_count?: number;
+  max_count?: number;
 }
 
 // お知らせ機能

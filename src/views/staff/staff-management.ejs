@@ -277,7 +277,7 @@ async function showEditModal(id) {
     const res = await fetch(`/api/staff/management/staff/${id}`, {
       credentials: 'include',
       });
-    const staff = await res.json();
+    const { staff } = await res.json();
     showFormModal(staff);
   } catch (error) {
     console.error('Error loading staff for edit:', error);
@@ -298,7 +298,7 @@ function showFormModal(staff = null) {
 
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">メールアドレス *</label>
-        <input type="email" id="staffEmail" value="${staff?.email || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="staffEmail" value="${staff?.email || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
 
       ${!isEdit ? `
@@ -389,12 +389,12 @@ async function saveStaff() {
     name: document.getElementById('staffName').value.trim(),
     email: document.getElementById('staffEmail').value.trim(),
     role: document.getElementById('staffRole').value,
-    staffCode: document.getElementById('staffCode').value.trim() || null,
+    staff_code: document.getElementById('staffCode').value.trim() || null,
     department: document.getElementById('department').value.trim() || null,
     position: document.getElementById('position').value.trim() || null,
-    hireDate: document.getElementById('hireDate').value || null,
-    staffStatus: document.getElementById('staffStatus').value,
-    isActive: document.getElementById('isActive').checked,
+    hire_date: document.getElementById('hireDate').value || null,
+    staff_status: document.getElementById('staffStatus').value,
+    is_active: document.getElementById('isActive').checked,
   };
 
   if (!editingStaffId) {

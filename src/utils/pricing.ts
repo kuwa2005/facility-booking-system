@@ -3,20 +3,28 @@
  *
  * このモジュールは以下の料金計算ロジックを実装しています：
  * - 部屋の基本料金と延長料金
+ * - 土日祝日料金（設定されている場合）
  * - 入場料倍率
  * - 設備料金
  * - 空調料金
  * - キャンセル料金
  */
 
+import HolidayService from '../services/HolidayService';
+
 export interface Room {
   id: number;
   name: string;
-  basePriceMorning: number;      // 午前の基本料金
-  basePriceAfternoon: number;    // 午後の基本料金
-  basePriceEvening: number;      // 夜間の基本料金
-  extensionPriceMidday: number;  // 正午延長料金
-  extensionPriceEvening: number; // 夕方延長料金
+  basePriceMorning: number;      // 平日午前の基本料金
+  basePriceAfternoon: number;    // 平日午後の基本料金
+  basePriceEvening: number;      // 平日夜間の基本料金
+  extensionPriceMidday: number;  // 平日正午延長料金
+  extensionPriceEvening: number; // 平日夕方延長料金
+  weekendPriceMorning: number | null;       // 土日祝日午前料金
+  weekendPriceAfternoon: number | null;     // 土日祝日午後料金
+  weekendPriceEvening: number | null;       // 土日祝日夜間料金
+  weekendExtensionPriceMidday: number | null;   // 土日祝日正午延長料金
+  weekendExtensionPriceEvening: number | null;  // 土日祝日夕方延長料金
   acPricePerHour: number;       // 空調の時間単価
 }
 
@@ -89,23 +97,34 @@ function countMainSlots(usage: UsageInput): number {
  *
  * ルール：
  * - 主要枠は基本料金で課金
+ * - 土日祝日は専用料金が設定されていればそれを使用、なければ平日料金を使用
  * - 延長枠は隣接する両方の枠が予約されている場合は無料
  * - 延長枠は連続予約なしで使用される場合は課金
+ *
+ * @param room - 部屋情報
+ * @param usage - 使用情報
+ * @param isWeekendOrHoliday - 土日祝日フラグ
  */
-function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
+function calculateRoomBaseCharge(room: Room, usage: UsageInput, isWeekendOrHoliday: boolean): number {
   let charge = 0;
 
   // 基本枠の料金を追加
   if (usage.useMorning) {
-    charge += room.basePriceMorning;
+    charge += isWeekendOrHoliday && room.weekendPriceMorning !== null
+      ? room.weekendPriceMorning
+      : room.basePriceMorning;
   }
 
   if (usage.useAfternoon) {
-    charge += room.basePriceAfternoon;
+    charge += isWeekendOrHoliday && room.weekendPriceAfternoon !== null
+      ? room.weekendPriceAfternoon
+      : room.basePriceAfternoon;
   }
 
   if (usage.useEvening) {
-    charge += room.basePriceEvening;
+    charge += isWeekendOrHoliday && room.weekendPriceEvening !== null
+      ? room.weekendPriceEvening
+      : room.basePriceEvening;
   }
 
   // 正午延長（12:00-13:00、午前と午後の間）を処理
@@ -113,7 +132,9 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
     // 午前と午後の両方が予約されている場合は無料
     const isFree = usage.useMorning && usage.useAfternoon;
     if (!isFree) {
-      charge += room.extensionPriceMidday;
+      charge += isWeekendOrHoliday && room.weekendExtensionPriceMidday !== null
+        ? room.weekendExtensionPriceMidday
+        : room.extensionPriceMidday;
     }
   }
 
@@ -122,7 +143,9 @@ function calculateRoomBaseCharge(room: Room, usage: UsageInput): number {
     // 午後と夜間の両方が予約されている場合は無料
     const isFree = usage.useAfternoon && usage.useEvening;
     if (!isFree) {
-      charge += room.extensionPriceEvening;
+      charge += isWeekendOrHoliday && room.weekendExtensionPriceEvening !== null
+        ? room.weekendExtensionPriceEvening
+        : room.extensionPriceEvening;
     }
   }
 
@@ -172,16 +195,21 @@ function calculateAcCharge(room: Room, usage: UsageInput): number {
  * @param usageInput - 使用詳細（枠、空調など）
  * @param equipmentUsages - 使用する設備
  * @param ticketMultiplier - 入場料に基づく倍率（1.0、1.5、または2.0）
+ * @param usageDate - 使用日（土日祝日判定用）
  * @returns すべての料金の詳細内訳
  */
-export function calculateUsageCharges(
+export async function calculateUsageCharges(
   room: Room,
   usageInput: UsageInput,
   equipmentUsages: EquipmentUsageInput[],
-  ticketMultiplier: number
-): UsageCharges {
+  ticketMultiplier: number,
+  usageDate: string
+): Promise<UsageCharges> {
+  // 土日祝日かどうかを判定
+  const isWeekendOrHoliday = await HolidayService.isWeekendOrHoliday(usageDate);
+
   // 部屋の基本料金を計算（倍率適用前）
-  const roomBaseChargeBeforeMultiplier = calculateRoomBaseCharge(room, usageInput);
+  const roomBaseChargeBeforeMultiplier = calculateRoomBaseCharge(room, usageInput, isWeekendOrHoliday);
 
   // 入場料倍率を部屋料金のみに適用
   const roomChargeAfterMultiplier = Math.round(roomBaseChargeBeforeMultiplier * ticketMultiplier);

@@ -219,6 +219,34 @@ export class EmailService {
       html: `${name}様、リセットトークン: ${token}`,
     });
   }
+
+  /**
+   * 決済完了通知メール送信
+   */
+  async sendPaymentConfirmation(
+    to: string,
+    name: string,
+    applicationId: number,
+    eventName: string,
+    amount: number
+  ): Promise<any> {
+    return this.sendEmail({
+      to,
+      subject: '【施設予約システム（DEMO）】決済完了のお知らせ',
+      html: `
+        <p>${name}様</p>
+        <p>予約の決済が完了しました。</p>
+        <hr>
+        <p><strong>予約番号:</strong> #${applicationId}</p>
+        <p><strong>イベント名:</strong> ${eventName}</p>
+        <p><strong>決済金額:</strong> ¥${amount.toLocaleString()}</p>
+        <hr>
+        <p>ご利用ありがとうございました。</p>
+        <p>※ これはデモシステムからの自動送信メールです。実際の決済は行われていません。</p>
+      `,
+      text: `${name}様\n\n予約の決済が完了しました。\n\n予約番号: #${applicationId}\nイベント名: ${eventName}\n決済金額: ¥${amount.toLocaleString()}\n\nご利用ありがとうございました。\n\n※ これはデモシステムからの自動送信メールです。実際の決済は行われていません。`,
+    });
+  }
 }
 
 // シングルトンインスタンス

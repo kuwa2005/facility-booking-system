@@ -14,7 +14,7 @@ export class PageController {
   static async home(req: Request, res: Response): Promise<void> {
     const rooms = await RoomRepository.findAllActive();
     res.render('public/index', {
-      title: '施設予約システム',
+      title: '施設予約システム（DEMO）',
       user: req.user,
       rooms: rooms.slice(0, 6),
     });
@@ -117,7 +117,22 @@ export class PageController {
         return;
       }
 
+      console.log('[myReservations] User ID:', req.user.userId);
+      console.log('[myReservations] User info:', req.user);
+
       const pool = (await import('../config/database')).default;
+
+      // デバッグ: 全予約数を確認
+      const [totalCount] = await pool.query('SELECT COUNT(*) as count FROM applications');
+      console.log('[myReservations] Total applications in DB:', totalCount);
+
+      // デバッグ: このユーザーの予約数を確認
+      const [userCount] = await pool.query(
+        'SELECT COUNT(*) as count FROM applications WHERE user_id = ?',
+        [req.user.userId]
+      );
+      console.log('[myReservations] User applications count:', userCount);
+
       const [reservations] = await pool.query(
         `SELECT a.*,
                 (SELECT COUNT(*) FROM usages WHERE application_id = a.id) as usage_count,
@@ -133,12 +148,18 @@ export class PageController {
         [req.user.userId]
       );
 
+      console.log('[myReservations] Reservations found:', Array.isArray(reservations) ? reservations.length : 0);
+      if (Array.isArray(reservations) && reservations.length > 0) {
+        console.log('[myReservations] First reservation:', reservations[0]);
+      }
+
       res.render('user/reservations', {
         title: '予約一覧',
         user: req.user,
         reservations,
       });
     } catch (error: any) {
+      console.error('[myReservations] Error:', error);
       next(createError(error.message, 500));
     }
   }

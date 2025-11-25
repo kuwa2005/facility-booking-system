@@ -262,18 +262,31 @@
   <header>
     <div class="container">
       <h1>
-        <a href="/" style="color: white; text-decoration: none;">施設予約システム</a>
+        <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
       </h1>
       <nav>
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
+        <% if (user) { %>
+          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
+            <strong><%= user.login_id %></strong> (<%= user.name %>)
+          </span>
+        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
-        <a href="/logout">ログアウト</a>
+        <a href="#" onclick="return confirmLogout();">ログアウト</a>
       </nav>
     </div>
   </header>
+  <script>
+    function confirmLogout() {
+      if (confirm('ログアウトしてもよろしいですか？')) {
+        window.location.href = '/logout';
+      }
+      return false;
+    }
+  </script>
 
   <main>
     <div class="container">
@@ -509,6 +522,11 @@
 
             const firstUsage = usages && usages.length > 0 ? usages[0] : null;
           %>
+          <% if (application.payment_status === 'unpaid') { %>
+            <button class="btn btn-primary" onclick="confirmPayment()" style="background-color: #10b981;">
+              💳 決済する
+            </button>
+          <% } %>
           <% if (canCancel) { %>
             <button class="btn btn-danger" onclick="confirmCancel()">予約をキャンセル</button>
           <% } else if (isCompleted && firstUsage && firstUsage.room) { %>
@@ -527,11 +545,39 @@
 
   <footer>
     <div class="container">
-      <p>&copy; 2025 施設予約システム. All rights reserved.</p>
+      <p>&copy; 2025 施設予約システム（DEMO）. All rights reserved.</p>
     </div>
   </footer>
 
   <script>
+    function confirmPayment() {
+      if (confirm('この予約の決済を行いますか？\n\n※ デモシステムのため、実際の決済は行われません。')) {
+        processPayment();
+      }
+    }
+
+    async function processPayment() {
+      try {
+        const response = await fetch('/api/user/reservations/<%= application.id %>/payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || '決済に失敗しました');
+        }
+
+        alert('✅ 決済が完了しました！\n\n請求金額: ¥' + (result.amount || 0).toLocaleString() + '\n\n※ デモシステムのため、実際の決済は行われていません。');
+        location.reload();
+      } catch (error) {
+        alert('エラー: ' + error.message);
+      }
+    }
+
     function confirmCancel() {
       if (confirm('この予約をキャンセルしますか？\n\nキャンセル料が発生する場合があります。')) {
         cancelReservation();
