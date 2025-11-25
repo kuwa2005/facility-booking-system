@@ -443,10 +443,18 @@
         <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
-        <a href="/logout">ログアウト</a>
+        <a href="#" onclick="return confirmLogout();">ログアウト</a>
       </nav>
     </div>
   </header>
+  <script>
+    function confirmLogout() {
+      if (confirm('ログアウトしてもよろしいですか？')) {
+        window.location.href = '/logout';
+      }
+      return false;
+    }
+  </script>
 
   <main>
     <div class="container">
@@ -558,7 +566,7 @@
 
       messages.forEach(message => {
         const item = document.createElement('div');
-        item.className = 'message-item' + (!message.is_read ? ' unread' : '');
+        item.className = 'message-item' + (!message.read_at ? ' unread' : '');
 
         const createdDate = new Date(message.created_at).toLocaleDateString('ja-JP', {
           year: 'numeric',
@@ -576,7 +584,7 @@
         item.innerHTML = `
           <div class="message-content" onclick="viewMessage(${message.id})">
             <div class="message-header">
-              ${!message.is_read ? '<span class="unread-badge">未読</span>' : ''}
+              ${!message.read_at ? '<span class="unread-badge">未読</span>' : ''}
               <span class="message-subject">${escapeHtml(message.subject)}</span>
             </div>
             <p class="message-preview">${escapeHtml(preview)}</p>
@@ -626,8 +634,8 @@
       // モーダルを表示
       document.getElementById('messageModal').classList.add('active');
 
-      // 未読の場合、既読にする
-      if (!message.is_read) {
+      // 未読の場合、既読にする（受信メッセージのみ）
+      if (!message.read_at && message.recipient_type === 'user') {
         markAsRead(messageId);
       }
     }

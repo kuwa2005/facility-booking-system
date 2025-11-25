@@ -389,12 +389,12 @@ async function saveStaff() {
     name: document.getElementById('staffName').value.trim(),
     email: document.getElementById('staffEmail').value.trim(),
     role: document.getElementById('staffRole').value,
-    staffCode: document.getElementById('staffCode').value.trim() || null,
+    staff_code: document.getElementById('staffCode').value.trim() || null,
     department: document.getElementById('department').value.trim() || null,
     position: document.getElementById('position').value.trim() || null,
-    hireDate: document.getElementById('hireDate').value || null,
-    staffStatus: document.getElementById('staffStatus').value,
-    isActive: document.getElementById('isActive').checked,
+    hire_date: document.getElementById('hireDate').value || null,
+    staff_status: document.getElementById('staffStatus').value,
+    is_active: document.getElementById('isActive').checked,
   };
 
   if (!editingStaffId) {

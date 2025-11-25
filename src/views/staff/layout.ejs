@@ -582,8 +582,9 @@
     <% } %>
 
     // ログアウト確認関数
-    function confirmLogout() {
-      if (confirm('ログアウトしてもよろしいですか？')) {
+    async function confirmLogout() {
+      const confirmed = await showCustomDialog('confirm', 'ログアウトしてもよろしいですか？', 'ログアウト確認');
+      if (confirmed) {
         window.location.href = '/logout';
       }
       return false;
