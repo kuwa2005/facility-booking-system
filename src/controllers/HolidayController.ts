@@ -58,7 +58,7 @@ export class HolidayController {
    */
   static async createHoliday(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { date, name, isRecurring } = req.body;
+      const { date, name } = req.body;
 
       if (!date || !name) {
         res.status(400).json({ error: 'Date and name are required' });
@@ -68,7 +68,6 @@ export class HolidayController {
       const holiday = await HolidayService.createHoliday({
         date,
         name,
-        isRecurring: isRecurring || false,
       });
 
       res.status(201).json({ success: true, holiday });
@@ -92,12 +91,11 @@ export class HolidayController {
         return;
       }
 
-      const { date, name, isRecurring } = req.body;
+      const { date, name } = req.body;
 
       const holiday = await HolidayService.updateHoliday(id, {
         date,
         name,
-        isRecurring,
       });
 
       res.json({ success: true, holiday });

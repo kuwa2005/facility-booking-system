@@ -14,7 +14,6 @@ class HolidayRepository {
       id: row.id,
       date: row.date,
       name: row.name,
-      isRecurring: Boolean(row.is_recurring),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -82,11 +81,10 @@ class HolidayRepository {
   async create(data: {
     date: string;
     name: string;
-    isRecurring?: boolean;
   }): Promise<Holiday> {
     const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO holidays (date, name, is_recurring) VALUES (?, ?, ?)',
-      [data.date, data.name, data.isRecurring || false]
+      'INSERT INTO holidays (date, name) VALUES (?, ?)',
+      [data.date, data.name]
     );
 
     const holiday = await this.findById(result.insertId);
@@ -105,7 +103,6 @@ class HolidayRepository {
     data: {
       date?: string;
       name?: string;
-      isRecurring?: boolean;
     }
   ): Promise<void> {
     const updates: string[] = [];
@@ -119,11 +116,6 @@ class HolidayRepository {
     if (data.name !== undefined) {
       updates.push('name = ?');
       values.push(data.name);
-    }
-
-    if (data.isRecurring !== undefined) {
-      updates.push('is_recurring = ?');
-      values.push(data.isRecurring);
     }
 
     if (updates.length === 0) {

@@ -48,14 +48,6 @@
         <input type="text" id="holidayName" required maxlength="255" placeholder="例: 元日、成人の日" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
 
-      <div>
-        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-          <input type="checkbox" id="holidayIsRecurring" style="width: 18px; height: 18px;">
-          <span>毎年繰り返す祝日（固定祝日）</span>
-        </label>
-        <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.25rem;">※ チェックすると、翌年以降も自動的にこの祝日として扱われます</p>
-      </div>
-
       <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
         <button type="button" onclick="closeHolidayModal()" class="btn" style="background-color: #95a5a6; color: white;">キャンセル</button>
         <button type="submit" class="btn btn-success" id="submitButton">登録</button>
@@ -127,7 +119,6 @@ function displayHolidays() {
           <tr>
             <th>日付</th>
             <th>祝日名</th>
-            <th>種別</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -136,12 +127,6 @@ function displayHolidays() {
             <tr>
               <td>${new Date(holiday.date).toLocaleDateString('ja-JP')}</td>
               <td><strong>${holiday.name}</strong></td>
-              <td>
-                ${holiday.isRecurring
-                  ? '<span class="badge badge-info">固定祝日</span>'
-                  : '<span class="badge badge-success">単発</span>'
-                }
-              </td>
               <td>
                 <button onclick="showEditModal(${holiday.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem; margin-right: 0.5rem;">編集</button>
                 <button onclick="deleteHoliday(${holiday.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
@@ -175,7 +160,6 @@ function showEditModal(id) {
   document.getElementById('holidayId').value = holiday.id;
   document.getElementById('holidayDate').value = holiday.date;
   document.getElementById('holidayName').value = holiday.name;
-  document.getElementById('holidayIsRecurring').checked = holiday.isRecurring;
   document.getElementById('holidayModal').style.display = 'block';
 }
 
@@ -192,7 +176,6 @@ document.getElementById('holidayForm').addEventListener('submit', async (e) => {
   const data = {
     date: document.getElementById('holidayDate').value,
     name: document.getElementById('holidayName').value.trim(),
-    isRecurring: document.getElementById('holidayIsRecurring').checked
   };
 
   try {

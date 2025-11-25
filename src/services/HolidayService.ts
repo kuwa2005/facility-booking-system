@@ -36,7 +36,6 @@ class HolidayService {
   async createHoliday(data: {
     date: string;
     name: string;
-    isRecurring?: boolean;
   }): Promise<Holiday> {
     // 日付の妥当性チェック
     const dateObj = new Date(data.date);
@@ -62,7 +61,6 @@ class HolidayService {
     return await HolidayRepository.create({
       date: data.date,
       name: data.name.trim(),
-      isRecurring: data.isRecurring || false,
     });
   }
 
@@ -74,7 +72,6 @@ class HolidayService {
     data: {
       date?: string;
       name?: string;
-      isRecurring?: boolean;
     }
   ): Promise<Holiday> {
     // 祝日の存在確認
@@ -114,7 +111,6 @@ class HolidayService {
     await HolidayRepository.update(id, {
       date: data.date,
       name: data.name?.trim(),
-      isRecurring: data.isRecurring,
     });
 
     const updated = await HolidayRepository.findById(id);
@@ -309,7 +305,6 @@ class HolidayService {
         await HolidayRepository.create({
           date: holiday.date,
           name: holiday.name,
-          isRecurring: false
         });
         result.created++;
       } catch (error: any) {
