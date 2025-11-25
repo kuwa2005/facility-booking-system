@@ -13,26 +13,52 @@ export class StaffReservationController {
       const {
         status,
         paymentStatus,
+        cancelStatus,
         roomId,
         userId,
         startDate,
         endDate,
         searchTerm,
+        search,
       } = req.query;
 
       const filter: any = {};
 
-      if (status) filter.status = status;
+      // キャンセル状況フィルタ
+      if (cancelStatus) {
+        if (cancelStatus === 'cancelled') {
+          filter.status = 'cancelled';
+        } else if (cancelStatus === 'none') {
+          // キャンセルされていない予約のみ（statusをupcomingやpastで絞り込んでいない場合）
+          filter.cancelStatus = 'none';
+        }
+      } else if (status) {
+        filter.status = status;
+      }
+
       if (paymentStatus) filter.paymentStatus = paymentStatus;
       if (roomId) filter.roomId = parseInt(roomId as string);
       if (userId) filter.userId = parseInt(userId as string);
       if (startDate) filter.startDate = new Date(startDate as string);
       if (endDate) filter.endDate = new Date(endDate as string);
-      if (searchTerm) filter.searchTerm = searchTerm;
+
+      // searchとsearchTermの両方に対応
+      const searchQuery = search || searchTerm;
+      if (searchQuery) filter.searchTerm = searchQuery;
+
+      console.log('[StaffReservationController] getReservations filter:', filter);
 
       const reservations = await StaffReservationManagementService.getReservations(filter);
-      res.json(reservations);
+
+      console.log('[StaffReservationController] Found reservations:', reservations.length);
+
+      // フロントエンドが期待する形式でレスポンスを返す
+      res.json({
+        reservations,
+        total: reservations.length
+      });
     } catch (error) {
+      console.error('[StaffReservationController] Error:', error);
       next(error);
     }
   }

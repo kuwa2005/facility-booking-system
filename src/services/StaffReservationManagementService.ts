@@ -6,6 +6,7 @@ import PaymentService from './PaymentService';
 export interface ReservationFilter {
   status?: 'all' | 'upcoming' | 'past' | 'cancelled';
   paymentStatus?: 'all' | 'unpaid' | 'paid' | 'refunded';
+  cancelStatus?: 'none' | 'cancelled';
   roomId?: number;
   userId?: number;
   startDate?: Date;
@@ -72,6 +73,12 @@ export class StaffReservationManagementService {
       query += ' AND a.cancel_status = "none"';
     } else if (filter.status === 'cancelled') {
       query += ' AND a.cancel_status = "cancelled"';
+    }
+
+    // キャンセルステータスフィルタ（statusと独立して使用可能）
+    if (filter.cancelStatus) {
+      query += ' AND a.cancel_status = ?';
+      params.push(filter.cancelStatus);
     }
 
     // 決済ステータスフィルタ
