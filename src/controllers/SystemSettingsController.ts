@@ -39,6 +39,27 @@ export class SystemSettingsController {
   static async getPublicSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const settings = await SystemSettingsService.getPublicSettings();
+
+      // admin_staff_idが存在する場合、管理者の名前も取得して追加
+      if (settings.admin_staff_id) {
+        try {
+          const pool = (await import('../config/database')).default;
+          const [staffRows] = await pool.query(
+            'SELECT id, name, role FROM staff WHERE id = ? LIMIT 1',
+            [settings.admin_staff_id]
+          );
+
+          if (Array.isArray(staffRows) && staffRows.length > 0) {
+            const staff: any = staffRows[0];
+            settings.admin_staff_name = staff.name;
+            settings.admin_staff_role = staff.role;
+          }
+        } catch (err) {
+          console.error('Failed to fetch admin staff info:', err);
+          // エラーが発生しても設定自体は返す
+        }
+      }
+
       res.json(settings);
     } catch (error) {
       next(error);

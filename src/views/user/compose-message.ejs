@@ -196,6 +196,16 @@
     <div id="successMessage" class="message success"></div>
     <div id="errorMessage" class="message error"></div>
 
+    <div style="background-color: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+        <span style="font-size: 20px;">👤</span>
+        <strong style="color: #333; font-size: 14px;">宛先</strong>
+      </div>
+      <div id="recipientInfo" style="color: #666; font-size: 14px; margin-left: 30px;">
+        施設管理者 (読み込み中...)
+      </div>
+    </div>
+
     <form id="messageForm">
       <div class="form-group">
         <label for="subject">件名 <span class="required">*</span></label>
@@ -239,26 +249,44 @@
     const submitBtn = document.getElementById('submitBtn');
     const successMessage = document.getElementById('successMessage');
     const errorMessage = document.getElementById('errorMessage');
+    const recipientInfo = document.getElementById('recipientInfo');
 
-    // 管理者スタッフIDを取得
+    // 管理者スタッフIDと情報を取得
     let adminStaffId = 2; // デフォルト値
+    let adminStaffName = '施設管理者';
 
-    async function loadAdminStaffId() {
+    async function loadAdminStaffInfo() {
       try {
-        const response = await fetch('/api/settings/public');
-        if (response.ok) {
-          const settings = await response.json();
+        // システム設定から管理者スタッフ情報を取得
+        const settingsResponse = await fetch('/api/settings/public');
+        if (settingsResponse.ok) {
+          const settings = await settingsResponse.json();
+
           if (settings.admin_staff_id) {
             adminStaffId = settings.admin_staff_id;
+
+            // 管理者名が取得できた場合は名前を表示
+            if (settings.admin_staff_name) {
+              adminStaffName = settings.admin_staff_name;
+              const roleText = settings.admin_staff_role === 'admin' ? '管理者' : 'スタッフ';
+              recipientInfo.textContent = `${adminStaffName} (${roleText} - ID: ${adminStaffId})`;
+            } else {
+              recipientInfo.textContent = `施設管理者 (スタッフID: ${adminStaffId})`;
+            }
+          } else {
+            recipientInfo.textContent = '施設管理者';
           }
+        } else {
+          recipientInfo.textContent = '施設管理者 (設定取得エラー)';
         }
       } catch (error) {
-        console.error('Failed to load admin staff ID:', error);
+        console.error('Failed to load admin staff info:', error);
+        recipientInfo.textContent = '施設管理者 (通信エラー)';
       }
     }
 
-    // ページ読み込み時に管理者IDを取得
-    loadAdminStaffId();
+    // ページ読み込み時に管理者情報を取得
+    loadAdminStaffInfo();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -282,9 +310,21 @@
         return;
       }
 
+      // 送信確認
+      const confirmMessage = `以下の内容で${adminStaffName}宛にメッセージを送信します。よろしいですか？\n\n件名: ${data.subject}\n宛先: ${adminStaffName} (ID: ${adminStaffId})`;
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
       try {
         submitBtn.disabled = true;
         submitBtn.textContent = '送信中...';
+
+        console.log('Sending message to admin staff:', {
+          recipient_id: adminStaffId,
+          recipient_name: adminStaffName,
+          subject: data.subject
+        });
 
         const response = await fetch('/api/user/messages', {
           method: 'POST',
@@ -297,7 +337,7 @@
         const result = await response.json();
 
         if (response.ok && result.success) {
-          successMessage.textContent = 'メッセージを送信しました。メッセージ一覧に戻ります...';
+          successMessage.textContent = `✅ ${adminStaffName}へメッセージを送信しました。メッセージ一覧に戻ります...`;
           successMessage.classList.add('show');
 
           setTimeout(() => {
