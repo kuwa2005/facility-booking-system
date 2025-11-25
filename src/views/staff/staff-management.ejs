@@ -277,7 +277,7 @@ async function showEditModal(id) {
     const res = await fetch(`/api/staff/management/staff/${id}`, {
       credentials: 'include',
       });
-    const staff = await res.json();
+    const { staff } = await res.json();
     showFormModal(staff);
   } catch (error) {
     console.error('Error loading staff for edit:', error);
