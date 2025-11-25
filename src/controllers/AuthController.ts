@@ -120,7 +120,6 @@ export class AuthController {
         await AuthService.logout(
           req.user.userId,
           req.user.role,
-          req.user.name || 'Unknown',
           req.user.email,
           ipAddress,
           userAgent

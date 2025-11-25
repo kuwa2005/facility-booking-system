@@ -192,9 +192,13 @@ export class AuthService {
   /**
    * Logout and record activity
    */
-  async logout(userId: number, userRole: string, userName: string, userEmail: string, ipAddress?: string, userAgent?: string): Promise<void> {
+  async logout(userId: number, userRole: string, userEmail: string, ipAddress?: string, userAgent?: string): Promise<void> {
     // Record activity log for staff/admin users
     if (userRole === 'staff' || userRole === 'admin') {
+      // Get user name from database
+      const user = await UserRepository.findById(userId);
+      const userName = user?.name || 'Unknown';
+
       await pool.query(
         `INSERT INTO staff_activity_logs (staff_id, action_type, description, ip_address, user_agent)
          VALUES (?, 'logout', ?, ?, ?)`,
