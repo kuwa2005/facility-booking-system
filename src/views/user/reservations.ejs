@@ -380,7 +380,7 @@
               <div class="detail-item">
                 <span class="detail-label">合計金額</span>
                 <span class="detail-value" style="color: #2563eb; font-size: 1.125rem;">
-                  ¥<%= (reservation.total_amount || 0).toLocaleString() %>
+                  ¥<%= (reservation.total_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>
                 </span>
               </div>
               <div class="detail-item">
@@ -465,7 +465,7 @@
           throw new Error(result.error || '決済に失敗しました');
         }
 
-        alert('✅ 決済が完了しました！\n\n請求金額: ¥' + (result.amount || 0).toLocaleString() + '\n\n※ デモシステムのため、実際の決済は行われていません。');
+        alert('✅ 決済が完了しました！\n\n請求金額: ¥' + (result.amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) + '\n\n※ デモシステムのため、実際の決済は行われていません。');
         location.reload();
       } catch (error) {
         alert('エラー: ' + error.message);
@@ -496,7 +496,7 @@
           throw new Error(result.error || 'キャンセルに失敗しました');
         }
 
-        alert('予約をキャンセルしました。\n\nキャンセル料: ¥' + (result.cancellation_fee || 0).toLocaleString() + '\n返金額: ¥' + (result.refund_amount || 0).toLocaleString());
+        alert('予約をキャンセルしました。\n\nキャンセル料: ¥' + (result.cancellation_fee || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}));
         location.reload();
       } catch (error) {
         alert('エラー: ' + error.message);

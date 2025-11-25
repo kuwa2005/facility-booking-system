@@ -340,7 +340,7 @@
             （キャンセル日時: <%= new Date(application.cancelled_at).toLocaleString('ja-JP') %>）
           <% } %>
           <% if (application.cancellation_fee > 0) { %>
-            <br>キャンセル料: ¥<%= application.cancellation_fee.toLocaleString() %>
+            <br>キャンセル料: ¥<%= application.cancellation_fee.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>
           <% } %>
         </div>
       <% } %>
@@ -382,7 +382,7 @@
 
           <div class="info-label">入場料</div>
           <div class="info-value">
-            <%= application.entrance_fee_type === 'free' ? '無料' : '有料（¥' + (application.entrance_fee_amount || 0).toLocaleString() + '）' %>
+            <%= application.entrance_fee_type === 'free' ? '無料' : '有料（¥' + (application.entrance_fee_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) + '）' %>
           </div>
 
           <% if (application.event_description) { %>
@@ -421,7 +421,7 @@
                     <% } %>
                   </div>
                   <div style="text-align: right; font-weight: 600; color: #2563eb; font-size: 1.125rem;">
-                    ¥<%= (usage.subtotal_amount || 0).toLocaleString() %>
+                    ¥<%= (usage.subtotal_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>
                   </div>
                 </div>
 
@@ -489,12 +489,12 @@
         <div class="price-summary">
           <div class="price-row">
             <span>利用料金合計</span>
-            <span>¥<%= (application.total_amount || 0).toLocaleString() %></span>
+            <span>¥<%= (application.total_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></span>
           </div>
           <% if (application.cancel_status === 'cancelled' && application.cancellation_fee > 0) { %>
             <div class="price-row">
               <span>キャンセル料</span>
-              <span style="color: #ef4444;">¥<%= application.cancellation_fee.toLocaleString() %></span>
+              <span style="color: #ef4444;">¥<%= application.cancellation_fee.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></span>
             </div>
           <% } %>
           <div class="price-row total">

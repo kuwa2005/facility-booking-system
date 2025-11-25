@@ -231,7 +231,7 @@
           <div class="info-label">合計金額</div>
           <div class="info-value">
             <span style="font-size: 1.25rem; font-weight: 600; color: #2563eb;">
-              ¥<%= application.total_amount.toLocaleString() %>
+              ¥<%= application.total_amount.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>
             </span>
           </div>
 

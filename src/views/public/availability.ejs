@@ -468,7 +468,7 @@
                   <div class="room-title"><%= room.name %></div>
                   <div class="room-info">
                     <% if (room.capacity) { %>定員: <%= room.capacity %>名 | <% } %>
-                    料金: ¥<%= (room.basePriceMorning || 0).toLocaleString() %>〜
+                    料金: ¥<%= (room.basePriceMorning || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>〜
                   </div>
                 </div>
                 <a href="/rooms/<%= room.id %>" class="view-detail-btn">詳細・予約</a>
