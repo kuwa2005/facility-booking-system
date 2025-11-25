@@ -89,15 +89,21 @@ export class UserProfileController {
       }
 
       const { name, nickname, organization_name, phone, address, bio } = req.body;
-
-      const profile = await UserProfileService.updateProfile(req.user.userId, {
+      const updateData: any = {
         name,
         nickname,
         organization_name,
         phone,
         address,
         bio,
-      });
+      };
+
+      // プロフィール画像がアップロードされた場合
+      if (req.file) {
+        updateData.profile_image_path = `/uploads/profiles/${req.file.filename}`;
+      }
+
+      const profile = await UserProfileService.updateProfile(req.user.userId, updateData);
 
       res.json({
         message: 'プロフィールを更新しました',

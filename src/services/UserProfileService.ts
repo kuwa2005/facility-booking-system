@@ -10,6 +10,7 @@ export interface UpdateProfileDto {
   phone?: string;
   address?: string;
   bio?: string;
+  profile_image_path?: string;
 }
 
 export class UserProfileService {

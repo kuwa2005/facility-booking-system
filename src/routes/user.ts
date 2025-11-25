@@ -17,6 +17,7 @@ router.use(authenticate);
 router.get('/profile', UserProfileController.getProfile);
 router.patch(
   '/profile',
+  profileImageUpload.single('profileImage'),
   UserProfileController.updateProfileValidation,
   UserProfileController.updateProfile
 );

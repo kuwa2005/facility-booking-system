@@ -227,6 +227,21 @@
           </div>
 
           <div class="form-group">
+            <label>プロフィール画像</label>
+            <div style="margin-bottom: 1rem;">
+              <% if (profile.profile_image_path) { %>
+                <img src="<%= profile.profile_image_path %>" alt="プロフィール画像" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb;">
+              <% } else { %>
+                <div style="width: 120px; height: 120px; border-radius: 50%; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; border: 3px solid #2563eb;">
+                  <span style="font-size: 2.5rem; color: #6b7280;">👤</span>
+                </div>
+              <% } %>
+            </div>
+            <input type="file" id="profileImage" name="profileImage" accept="image/*" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            <div class="form-help">JPG, PNG, GIF形式（最大5MB）</div>
+          </div>
+
+          <div class="form-group">
             <label for="phone">電話番号</label>
             <input type="tel" id="phone" name="phone" required value="<%= profile.phone %>" placeholder="090-1234-5678">
           </div>
@@ -286,41 +301,86 @@
       spinner.style.display = 'block';
 
       const formData = new FormData(form);
-      const data = Object.fromEntries(formData);
+      const profileImageFile = document.getElementById('profileImage').files[0];
 
-      // 空の値はnullに変換
-      Object.keys(data).forEach(key => {
-        if (data[key] === '') {
-          data[key] = null;
+      // 画像ファイルがある場合
+      if (profileImageFile) {
+        // ファイルサイズチェック（5MB）
+        if (profileImageFile.size > 5 * 1024 * 1024) {
+          errorMessage.textContent = '画像ファイルのサイズは5MB以下にしてください';
+          errorMessage.style.display = 'block';
+          submitBtn.disabled = false;
+          btnText.style.display = 'block';
+          spinner.style.display = 'none';
+          return;
         }
-      });
 
-      try {
-        const response = await fetch('/api/user/profile', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+        // FormDataとして送信
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'PATCH',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            successMessage.textContent = 'プロフィールを更新しました';
+            successMessage.style.display = 'block';
+
+            // 2秒後にマイページへリダイレクト
+            setTimeout(() => {
+              window.location.href = '/my-page';
+            }, 2000);
+          } else {
+            throw new Error(result.error || 'プロフィールの更新に失敗しました');
+          }
+        } catch (error) {
+          errorMessage.textContent = error.message;
+          errorMessage.style.display = 'block';
+          submitBtn.disabled = false;
+          btnText.style.display = 'block';
+          spinner.style.display = 'none';
+        }
+      } else {
+        // 画像ファイルがない場合はJSONとして送信
+        const data = Object.fromEntries(formData);
+        delete data.profileImage;
+
+        // 空の値はnullに変換
+        Object.keys(data).forEach(key => {
+          if (data[key] === '') {
+            data[key] = null;
+          }
         });
 
-        const result = await response.json();
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
 
-        if (response.ok) {
-          successMessage.textContent = 'プロフィールを更新しました';
-          successMessage.style.display = 'block';
+          const result = await response.json();
 
-          // 2秒後にマイページへリダイレクト
-          setTimeout(() => {
-            window.location.href = '/my-page';
-          }, 2000);
-        } else {
-          throw new Error(result.error || 'プロフィールの更新に失敗しました');
+          if (response.ok) {
+            successMessage.textContent = 'プロフィールを更新しました';
+            successMessage.style.display = 'block';
+
+            // 2秒後にマイページへリダイレクト
+            setTimeout(() => {
+              window.location.href = '/my-page';
+            }, 2000);
+          } else {
+            throw new Error(result.error || 'プロフィールの更新に失敗しました');
+          }
+        } catch (error) {
+          errorMessage.textContent = error.message;
+          errorMessage.style.display = 'block';
+          submitBtn.disabled = false;
+          btnText.style.display = 'block';
+          spinner.style.display = 'none';
         }
-      } catch (error) {
-        errorMessage.textContent = error.message;
-        errorMessage.style.display = 'block';
-        submitBtn.disabled = false;
-        btnText.style.display = 'block';
-        spinner.style.display = 'none';
       }
     });
   </script>
