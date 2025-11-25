@@ -170,6 +170,19 @@ function showFormModal(announcement = null) {
         <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #7f8c8d;">公開：ログインしていないユーザーにも表示されます / 会員のみ：ログイン済みの会員のみに表示されます</p>
       </div>
 
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">表示開始日時</label>
+          <input type="datetime-local" id="startsAt" value="${announcement?.startsAt ? new Date(announcement.startsAt).toISOString().slice(0, 16) : ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <p style="margin-top: 0.25rem; font-size: 0.875rem; color: #7f8c8d;">未設定の場合は即時表示</p>
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">表示終了日時</label>
+          <input type="datetime-local" id="endsAt" value="${announcement?.endsAt ? new Date(announcement.endsAt).toISOString().slice(0, 16) : ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <p style="margin-top: 0.25rem; font-size: 0.875rem; color: #7f8c8d;">未設定の場合は無期限</p>
+        </div>
+      </div>
+
       <div>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
           <input type="checkbox" id="isActive" ${announcement?.isActive !== false ? 'checked' : ''} style="width: 20px; height: 20px;">
@@ -202,15 +215,25 @@ function closeFormModal() {
 
 // お知らせを保存
 async function saveAnnouncement() {
+  const startsAtValue = document.getElementById('startsAt').value;
+  const endsAtValue = document.getElementById('endsAt').value;
+
   const data = {
     title: document.getElementById('title').value.trim(),
     content: document.getElementById('content').value.trim(),
     announcement_type: document.getElementById('announcementType').value,
     is_active: document.getElementById('isActive').checked,
+    starts_at: startsAtValue ? new Date(startsAtValue).toISOString() : null,
+    ends_at: endsAtValue ? new Date(endsAtValue).toISOString() : null,
   };
 
   if (!data.title || !data.content || !data.announcement_type) {
     alert('タイトル、内容、表示対象は必須です');
+    return;
+  }
+
+  if (data.starts_at && data.ends_at && new Date(data.starts_at) >= new Date(data.ends_at)) {
+    alert('表示終了日時は表示開始日時より後に設定してください');
     return;
   }
 

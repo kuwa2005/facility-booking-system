@@ -38,6 +38,34 @@ export interface ReservationListItem {
  */
 export class StaffReservationManagementService {
   /**
+   * Convert snake_case usage to camelCase
+   */
+  private usageToCamelCase(usage: any): any {
+    return {
+      id: usage.id,
+      applicationId: usage.application_id,
+      roomId: usage.room_id,
+      date: usage.date,
+      useMorning: usage.use_morning,
+      useAfternoon: usage.use_afternoon,
+      useEvening: usage.use_evening,
+      useMiddayExtension: usage.use_midday_extension,
+      useEveningExtension: usage.use_evening_extension,
+      acRequested: usage.ac_requested,
+      acHours: usage.ac_hours,
+      roomBaseChargeBeforeMultiplier: usage.room_base_charge_before_multiplier,
+      roomChargeAfterMultiplier: usage.room_charge_after_multiplier,
+      equipmentCharge: usage.equipment_charge,
+      acCharge: usage.ac_charge,
+      subtotalAmount: usage.subtotal_amount,
+      roomName: usage.room_name,
+      capacity: usage.capacity,
+      createdAt: usage.created_at,
+      updatedAt: usage.updated_at,
+    };
+  }
+
+  /**
    * 予約一覧を取得（フィルタ・検索機能付き）
    */
   async getReservations(filter: ReservationFilter = {}): Promise<ReservationListItem[]> {
@@ -194,6 +222,9 @@ export class StaffReservationManagementService {
       [applicationId]
     );
 
+    // Convert usages to camelCase
+    const usagesCamelCase = usages.map(usage => this.usageToCamelCase(usage));
+
     // 設備利用情報を取得
     const [equipmentUsages] = await pool.query<RowDataPacket[]>(
       `SELECT
@@ -220,7 +251,7 @@ export class StaffReservationManagementService {
 
     return {
       application,
-      usages,
+      usages: usagesCamelCase,
       equipmentUsages,
       user,
     };
