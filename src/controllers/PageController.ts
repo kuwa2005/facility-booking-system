@@ -14,7 +14,7 @@ export class PageController {
   static async home(req: Request, res: Response): Promise<void> {
     const rooms = await RoomRepository.findAllActive();
     res.render('public/index', {
-      title: '施設予約システム',
+      title: '施設予約システム（DEMO）',
       user: req.user,
       rooms: rooms.slice(0, 6),
     });

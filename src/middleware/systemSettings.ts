@@ -16,7 +16,7 @@ export async function loadSystemSettings(
     const settings = await SystemSettingsService.getPublicSettings();
 
     // res.localsに追加（すべてのビューで利用可能になる）
-    res.locals.siteName = settings.site_name || '施設予約システム';
+    res.locals.siteName = settings.site_name || '施設予約システム（DEMO）';
     res.locals.contactEmail = settings.contact_email || '';
     res.locals.systemSettings = settings;
 
@@ -27,7 +27,7 @@ export async function loadSystemSettings(
   } catch (error) {
     // エラーが発生してもデフォルト値を設定して続行
     console.error('Error loading system settings:', error);
-    res.locals.siteName = '施設予約システム';
+    res.locals.siteName = '施設予約システム（DEMO）';
     res.locals.contactEmail = '';
     res.locals.systemSettings = {};
     res.locals.isMaintenanceMode = false;
