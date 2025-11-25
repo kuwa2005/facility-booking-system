@@ -27,6 +27,32 @@
         <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">一般ユーザーからのメッセージを受信するスタッフのIDを指定します</p>
       </div>
       <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">タイムゾーン</label>
+        <select id="timezone" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="Asia/Tokyo">Asia/Tokyo (日本標準時)</option>
+          <option value="America/New_York">America/New_York (米国東部時間)</option>
+          <option value="America/Los_Angeles">America/Los_Angeles (米国太平洋時間)</option>
+          <option value="Europe/London">Europe/London (英国時間)</option>
+          <option value="Europe/Paris">Europe/Paris (中央ヨーロッパ時間)</option>
+          <option value="Australia/Sydney">Australia/Sydney (オーストラリア東部時間)</option>
+          <option value="UTC">UTC (協定世界時)</option>
+        </select>
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">システム全体で使用するタイムゾーンを設定します</p>
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">タイムゾーンオフセット</label>
+        <select id="timezoneOffset" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="+09:00">+09:00 (JST)</option>
+          <option value="+08:00">+08:00 (中国、シンガポール)</option>
+          <option value="+00:00">+00:00 (UTC)</option>
+          <option value="-05:00">-05:00 (EST)</option>
+          <option value="-08:00">-08:00 (PST)</option>
+          <option value="+01:00">+01:00 (CET)</option>
+          <option value="+10:00">+10:00 (AEST)</option>
+        </select>
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">タイムゾーンのUTCオフセットを指定します</p>
+      </div>
+      <div>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
           <input type="checkbox" id="maintenanceMode">
           <span>メンテナンスモード（利用者のアクセスを制限）</span>
@@ -223,6 +249,12 @@ async function loadSettings() {
     if (settings.admin_staff_id) {
       document.getElementById('adminStaffId').value = settings.admin_staff_id.value;
     }
+    if (settings.timezone) {
+      document.getElementById('timezone').value = settings.timezone.value;
+    }
+    if (settings.timezone_offset) {
+      document.getElementById('timezoneOffset').value = settings.timezone_offset.value;
+    }
     if (settings.maintenance_mode) {
       document.getElementById('maintenanceMode').checked = settings.maintenance_mode.value;
     }
@@ -350,6 +382,8 @@ async function saveBasicSettings() {
     adminEmail: document.getElementById('adminEmail').value,
     contactPhone: document.getElementById('contactPhone').value,
     adminStaffId: parseInt(document.getElementById('adminStaffId').value) || 2,
+    timezone: document.getElementById('timezone').value,
+    timezoneOffset: document.getElementById('timezoneOffset').value,
     maintenanceMode: document.getElementById('maintenanceMode').checked
   };
 
