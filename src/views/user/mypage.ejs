@@ -227,6 +227,17 @@
         <p>ようこそ、<%= profile.name %> さん</p>
       </div>
 
+      <!-- お知らせ（最新n件） -->
+      <div class="card" id="announcements-card" style="background-color: #fef3c7; border-left: 4px solid #f59e0b;">
+        <h3 style="color: #92400e; margin-bottom: 1rem;">📢 お知らせ</h3>
+        <div id="announcementsContainer">
+          <p style="text-align: center; color: #92400e;">読み込み中...</p>
+        </div>
+        <div style="margin-top: 1rem; text-align: center;">
+          <a href="/my-page/announcements" class="btn btn-outline" style="border-color: #f59e0b; color: #f59e0b;">すべてのお知らせを見る →</a>
+        </div>
+      </div>
+
       <div class="grid">
         <!-- プロフィール -->
         <div>
@@ -493,9 +504,45 @@
       }
     }
 
-    // ページロード時にレビューと未読メッセージ数を取得
+    // お知らせを取得・表示（最新n件）
+    async function loadAnnouncements() {
+      try {
+        const response = await fetch('/api/user/announcements');
+        const data = await response.json();
+
+        const container = document.getElementById('announcementsContainer');
+
+        if (data.success && data.data && data.data.length > 0) {
+          // 最新5件を表示（システム設定で変更可能にする予定）
+          const maxDisplay = 5;
+          const announcements = data.data.slice(0, maxDisplay);
+
+          container.innerHTML = announcements.map(announcement => {
+            const createdDate = new Date(announcement.created_at).toLocaleDateString('ja-JP');
+            const title = escapeHtml(announcement.title);
+            const contentFirstLine = escapeHtml(announcement.content.split('\n')[0]);
+
+            return `
+              <div style="padding: 1rem; border-bottom: 1px solid #fde68a; cursor: pointer;" onclick="window.location.href='/my-page/announcements'">
+                <div style="font-weight: 600; color: #92400e; margin-bottom: 0.25rem;">${title}</div>
+                <div style="font-size: 0.875rem; color: #78350f; margin-bottom: 0.25rem;">${contentFirstLine}...</div>
+                <div style="font-size: 0.75rem; color: #a16207;">${createdDate}</div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = '<p style="text-align: center; color: #92400e; padding: 1rem;">現在お知らせはありません</p>';
+        }
+      } catch (error) {
+        console.error('Failed to load announcements:', error);
+        document.getElementById('announcementsContainer').innerHTML = '<p style="text-align: center; color: #ef4444; padding: 1rem;">お知らせの読み込みに失敗しました</p>';
+      }
+    }
+
+    // ページロード時にレビュー、未読メッセージ数、お知らせを取得
     loadMyReviews();
     loadUnreadCount();
+    loadAnnouncements();
   </script>
 </body>
 </html>
