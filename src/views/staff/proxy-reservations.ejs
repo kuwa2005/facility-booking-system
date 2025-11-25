@@ -407,12 +407,6 @@ async function searchUsers() {
   const organization = document.getElementById('searchUserOrganization').value.trim();
   const userId = document.getElementById('searchUserId').value.trim();
 
-  // 検索条件が1つも入力されていない場合
-  if (!name && !email && !phone && !organization && !userId) {
-    alert('検索条件を最低1つ入力してください');
-    return;
-  }
-
   document.getElementById('userSearchResults').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">検索中...</p>';
 
   try {

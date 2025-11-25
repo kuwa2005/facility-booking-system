@@ -56,21 +56,21 @@ app.use(cors({
   credentials: true,
 }));
 
-// レート制限
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 開発環境では1000リクエスト、本番環境では100リクエスト
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  handler: (req, res) => {
-    res.status(429).json({
-      error: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
-      retryAfter: 900, // 15分後に再試行（秒単位）
-    });
-  },
-});
-
-app.use('/api/', limiter);
+// レート制限（デモ版では無効化）
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15分
+//   max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 開発環境では1000リクエスト、本番環境では100リクエスト
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+//   handler: (req, res) => {
+//     res.status(429).json({
+//       error: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
+//       retryAfter: 900, // 15分後に再試行（秒単位）
+//     });
+//   },
+// });
+//
+// app.use('/api/', limiter);
 
 // ボディパーサーミドルウェア
 app.use(express.json({ limit: '10mb' }));
