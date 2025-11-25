@@ -11,7 +11,7 @@
     <form id="basicSettingsForm" style="display: grid; gap: 1rem;">
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">サイト名</label>
-        <input type="text" id="siteName" value="施設予約システム" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="siteName" value="施設予約システム（DEMO）" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">管理者メールアドレス</label>
@@ -80,7 +80,7 @@
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">送信者名</label>
-        <input type="text" id="emailFromName" value="施設予約システム" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" id="emailFromName" value="施設予約システム（DEMO）" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">送信者アドレス</label>
@@ -489,14 +489,14 @@ function sendTestEmail() {
     emailFromName,
     emailFromAddress,
     to: 'test@example.com',
-    subject: 'テストメール - 施設予約システム',
+    subject: 'テストメール - 施設予約システム（DEMO）',
     body: 'これはメール設定のテストメールです。'
   });
 
   // 成功メッセージ
   alert('✅ テストメールを送信しました\n\n' +
         '送信先: test@example.com\n' +
-        '件名: テストメール - 施設予約システム\n\n' +
+        '件名: テストメール - 施設予約システム（DEMO）\n\n' +
         '※ デモサイトのため、実際にはメールは送信されていません。\n' +
         '本番環境では、設定したSMTPサーバーを通じてメールが送信されます。');
 }

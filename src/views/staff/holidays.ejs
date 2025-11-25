@@ -216,7 +216,7 @@ document.getElementById('holidayForm').addEventListener('submit', async (e) => {
 
     await showSuccess(id ? '祝日を更新しました' : '祝日を登録しました');
     closeHolidayModal();
-    loadHolidays();
+    await loadHolidays();
   } catch (error) {
     console.error('Error saving holiday:', error);
     await showError('保存に失敗しました');
@@ -244,7 +244,7 @@ async function deleteHoliday(id) {
     }
 
     await showSuccess('祝日を削除しました');
-    loadHolidays();
+    await loadHolidays();
   } catch (error) {
     console.error('Error deleting holiday:', error);
     await showError('削除に失敗しました');
@@ -291,7 +291,7 @@ async function bulkRegisterHolidays() {
     }
 
     await showSuccess(message);
-    loadHolidays();
+    await loadHolidays();
   } catch (error) {
     console.error('Error bulk registering holidays:', error);
     await showError('一括登録に失敗しました');

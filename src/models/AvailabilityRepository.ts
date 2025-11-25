@@ -120,6 +120,10 @@ export class AvailabilityRepository {
       return false;
     }
 
+    // Get room's max reservation count
+    const room = await RoomRepository.findById(roomId);
+    const maxCount = room?.maxReservationCount || 1;
+
     // Check for existing reservations
     const slotColumn = `use_${slot}`;
     const [reservationRows] = await pool.query<RowDataPacket[]>(
@@ -132,7 +136,7 @@ export class AvailabilityRepository {
       [roomId, date]
     );
 
-    return reservationRows[0].count === 0;
+    return reservationRows[0].count < maxCount;
   }
 }
 
