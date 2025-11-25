@@ -53,11 +53,13 @@
       <input type="text" id="actorSearch" placeholder="職員名で検索..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
     </div>
   </div>
-  <div style="display: flex; gap: 1rem;">
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
     <button onclick="loadActivityLog()" class="btn btn-primary">検索</button>
     <button onclick="resetFilters()" class="btn" style="background-color: #95a5a6; color: white;">リセット</button>
     <button onclick="loadToday()" class="btn" style="background-color: #27ae60; color: white;">今日</button>
+    <button onclick="loadYesterday()" class="btn" style="background-color: #3498db; color: white;">昨日</button>
     <button onclick="loadWeek()" class="btn" style="background-color: #f39c12; color: white;">今週</button>
+    <button onclick="loadCustomDaysAgo()" class="btn" style="background-color: #9b59b6; color: white;">n日前</button>
   </div>
 </div>
 
@@ -98,16 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
   loadActivityLog();
 });
 
-// デフォルトの日時範囲を設定（今日）
+// デフォルトの日時範囲を設定（今日 00:00-23:59）
 function setDefaultDateRange() {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0);
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59);
 
   const startInput = document.getElementById('startDateTime');
   const endInput = document.getElementById('endDateTime');
 
-  startInput.value = formatDateTimeLocal(today);
-  endInput.value = formatDateTimeLocal(now);
+  startInput.value = formatDateTimeLocal(todayStart);
+  endInput.value = formatDateTimeLocal(todayEnd);
 }
 
 // datetime-local形式にフォーマット
@@ -318,13 +321,28 @@ function resetFilters() {
   document.getElementById('actorSearch').value = '';
 }
 
-// 今日のログを表示
+// 今日のログを表示（00:00-23:59）
 function loadToday() {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0);
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59);
 
-  document.getElementById('startDateTime').value = formatDateTimeLocal(today);
-  document.getElementById('endDateTime').value = formatDateTimeLocal(now);
+  document.getElementById('startDateTime').value = formatDateTimeLocal(todayStart);
+  document.getElementById('endDateTime').value = formatDateTimeLocal(todayEnd);
+  document.getElementById('actionType').value = '';
+  document.getElementById('actorSearch').value = '';
+
+  loadActivityLog();
+}
+
+// 昨日のログを表示（00:00-23:59）
+function loadYesterday() {
+  const now = new Date();
+  const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0);
+  const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59);
+
+  document.getElementById('startDateTime').value = formatDateTimeLocal(yesterdayStart);
+  document.getElementById('endDateTime').value = formatDateTimeLocal(yesterdayEnd);
   document.getElementById('actionType').value = '';
   document.getElementById('actorSearch').value = '';
 
@@ -335,9 +353,37 @@ function loadToday() {
 function loadWeek() {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  weekAgo.setHours(0, 0, 0, 0);
+  const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59);
 
   document.getElementById('startDateTime').value = formatDateTimeLocal(weekAgo);
-  document.getElementById('endDateTime').value = formatDateTimeLocal(now);
+  document.getElementById('endDateTime').value = formatDateTimeLocal(endTime);
+  document.getElementById('actionType').value = '';
+  document.getElementById('actorSearch').value = '';
+
+  loadActivityLog();
+}
+
+// n日前のログを表示
+function loadCustomDaysAgo() {
+  const daysAgo = prompt('何日前のログを表示しますか？（数字を入力）', '3');
+
+  if (daysAgo === null || daysAgo === '') {
+    return;
+  }
+
+  const days = parseInt(daysAgo);
+  if (isNaN(days) || days < 0) {
+    alert('正しい数字を入力してください');
+    return;
+  }
+
+  const now = new Date();
+  const targetStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days, 0, 0);
+  const targetEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days, 23, 59);
+
+  document.getElementById('startDateTime').value = formatDateTimeLocal(targetStart);
+  document.getElementById('endDateTime').value = formatDateTimeLocal(targetEnd);
   document.getElementById('actionType').value = '';
   document.getElementById('actorSearch').value = '';
 
