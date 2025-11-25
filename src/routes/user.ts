@@ -89,6 +89,10 @@ router.delete(
   '/messages/:id',
   messageController.deleteMessageByUser.bind(messageController)
 );
+router.post(
+  '/messages/:id/delete',
+  messageController.deleteMessageByUser.bind(messageController)
+);
 
 // お問い合わせ（ログイン中のユーザー）
 router.post(

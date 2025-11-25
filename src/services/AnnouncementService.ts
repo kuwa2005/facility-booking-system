@@ -119,7 +119,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'create', 'announcement', ?, ?)`,
       [staffId, announcementId, `お知らせ「${title}」を作成しました`],
     );
@@ -185,7 +185,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'update', 'announcement', ?, ?)`,
       [staffId, announcementId, `お知らせ（ID: ${announcementId}）を更新しました`],
     );
@@ -211,7 +211,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'delete', 'announcement', ?, ?)`,
       [
         staffId,
@@ -236,7 +236,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'update', 'announcement', ?, ?)`,
       [
         staffId,

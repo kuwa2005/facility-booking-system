@@ -50,21 +50,30 @@ export class MessageController {
 
   /**
    * 自分のメッセージ一覧取得（一般利用者）
-   * GET /api/messages
+   * GET /api/messages?page=1&limit=30
    */
   async getUserMessages(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user.userId;
       const includeDeleted = req.query.includeDeleted === 'true';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 30;
 
       const messages = await messageService.getUserMessages(
         userId,
         includeDeleted,
+        page,
+        limit,
       );
 
       res.json({
         success: true,
         data: messages,
+        pagination: {
+          page,
+          limit,
+          hasMore: messages.length === limit,
+        },
       });
     } catch (error: any) {
       console.error('Error fetching user messages:', error);
@@ -141,6 +150,7 @@ export class MessageController {
     try {
       const messageId = parseInt(req.params.id);
       const userId = (req as any).user.userId;
+      const userRole = (req as any).user.role;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -150,7 +160,9 @@ export class MessageController {
         return;
       }
 
-      await messageService.markAsRead(messageId, userId);
+      // roleが'staff'または'admin'の場合はuserTypeを'staff'にする
+      const userType = (userRole === 'staff' || userRole === 'admin') ? 'staff' : 'user';
+      await messageService.markAsRead(messageId, userId, userType);
 
       res.json({
         success: true,
@@ -315,21 +327,30 @@ export class MessageController {
 
   /**
    * 職員が関わるメッセージ一覧取得
-   * GET /api/staff/messages
+   * GET /api/staff/messages?page=1&limit=30
    */
   async getStaffMessages(req: Request, res: Response): Promise<void> {
     try {
       const staffId = (req as any).user.userId;
       const showAll = req.query.showAll === 'true';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 30;
 
       // 管理者の場合は全メッセージを表示可能
       const messages = await messageService.getStaffMessages(
         showAll && (req as any).user.role === 'admin' ? undefined : staffId,
+        page,
+        limit,
       );
 
       res.json({
         success: true,
         data: messages,
+        pagination: {
+          page,
+          limit,
+          hasMore: messages.length === limit,
+        },
       });
     } catch (error: any) {
       console.error('Error fetching staff messages:', error);
