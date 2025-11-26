@@ -106,12 +106,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadTimezoneSettings() {
   try {
     const response = await fetch('/api/staff/settings');
-    const data = await response.json();
-    if (data.success && data.settings && data.settings.basic) {
-      // timezone_offsetが設定されている場合はそれを使用（分単位）
-      if (data.settings.basic.timezone_offset !== undefined && data.settings.basic.timezone_offset !== null) {
-        timezoneOffset = parseInt(data.settings.basic.timezone_offset);
-      }
+    const settings = await response.json();
+
+    // timezone_offsetが設定されている場合はそれを使用（分単位）
+    if (settings.timezone_offset && settings.timezone_offset.value !== undefined && settings.timezone_offset.value !== null) {
+      timezoneOffset = parseInt(settings.timezone_offset.value);
+      console.log('Loaded timezone offset:', timezoneOffset, 'minutes');
     }
   } catch (error) {
     console.error('Failed to load timezone settings:', error);
