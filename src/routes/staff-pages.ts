@@ -49,6 +49,9 @@ router.get('/settings', requireAdmin, StaffPageController.settings);
 // アクティビティログ（管理者のみ）
 router.get('/activity-log', requireAdmin, StaffPageController.activityLog);
 
+// ユーザーアクティビティログ（管理者のみ）
+router.get('/user-activity-log', requireAdmin, StaffPageController.userActivityLog);
+
 // 祝日管理
 router.get('/holidays', StaffPageController.holidays);
 
