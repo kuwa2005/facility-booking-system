@@ -3,6 +3,7 @@ import { createError } from '../middleware/errorHandler';
 import UserProfileService from '../services/UserProfileService';
 import RoomRepository from '../models/RoomRepository';
 import ApplicationRepository from '../models/ApplicationRepository';
+import UserActivityLogService from '../services/UserActivityLogService';
 
 /**
  * ページレンダリング用コントローラー
@@ -241,6 +242,19 @@ export class PageController {
       if (!room) {
         next(createError('施設が見つかりません', 404));
         return;
+      }
+
+      // ログインユーザーの場合、部屋閲覧ログを記録
+      if (req.user && req.user.role === 'user') {
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('user-agent');
+        await UserActivityLogService.logRoomView(
+          req.user.userId,
+          room.id,
+          room.name,
+          ipAddress,
+          userAgent
+        );
       }
 
       res.render('public/room-detail', {

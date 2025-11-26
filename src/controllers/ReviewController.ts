@@ -2,8 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { body, param } from 'express-validator';
 import ReviewRepository from '../models/ReviewRepository';
 import ApplicationRepository from '../models/ApplicationRepository';
+import RoomRepository from '../models/RoomRepository';
 import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
+import UserActivityLogService from '../services/UserActivityLogService';
 
 /**
  * Review controller for handling room reviews
@@ -75,6 +77,25 @@ export class ReviewController {
         title,
         comment,
       });
+
+      // レビュー投稿ログを記録
+      if (req.user.role === 'user') {
+        const room = await RoomRepository.findById(room_id);
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('user-agent');
+
+        if (room) {
+          await UserActivityLogService.logReviewPost(
+            req.user.userId,
+            review.id,
+            room.id,
+            room.name,
+            rating,
+            ipAddress,
+            userAgent
+          );
+        }
+      }
 
       res.status(201).json({
         message: 'Review created successfully',

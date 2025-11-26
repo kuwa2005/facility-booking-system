@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MessageService } from '../services/MessageService';
 import { CreateMessageDto } from '../models/types';
+import UserActivityLogService from '../services/UserActivityLogService';
 
 const messageService = new MessageService();
 
@@ -32,6 +33,21 @@ export class MessageController {
       }
 
       const message = await messageService.sendMessageFromUser(userId, data);
+
+      // メッセージ送信ログを記録
+      if ((req as any).user && (req as any).user.role === 'user') {
+        const ipAddress = (req as any).ip || req.connection.remoteAddress;
+        const userAgent = req.get('user-agent');
+
+        await UserActivityLogService.logMessageSend(
+          userId,
+          message.id,
+          data.subject,
+          data.content.length,
+          ipAddress,
+          userAgent
+        );
+      }
 
       res.status(201).json({
         success: true,

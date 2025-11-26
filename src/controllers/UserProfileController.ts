@@ -6,6 +6,8 @@ import { createError } from '../middleware/errorHandler';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import UserActivityLogService from '../services/UserActivityLogService';
+import RoomRepository from '../models/RoomRepository';
 
 // プロフィール画像のアップロード設定
 const storage = multer.diskStorage({
@@ -275,6 +277,23 @@ export class UserProfileController {
         [req.user.userId, roomId]
       );
 
+      // お気に入り追加ログを記録
+      if (req.user.role === 'user') {
+        const room = await RoomRepository.findById(parseInt(roomId));
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('user-agent');
+
+        if (room) {
+          await UserActivityLogService.logFavoriteAdd(
+            req.user.userId,
+            room.id,
+            room.name,
+            ipAddress,
+            userAgent
+          );
+        }
+      }
+
       res.json({
         success: true,
         message: 'お気に入りに追加しました',
@@ -303,6 +322,23 @@ export class UserProfileController {
 
       const { roomId } = req.params;
       const pool = (await import('../config/database')).default;
+
+      // お気に入り削除ログを記録（削除前に部屋情報を取得）
+      if (req.user.role === 'user') {
+        const room = await RoomRepository.findById(parseInt(roomId));
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('user-agent');
+
+        if (room) {
+          await UserActivityLogService.logFavoriteRemove(
+            req.user.userId,
+            room.id,
+            room.name,
+            ipAddress,
+            userAgent
+          );
+        }
+      }
 
       await pool.query(
         `DELETE FROM user_favorite_rooms WHERE user_id = ? AND room_id = ?`,

@@ -3,6 +3,7 @@ import RoomRepository from '../models/RoomRepository';
 import EquipmentRepository from '../models/EquipmentRepository';
 import AvailabilityRepository from '../models/AvailabilityRepository';
 import { createError } from '../middleware/errorHandler';
+import UserActivityLogService from '../services/UserActivityLogService';
 
 export class RoomController {
   /**
@@ -69,6 +70,20 @@ export class RoomController {
         yearNum,
         monthNum
       );
+
+      // 空室確認ログを記録
+      if (req.user && req.user.role === 'user') {
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('user-agent');
+        await UserActivityLogService.logAvailabilityCheck(
+          req.user.userId,
+          room.id,
+          room.name,
+          `${yearNum}-${monthNum}`,
+          ipAddress,
+          userAgent
+        );
+      }
 
       res.json({
         room: { id: room.id, name: room.name },
