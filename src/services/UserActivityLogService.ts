@@ -369,6 +369,180 @@ export class UserActivityLogService {
       userAgent
     );
   }
+
+  /**
+   * ユーザーアクティビティログを取得（フィルタリング付き）
+   */
+  static async getUserActivityLogs(filters: {
+    startDate?: string;
+    endDate?: string;
+    actionType?: string;
+    userId?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<any[]> {
+    const { startDate, endDate, actionType, userId, limit = 100, offset = 0 } = filters;
+
+    let query = `
+      SELECT
+        ual.id,
+        ual.user_id,
+        ual.action_type,
+        ual.target_type,
+        ual.target_id,
+        ual.description,
+        ual.metadata,
+        ual.ip_address,
+        ual.user_agent,
+        ual.created_at,
+        u.name as user_name,
+        u.email as user_email
+      FROM user_activity_logs ual
+      LEFT JOIN users u ON ual.user_id = u.id
+      WHERE 1=1
+    `;
+
+    const params: any[] = [];
+
+    if (startDate) {
+      query += ' AND ual.created_at >= ?';
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      query += ' AND ual.created_at <= ?';
+      params.push(endDate);
+    }
+
+    if (actionType) {
+      query += ' AND ual.action_type = ?';
+      params.push(actionType);
+    }
+
+    if (userId) {
+      query += ' AND ual.user_id = ?';
+      params.push(userId);
+    }
+
+    query += ' ORDER BY ual.created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    try {
+      const [rows] = await pool.query(query, params);
+
+      return (rows as any[]).map((row: any) => ({
+        id: row.id,
+        userId: row.user_id,
+        userName: row.user_name,
+        userEmail: row.user_email,
+        actionType: row.action_type,
+        targetType: row.target_type,
+        targetId: row.target_id,
+        description: row.description,
+        metadata: row.metadata,
+        ipAddress: row.ip_address,
+        userAgent: row.user_agent,
+        createdAt: row.created_at,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch user activity logs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ユーザーアクティビティログの統計情報を取得
+   */
+  static async getUserActivityStats(): Promise<{
+    today: number;
+    week: number;
+    month: number;
+    total: number;
+  }> {
+    try {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [todayResult] = await pool.query(
+        'SELECT COUNT(*) as count FROM user_activity_logs WHERE created_at >= ?',
+        [today]
+      );
+
+      const [weekResult] = await pool.query(
+        'SELECT COUNT(*) as count FROM user_activity_logs WHERE created_at >= ?',
+        [weekAgo]
+      );
+
+      const [monthResult] = await pool.query(
+        'SELECT COUNT(*) as count FROM user_activity_logs WHERE created_at >= ?',
+        [monthStart]
+      );
+
+      const [totalResult] = await pool.query(
+        'SELECT COUNT(*) as count FROM user_activity_logs'
+      );
+
+      return {
+        today: Number((todayResult as any)[0].count),
+        week: Number((weekResult as any)[0].count),
+        month: Number((monthResult as any)[0].count),
+        total: Number((totalResult as any)[0].count),
+      };
+    } catch (error) {
+      console.error('Failed to fetch user activity stats:', error);
+      return {
+        today: 0,
+        week: 0,
+        month: 0,
+        total: 0,
+      };
+    }
+  }
+
+  /**
+   * ユーザーアクティビティログの総件数を取得（フィルタリング付き）
+   */
+  static async getUserActivityLogCount(filters: {
+    startDate?: string;
+    endDate?: string;
+    actionType?: string;
+    userId?: number;
+  }): Promise<number> {
+    const { startDate, endDate, actionType, userId } = filters;
+
+    let query = 'SELECT COUNT(*) as count FROM user_activity_logs WHERE 1=1';
+    const params: any[] = [];
+
+    if (startDate) {
+      query += ' AND created_at >= ?';
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      query += ' AND created_at <= ?';
+      params.push(endDate);
+    }
+
+    if (actionType) {
+      query += ' AND action_type = ?';
+      params.push(actionType);
+    }
+
+    if (userId) {
+      query += ' AND user_id = ?';
+      params.push(userId);
+    }
+
+    try {
+      const [rows] = await pool.query(query, params);
+      return Number((rows as any)[0].count);
+    } catch (error) {
+      console.error('Failed to count user activity logs:', error);
+      return 0;
+    }
+  }
 }
 
 export default UserActivityLogService;
