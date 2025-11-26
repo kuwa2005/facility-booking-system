@@ -169,19 +169,20 @@ export class AuthService {
     // Update last login time
     await UserRepository.update(user.id, { last_login_at: new Date() });
 
-    // Record activity log for staff/admin users
-    if (user.role === 'staff' || user.role === 'admin') {
-      await pool.query(
-        `INSERT INTO staff_activity_logs (staff_id, action_type, description, ip_address, user_agent)
-         VALUES (?, 'login', ?, ?, ?)`,
-        [
-          user.id,
-          `${user.name} (${user.email}) がログインしました`,
-          ipAddress || null,
-          userAgent || null,
-        ]
-      );
-    }
+    // Record activity log for all users
+    const logTable = (user.role === 'staff' || user.role === 'admin') ? 'staff_activity_logs' : 'user_activity_logs';
+    const logIdColumn = (user.role === 'staff' || user.role === 'admin') ? 'staff_id' : 'user_id';
+
+    await pool.query(
+      `INSERT INTO ${logTable} (${logIdColumn}, action_type, description, ip_address, user_agent)
+       VALUES (?, 'login', ?, ?, ?)`,
+      [
+        user.id,
+        `${user.name} (${user.email}) がログインしました`,
+        ipAddress || null,
+        userAgent || null,
+      ]
+    );
 
     return {
       user: this.sanitizeUser(user),
@@ -193,23 +194,24 @@ export class AuthService {
    * Logout and record activity
    */
   async logout(userId: number, userRole: string, userEmail: string, ipAddress?: string, userAgent?: string): Promise<void> {
-    // Record activity log for staff/admin users
-    if (userRole === 'staff' || userRole === 'admin') {
-      // Get user name from database
-      const user = await UserRepository.findById(userId);
-      const userName = user?.name || 'Unknown';
+    // Get user name from database
+    const user = await UserRepository.findById(userId);
+    const userName = user?.name || 'Unknown';
 
-      await pool.query(
-        `INSERT INTO staff_activity_logs (staff_id, action_type, description, ip_address, user_agent)
-         VALUES (?, 'logout', ?, ?, ?)`,
-        [
-          userId,
-          `${userName} (${userEmail}) がログアウトしました`,
-          ipAddress || null,
-          userAgent || null,
-        ]
-      );
-    }
+    // Record activity log for all users
+    const logTable = (userRole === 'staff' || userRole === 'admin') ? 'staff_activity_logs' : 'user_activity_logs';
+    const logIdColumn = (userRole === 'staff' || userRole === 'admin') ? 'staff_id' : 'user_id';
+
+    await pool.query(
+      `INSERT INTO ${logTable} (${logIdColumn}, action_type, description, ip_address, user_agent)
+       VALUES (?, 'logout', ?, ?, ?)`,
+      [
+        userId,
+        `${userName} (${userEmail}) がログアウトしました`,
+        ipAddress || null,
+        userAgent || null,
+      ]
+    );
   }
 
   /**
