@@ -24,14 +24,21 @@
     header .container {
       max-width: 1200px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 1rem;
     }
-    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: left;
+      width: 100%;
+    }
     header nav {
       display: flex;
       gap: 1.5rem;
       align-items: center;
+      justify-content: center;
+      width: 100%;
     }
     header nav a {
       color: white;
@@ -353,6 +360,70 @@
       margin-top: 4rem;
       text-align: center;
     }
+    .logout-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    .logout-modal.show {
+      display: flex;
+    }
+    .logout-modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .logout-modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+    .logout-modal-message {
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+    .logout-modal-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .logout-modal-buttons .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      min-width: 120px;
+    }
+    .logout-modal-buttons .btn-outline {
+      background: white;
+      color: #2563eb;
+      border: 1px solid #2563eb;
+    }
+    .logout-modal-buttons .btn-outline:hover {
+      background: #eff6ff;
+    }
+    .logout-modal-buttons .btn-primary {
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
+    .logout-modal-buttons .btn-primary:hover {
+      background: #1d4ed8;
+    }
 
     /* レスポンシブ */
     @media (max-width: 768px) {
@@ -388,7 +459,7 @@
         <% if (user) { %>
           <a href="/my-page">マイページ</a>
           <a href="/my-reservations">予約一覧</a>
-          <a href="/logout">ログアウト</a>
+          <a href="#" onclick="return confirmLogout();">ログアウト</a>
         <% } else { %>
           <a href="/login">ログイン</a>
           <a href="/register" class="btn-primary">新規登録</a>
@@ -503,6 +574,18 @@
       <p>&copy; 2025 施設予約システム（DEMO）. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- ログアウト確認モーダル -->
+  <div class="logout-modal" id="logoutModal">
+    <div class="logout-modal-content">
+      <div class="logout-modal-title">ログアウト確認</div>
+      <div class="logout-modal-message">ログアウトしてもよろしいですか？</div>
+      <div class="logout-modal-buttons">
+        <button class="btn btn-outline" onclick="closeLogoutModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const rooms = <%- JSON.stringify(rooms) %>;
@@ -705,6 +788,29 @@
 
     // 初期表示
     generateCalendars();
+  </script>
+  <script>
+    function confirmLogout() {
+      document.getElementById('logoutModal').classList.add('show');
+      return false;
+    }
+
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('show');
+    }
+
+    function doLogout() {
+      window.location.href = '/logout';
+    }
+
+    // モーダルの外側をクリックで閉じる
+    if (document.getElementById('logoutModal')) {
+      document.getElementById('logoutModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeLogoutModal();
+        }
+      });
+    }
   </script>
 </body>
 </html>
