@@ -16,6 +16,7 @@ export class PageController {
     const rooms = await RoomRepository.findAllActive();
     res.render('public/index', {
       title: '施設予約システム（DEMO）',
+      siteName: '施設予約システム（DEMO）',
       user: req.user,
       rooms: rooms.slice(0, 6),
     });
