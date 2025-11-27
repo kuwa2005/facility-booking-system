@@ -579,12 +579,6 @@ async function toggleActive(id, currentStatus) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('detailModal').addEventListener('click', (e) => {
-  if (e.target.id === 'detailModal') {
-    closeDetailModal();
-  }
-});
 
 document.getElementById('editModal').addEventListener('click', (e) => {
   if (e.target.id === 'editModal') {

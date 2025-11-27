@@ -439,12 +439,6 @@ async function updateRemarks() {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('editModal').addEventListener('click', (e) => {
-  if (e.target.id === 'editModal') {
-    closeEditModal();
-  }
-});
 
 // CSVエクスポート
 function exportToCSV() {

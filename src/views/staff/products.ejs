@@ -420,14 +420,4 @@ async function recordSale() {
     alert('記録に失敗しました');
   }
 }
-
-// モーダル外クリックで閉じる
-['productModal', 'saleModal'].forEach(modalId => {
-  document.getElementById(modalId).addEventListener('click', (e) => {
-    if (e.target.id === modalId) {
-      if (modalId === 'productModal') closeProductModal();
-      else closeSaleModal();
-    }
-  });
-});
 </script>

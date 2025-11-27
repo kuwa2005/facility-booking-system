@@ -487,12 +487,6 @@ async function addNote(id) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('detailModal').addEventListener('click', (e) => {
-  if (e.target.id === 'detailModal') {
-    closeDetailModal();
-  }
-});
 
 document.getElementById('noteModal').addEventListener('click', (e) => {
   if (e.target.id === 'noteModal') {

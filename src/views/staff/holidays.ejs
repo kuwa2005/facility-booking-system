@@ -234,12 +234,6 @@ async function deleteHoliday(id) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('holidayModal').addEventListener('click', (e) => {
-  if (e.target.id === 'holidayModal') {
-    closeHolidayModal();
-  }
-});
 
 // 1年分の祝日を一括登録
 async function bulkRegisterHolidays() {

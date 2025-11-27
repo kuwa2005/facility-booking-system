@@ -367,16 +367,6 @@ async function createGuestProxy() {
   }
 }
 
-// モーダル外クリックで閉じる
-['memberProxyModal', 'guestProxyModal'].forEach(modalId => {
-  document.getElementById(modalId).addEventListener('click', (e) => {
-    if (e.target.id === modalId) {
-      if (modalId === 'memberProxyModal') closeMemberProxyModal();
-      else closeGuestProxyModal();
-    }
-  });
-});
-
 // ユーザー検索モーダル関連
 let userSearchTargetInputId = null;
 
@@ -507,11 +497,4 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
-
-// ユーザー検索モーダル外クリックで閉じる
-document.getElementById('userSearchModal').addEventListener('click', (e) => {
-  if (e.target.id === 'userSearchModal') {
-    closeUserSearchModal();
-  }
-});
 </script>

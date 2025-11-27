@@ -281,13 +281,6 @@ async function deleteMessage(id) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('sendModal').addEventListener('click', (e) => {
-  if (e.target.id === 'sendModal') {
-    closeSendModal();
-  }
-});
-
 // ユーザー検索モーダル関連
 let userSearchTargetInputId = null;
 
@@ -418,11 +411,4 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
-
-// ユーザー検索モーダル外クリックで閉じる
-document.getElementById('userSearchModal').addEventListener('click', (e) => {
-  if (e.target.id === 'userSearchModal') {
-    closeUserSearchModal();
-  }
-});
 </script>

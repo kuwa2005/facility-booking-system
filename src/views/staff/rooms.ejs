@@ -417,12 +417,6 @@ async function deleteRoom(id) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('formModal').addEventListener('click', (e) => {
-  if (e.target.id === 'formModal') {
-    closeFormModal();
-  }
-});
 
 // ドラッグ&ドロップ機能の初期化
 let draggedRow = null;
