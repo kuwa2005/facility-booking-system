@@ -201,14 +201,13 @@ async function loadMessages() {
           <table class="table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>種別</th>
-                <th>相手</th>
-                <th>件名</th>
-                <th>メッセージ（抜粋）</th>
-                <th>日時</th>
-                <th>状態</th>
-                <th>操作</th>
+                <th style="width: 60px;">ID</th>
+                <th style="width: 80px;">種別</th>
+                <th style="width: 150px;">相手</th>
+                <th style="width: auto;">件名</th>
+                <th style="width: 350px;">メッセージ（抜粋）</th>
+                <th style="width: 180px;">日時</th>
+                <th style="width: 80px;">状態</th>
               </tr>
             </thead>
             <tbody>
@@ -227,21 +226,18 @@ async function loadMessages() {
 
                 const isUnread = !msg.readAt && isFromUser;
                 const statusBadge = isUnread
-                  ? '<span style="background-color: #e74c3c; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">未読</span>'
-                  : '<span style="background-color: #27ae60; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">既読</span>';
+                  ? '<span style="background-color: #e74c3c; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">未読</span>'
+                  : '<span style="background-color: #27ae60; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">既読</span>';
 
                 return `
-                  <tr style="${isUnread ? 'background-color: #fff3cd;' : ''} cursor: pointer; transition: background-color 0.2s;" onmouseover="if(!${isUnread}) this.style.backgroundColor='#f8f9fa';" onmouseout="if(!${isUnread}) this.style.backgroundColor='';">
-                    <td onclick="viewMessageDetail(${msg.id})">${msg.id}</td>
-                    <td onclick="viewMessageDetail(${msg.id})"><span style="background-color: ${typeBadgeColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${typeLabel}</span></td>
-                    <td onclick="viewMessageDetail(${msg.id})">${otherParty}</td>
-                    <td onclick="viewMessageDetail(${msg.id})"><strong>${msg.subject || '（件名なし）'}</strong></td>
-                    <td onclick="viewMessageDetail(${msg.id})" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${contentPreview}</td>
-                    <td onclick="viewMessageDetail(${msg.id})" style="white-space: nowrap;">${new Date(msg.createdAt).toLocaleString('ja-JP')}</td>
-                    <td onclick="viewMessageDetail(${msg.id})">${statusBadge}</td>
-                    <td>
-                      <button onclick="event.stopPropagation(); deleteMessage(${msg.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
-                    </td>
+                  <tr style="${isUnread ? 'background-color: #fff3cd;' : ''} cursor: pointer; transition: background-color 0.2s;" onmouseover="if(!${isUnread}) this.style.backgroundColor='#f8f9fa';" onmouseout="if(!${isUnread}) this.style.backgroundColor='';" onclick="viewMessageDetail(${msg.id})">
+                    <td>${msg.id}</td>
+                    <td><span style="background-color: ${typeBadgeColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">${typeLabel}</span></td>
+                    <td>${otherParty}</td>
+                    <td><strong>${msg.subject || '（件名なし）'}</strong></td>
+                    <td style="max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${contentPreview}</td>
+                    <td style="white-space: nowrap;">${new Date(msg.createdAt).toLocaleString('ja-JP')}</td>
+                    <td>${statusBadge}</td>
                   </tr>
                 `;
               }).join('')}
