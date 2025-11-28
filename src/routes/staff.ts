@@ -182,6 +182,7 @@ router.get('/messages/stats', messageController.getMessageStats.bind(messageCont
 router.get('/messages/unread-from-users/count', messageController.getUnreadCountFromUsers.bind(messageController));
 router.get('/messages/user/:userId', messageController.getMessagesByUser.bind(messageController));
 router.get('/messages/:id/thread', messageController.getMessageThread.bind(messageController));
+router.post('/messages/:id/read', messageController.markAsRead.bind(messageController));
 router.delete('/messages/:id', messageController.deleteMessageByStaff.bind(messageController));
 router.post('/messages/:id/delete', messageController.deleteMessageByStaff.bind(messageController));
 router.post('/messages/cleanup', messageController.cleanupExpiredMessages.bind(messageController));
