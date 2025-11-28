@@ -402,7 +402,8 @@ export class MessageService {
     let query = `
       SELECT
         COUNT(*) as total_messages,
-        SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread_messages,
+        SUM(CASE WHEN read_at IS NULL AND sender_type = 'user' AND recipient_type = 'staff' THEN 1 ELSE 0 END) as unread_messages,
+        SUM(CASE WHEN sender_type = 'user' AND DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today_messages,
         SUM(CASE WHEN sender_type = 'user' THEN 1 ELSE 0 END) as from_users,
         SUM(CASE WHEN sender_type = 'staff' THEN 1 ELSE 0 END) as from_staff
       FROM messages
@@ -422,10 +423,11 @@ export class MessageService {
 
     // BigInt を Number に変換
     return {
-      total_messages: stats?.total_messages ? Number(stats.total_messages) : 0,
-      unread_messages: stats?.unread_messages ? Number(stats.unread_messages) : 0,
-      from_users: stats?.from_users ? Number(stats.from_users) : 0,
-      from_staff: stats?.from_staff ? Number(stats.from_staff) : 0,
+      totalMessages: stats?.total_messages ? Number(stats.total_messages) : 0,
+      unreadMessages: stats?.unread_messages ? Number(stats.unread_messages) : 0,
+      todayMessages: stats?.today_messages ? Number(stats.today_messages) : 0,
+      fromUsers: stats?.from_users ? Number(stats.from_users) : 0,
+      fromStaff: stats?.from_staff ? Number(stats.from_staff) : 0,
     };
   }
 }
