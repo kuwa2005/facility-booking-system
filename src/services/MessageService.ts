@@ -374,21 +374,7 @@ export class MessageService {
          AND deleted_at IS NULL`,
     );
 
-    const count = rows[0]?.count ? Number(rows[0].count) : 0;
-    console.log('[DEBUG] getUnreadCountFromUsers:', count, 'messages');
-
-    // デバッグ用：実際のメッセージIDを取得
-    const [debugRows] = await pool.query<RowDataPacket[]>(
-      `SELECT id, subject, read_at FROM messages
-       WHERE sender_type = 'user'
-         AND recipient_type = 'staff'
-         AND read_at IS NULL
-         AND deleted_at IS NULL
-       ORDER BY created_at DESC`,
-    );
-    console.log('[DEBUG] Unread messages:', debugRows);
-
-    return count;
+    return rows[0]?.count ? Number(rows[0].count) : 0;
   }
 
   /**
