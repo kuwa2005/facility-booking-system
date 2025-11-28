@@ -384,6 +384,9 @@
           usages: usages
         };
 
+        // デバッグ: リクエストデータをコンソールに出力
+        console.log('送信データ:', requestData);
+
         const response = await fetch('/api/applications', {
           method: 'POST',
           headers: {
@@ -395,6 +398,12 @@
         const result = await response.json();
 
         if (!response.ok) {
+          // デバッグ: エラーの詳細をコンソールに出力
+          console.error('バリデーションエラー:', result);
+          if (result.details && result.details.length > 0) {
+            const errorMessages = result.details.map(d => `${d.path || d.param}: ${d.msg}`).join('\n');
+            throw new Error(`バリデーションエラー:\n${errorMessages}`);
+          }
           throw new Error(result.error || '予約の作成に失敗しました');
         }
 
