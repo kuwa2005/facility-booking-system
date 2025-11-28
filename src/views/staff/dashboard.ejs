@@ -7,11 +7,21 @@
     <div style="display: flex; gap: 0.5rem; align-items: center;">
       <span style="font-size: 0.875rem; color: #7f8c8d;">最終更新:</span>
       <span id="lastUpdate" style="font-size: 0.875rem; font-weight: 600; color: #3498db;">-</span>
+      <button id="autoRefreshToggle" onclick="toggleAutoRefresh()" class="btn" style="padding: 0.5rem 1rem; background-color: #27ae60; color: white; border: none; transition: background-color 0.3s;">
+        ⚡ 自動更新: ON
+      </button>
       <button onclick="refreshDashboard()" class="btn btn-primary" style="padding: 0.5rem 1rem;">
         🔄 更新
       </button>
     </div>
   </div>
+</div>
+
+<!-- 未読メッセージバナー -->
+<div id="unreadMessagesBanner" style="display: none; background-color: #dc2626; padding: 0.5rem 1rem; margin-bottom: 1rem; border-radius: 4px;">
+  <p style="margin: 0; color: #fbbf24; font-weight: 700; text-align: center; font-size: 0.95rem;">
+    ⚠️ お客様からの未読メッセージが<span id="unreadCount">0</span>件あります
+  </p>
 </div>
 
 <!-- 統計カード（改善版・クリック可能） -->
@@ -157,6 +167,7 @@
 // ダッシュボードを更新
 function refreshDashboard() {
   loadDashboardData();
+  updateUnreadMessagesBanner();
 }
 
 // ダッシュボードデータを読み込み
@@ -513,11 +524,77 @@ function updateLastUpdateTime() {
   document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ja-JP');
 }
 
+// 自動更新の管理
+let autoRefreshEnabled = true;
+let autoRefreshInterval = null;
+
+// 自動更新をトグル
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  const toggleBtn = document.getElementById('autoRefreshToggle');
+
+  if (autoRefreshEnabled) {
+    toggleBtn.textContent = '⚡ 自動更新: ON';
+    toggleBtn.style.backgroundColor = '#27ae60';
+    startAutoRefresh();
+  } else {
+    toggleBtn.textContent = '⏸️ 自動更新: OFF';
+    toggleBtn.style.backgroundColor = '#95a5a6';
+    stopAutoRefresh();
+  }
+}
+
+// 自動更新を開始
+function startAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+  }
+  // 1分ごとに自動更新
+  autoRefreshInterval = setInterval(loadDashboardData, 1 * 60 * 1000);
+}
+
+// 自動更新を停止
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+}
+
+// 未読メッセージバナーを更新
+async function updateUnreadMessagesBanner() {
+  try {
+    const response = await fetch('/api/staff/messages/unread-from-users/count', {
+      credentials: 'include',
+    });
+
+    if (!response.ok) return;
+
+    const result = await response.json();
+    const count = result.data?.count || 0;
+
+    const banner = document.getElementById('unreadMessagesBanner');
+    const countSpan = document.getElementById('unreadCount');
+
+    if (banner && countSpan) {
+      countSpan.textContent = count;
+      if (count > 0) {
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load unread messages count:', error);
+  }
+}
+
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();
+  updateUnreadMessagesBanner();
 
-  // 5分ごとに自動更新
-  setInterval(loadDashboardData, 5 * 60 * 1000);
+  // 1分ごとに自動更新（デフォルトでON）
+  startAutoRefresh();
 });
 </script>
