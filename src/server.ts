@@ -32,8 +32,11 @@ const PORT = parseInt(process.env.PORT || '18080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Nginxリバースプロキシ対応：trust proxyを有効化
-// これにより、X-Forwarded-*ヘッダーを信頼し、正しいクライアントIPを取得できます
-app.set('trust proxy', true);
+// Docker環境では、Dockerネットワークサブネットを信頼する必要がある
+// loopback: 127.0.0.0/8
+// linklocal: 169.254.0.0/16
+// uniquelocal: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (Docker含む)
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 // セキュリティミドルウェア
 // HTTPSが必要なヘッダーは開発環境(HTTP)では無効化
