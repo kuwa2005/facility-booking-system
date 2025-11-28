@@ -259,6 +259,42 @@ export class StaffDashboardService {
   }
 
   /**
+   * 日付範囲の売上レポート
+   */
+  async getRevenueByDateRange(startDate: Date, endDate: Date): Promise<any> {
+    // 日別売上を取得
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+         DATE(a.created_at) as date,
+         COALESCE(SUM(CASE WHEN a.payment_status = 'paid' THEN a.total_amount - a.cancellation_fee ELSE 0 END), 0) as revenue
+       FROM applications a
+       WHERE DATE(a.created_at) >= DATE(?)
+         AND DATE(a.created_at) <= DATE(?)
+       GROUP BY DATE(a.created_at)
+       ORDER BY date ASC`,
+      [startDate, endDate]
+    );
+
+    // 期間の総売上を計算
+    const [totalRows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+         COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN total_amount - cancellation_fee ELSE 0 END), 0) as total
+       FROM applications
+       WHERE DATE(created_at) >= DATE(?)
+         AND DATE(created_at) <= DATE(?)`,
+      [startDate, endDate]
+    );
+
+    return {
+      dailyRevenue: rows.map(row => ({
+        date: row.date,
+        revenue: Number(row.revenue || 0),
+      })),
+      totalRevenue: Number(totalRows[0]?.total || 0),
+    };
+  }
+
+  /**
    * 部屋別利用統計
    */
   async getRoomUsageStats(startDate?: Date, endDate?: Date): Promise<any> {

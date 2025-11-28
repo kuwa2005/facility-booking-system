@@ -49,26 +49,60 @@
   </a>
 </div>
 
-<!-- 月別売上グラフ -->
+<!-- 売上推移と施設利用状況（統合版） -->
 <div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h2 class="card-title" style="margin: 0;">月別売上推移</h2>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title" style="margin: 0;">売上推移と施設利用状況</h2>
+      <p style="color: #7f8c8d; font-size: 0.875rem; margin-top: 0.25rem;">期間を指定して売上と施設利用状況を確認できます</p>
+    </div>
   </div>
 
-  <!-- 月選択ボタン -->
-  <div id="monthSelector" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; justify-content: center;">
-    <!-- JavaScriptで動的生成 -->
+  <!-- 日付範囲選択と月別ボタン -->
+  <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+    <!-- 月選択ボタン -->
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">📅 月別クイック選択</label>
+      <div id="monthSelector" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-start;">
+        <!-- JavaScriptで動的生成 -->
+      </div>
+    </div>
+
+    <!-- カスタム日付範囲 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+      <div>
+        <label for="startDate" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">集計開始日</label>
+        <input type="date" id="startDate" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+      </div>
+      <div>
+        <label for="endDate" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">集計終了日</label>
+        <input type="date" id="endDate" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+      </div>
+      <div>
+        <button onclick="applyCustomDateRange()" class="btn btn-primary" style="padding: 0.75rem 2rem; white-space: nowrap;">
+          🔍 表示
+        </button>
+      </div>
+    </div>
   </div>
 
+  <!-- タブ切り替え -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1;">
+    <button id="tabRevenue" onclick="switchTab('revenue')" style="padding: 0.75rem 1.5rem; border: none; background: none; color: #3498db; font-weight: 600; border-bottom: 3px solid #3498db; cursor: pointer; transition: all 0.2s;">
+      📊 売上推移
+    </button>
+    <button id="tabUsage" onclick="switchTab('usage')" style="padding: 0.75rem 1.5rem; border: none; background: none; color: #7f8c8d; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;">
+      🏢 施設利用状況
+    </button>
+  </div>
+
+  <!-- 売上グラフ -->
   <div id="revenueChartContainer">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
   </div>
-</div>
 
-<!-- 施設利用状況 -->
-<div class="card">
-  <h2 class="card-title">施設利用状況</h2>
-  <div id="roomUsageContainer">
+  <!-- 施設利用状況 -->
+  <div id="roomUsageContainer" style="display: none;">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
   </div>
 </div>
@@ -159,11 +193,16 @@ async function loadDashboardData() {
   // 月選択ボタンを生成
   generateMonthSelector();
 
-  // 月別売上グラフを読み込み
-  loadRevenueChart();
+  // 現在の月の日付範囲を初期設定
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  // 施設利用状況を読み込み
-  loadRoomUsage();
+  document.getElementById('startDate').value = formatDateForInput(startDate);
+  document.getElementById('endDate').value = formatDateForInput(endDate);
+
+  // 売上グラフを初期ロード（デフォルトは売上タブ）
+  loadRevenueChart(startDate, endDate);
 }
 
 // 最近の申請を表示
@@ -223,9 +262,12 @@ function displayTodayUsages(usages) {
   }
 }
 
-// 現在選択中の年月
+// 現在選択中の年月と日付範囲
 let selectedYear = new Date().getFullYear();
 let selectedMonth = new Date().getMonth() + 1;
+let currentStartDate = null;
+let currentEndDate = null;
+let currentTab = 'revenue'; // 'revenue' or 'usage'
 
 // 月選択ボタンを生成
 function generateMonthSelector() {
@@ -244,7 +286,7 @@ function generateMonthSelector() {
   }
 
   const selectorHtml = months.map(m => {
-    const isSelected = m.year === selectedYear && m.month === selectedMonth;
+    const isSelected = m.year === selectedYear && m.month === selectedMonth && !currentStartDate;
     return `
       <button
         onclick="selectMonth(${m.year}, ${m.month})"
@@ -264,16 +306,121 @@ function generateMonthSelector() {
 async function selectMonth(year, month) {
   selectedYear = year;
   selectedMonth = month;
+
+  // 月の開始日と終了日を設定
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0); // 月の最終日
+
+  // 日付入力フィールドを更新
+  document.getElementById('startDate').value = formatDateForInput(startDate);
+  document.getElementById('endDate').value = formatDateForInput(endDate);
+
+  // カスタム日付範囲をクリア
+  currentStartDate = null;
+  currentEndDate = null;
+
   generateMonthSelector();
-  await loadRevenueChart(year, month);
+  await loadData(startDate, endDate);
+}
+
+// カスタム日付範囲を適用
+async function applyCustomDateRange() {
+  const startDateStr = document.getElementById('startDate').value;
+  const endDateStr = document.getElementById('endDate').value;
+
+  if (!startDateStr || !endDateStr) {
+    alert('開始日と終了日を両方入力してください');
+    return;
+  }
+
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+
+  if (startDate > endDate) {
+    alert('開始日は終了日より前である必要があります');
+    return;
+  }
+
+  currentStartDate = startDate;
+  currentEndDate = endDate;
+
+  generateMonthSelector(); // ボタンの選択状態を更新
+  await loadData(startDate, endDate);
+}
+
+// データを読み込み
+async function loadData(startDate, endDate) {
+  if (currentTab === 'revenue') {
+    await loadRevenueChart(startDate, endDate);
+  } else {
+    await loadRoomUsage(startDate, endDate);
+  }
+}
+
+// タブを切り替え
+function switchTab(tab) {
+  currentTab = tab;
+
+  // タブボタンのスタイルを更新
+  const tabRevenue = document.getElementById('tabRevenue');
+  const tabUsage = document.getElementById('tabUsage');
+
+  if (tab === 'revenue') {
+    tabRevenue.style.color = '#3498db';
+    tabRevenue.style.borderBottomColor = '#3498db';
+    tabUsage.style.color = '#7f8c8d';
+    tabUsage.style.borderBottomColor = 'transparent';
+
+    document.getElementById('revenueChartContainer').style.display = 'block';
+    document.getElementById('roomUsageContainer').style.display = 'none';
+  } else {
+    tabRevenue.style.color = '#7f8c8d';
+    tabRevenue.style.borderBottomColor = 'transparent';
+    tabUsage.style.color = '#3498db';
+    tabUsage.style.borderBottomColor = '#3498db';
+
+    document.getElementById('revenueChartContainer').style.display = 'none';
+    document.getElementById('roomUsageContainer').style.display = 'block';
+  }
+
+  // データを読み込み
+  const startDateStr = document.getElementById('startDate').value;
+  const endDateStr = document.getElementById('endDate').value;
+
+  if (startDateStr && endDateStr) {
+    loadData(new Date(startDateStr), new Date(endDateStr));
+  }
+}
+
+// 日付をYYYY-MM-DD形式にフォーマット
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 日付をMM/DD形式にフォーマット
+function formatDateShort(dateStr) {
+  try {
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day}`;
+  } catch (e) {
+    return dateStr;
+  }
 }
 
 // 月別売上グラフを読み込み
-async function loadRevenueChart(year = selectedYear, month = selectedMonth) {
+async function loadRevenueChart(startDate, endDate) {
   try {
-    const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${year}&month=${month}`, {
+    const startStr = formatDateForInput(startDate);
+    const endStr = formatDateForInput(endDate);
+
+    const res = await fetch(`/api/staff/dashboard/revenue/range?startDate=${startStr}&endDate=${endStr}`, {
       credentials: 'include',
-      });
+    });
     const data = await res.json();
 
     if (data.dailyRevenue && data.dailyRevenue.length > 0) {
@@ -281,31 +428,31 @@ async function loadRevenueChart(year = selectedYear, month = selectedMonth) {
 
       const html = `
         <div style="padding: 1rem;">
-          <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 200px; gap: 0.5rem;">
-            ${data.dailyRevenue.slice(0, 15).map(day => {
+          <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 250px; gap: 0.25rem; overflow-x: auto;">
+            ${data.dailyRevenue.map(day => {
               const height = maxRevenue > 0 ? (day.revenue / maxRevenue * 100) : 0;
               return `
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-                  <div style="font-size: 0.75rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                <div style="flex: 0 0 auto; min-width: 40px; display: flex; flex-direction: column; align-items: center;">
+                  <div style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 0.5rem; white-space: nowrap;">
                     ¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
                   </div>
                   <div style="width: 100%; background: linear-gradient(to top, #3498db, #5dade2); height: ${height}%; min-height: 2px; border-radius: 4px 4px 0 0;" title="¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}"></div>
-                  <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 0.5rem;">
-                    ${day.date.split('-')[2]}日
+                  <div style="font-size: 0.7rem; color: #7f8c8d; margin-top: 0.5rem; white-space: nowrap;">
+                    ${formatDateShort(day.date)}
                   </div>
                 </div>
               `;
             }).join('')}
           </div>
-          <div style="text-align: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
-            <div style="font-size: 0.875rem; color: #7f8c8d;">${year}年${month}月の総売上</div>
-            <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
+          <div style="text-align: center; margin-top: 1.5rem; padding: 1.5rem; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 0.875rem; color: #7f8c8d;">期間の総売上（${startStr} 〜 ${endStr}）</div>
+            <div style="font-size: 1.75rem; font-weight: 600; color: #3498db; margin-top: 0.5rem;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
           </div>
         </div>
       `;
       document.getElementById('revenueChartContainer').innerHTML = html;
     } else {
-      document.getElementById('revenueChartContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">データがありません</p>';
+      document.getElementById('revenueChartContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">この期間のデータがありません</p>';
     }
   } catch (error) {
     console.error('Error loading revenue chart:', error);
@@ -314,29 +461,35 @@ async function loadRevenueChart(year = selectedYear, month = selectedMonth) {
 }
 
 // 施設利用状況を読み込み
-async function loadRoomUsage() {
+async function loadRoomUsage(startDate, endDate) {
   try {
-    const res = await fetch('/api/staff/dashboard/rooms/usage-stats', {
+    const startStr = formatDateForInput(startDate);
+    const endStr = formatDateForInput(endDate);
+
+    const res = await fetch(`/api/staff/dashboard/rooms/usage-stats?startDate=${startStr}&endDate=${endStr}`, {
       credentials: 'include',
-      });
+    });
     const data = await res.json();
 
     if (data.rooms && data.rooms.length > 0) {
       const html = `
         <div style="padding: 1rem;">
+          <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #7f8c8d;">集計期間（${startStr} 〜 ${endStr}）</div>
+          </div>
           ${data.rooms.map(room => `
-            <div style="margin-bottom: 1.5rem;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="font-weight: 600;">${room.name}</span>
-                <span style="color: #7f8c8d;">
-                  ${room.usageCount || 0}回 · ¥${(room.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #f9fafb; border-radius: 6px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-weight: 600; font-size: 1.1rem;">${room.name}</span>
+                <span style="color: #7f8c8d; font-size: 0.9rem;">
+                  ${room.usageCount || 0}回利用 · ¥${(room.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
                 </span>
               </div>
               <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="flex: 1; height: 12px; background-color: #ecf0f1; border-radius: 6px; overflow: hidden;">
+                <div style="flex: 1; height: 16px; background-color: #ecf0f1; border-radius: 8px; overflow: hidden;">
                   <div style="height: 100%; background: linear-gradient(to right, #3498db, #2ecc71); width: ${room.utilizationRate || 0}%; transition: width 0.3s ease;"></div>
                 </div>
-                <span style="min-width: 50px; text-align: right; font-weight: 600; color: #3498db;">
+                <span style="min-width: 60px; text-align: right; font-weight: 600; color: #3498db; font-size: 1.1rem;">
                   ${room.utilizationRate || 0}%
                 </span>
               </div>
@@ -346,7 +499,7 @@ async function loadRoomUsage() {
       `;
       document.getElementById('roomUsageContainer').innerHTML = html;
     } else {
-      document.getElementById('roomUsageContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">データがありません</p>';
+      document.getElementById('roomUsageContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">この期間のデータがありません</p>';
     }
   } catch (error) {
     console.error('Error loading room usage:', error);

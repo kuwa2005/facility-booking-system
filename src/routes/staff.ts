@@ -57,6 +57,7 @@ const profileImageUpload = multer({
 // ===== ダッシュボード =====
 router.get('/dashboard/stats', StaffDashboardController.getDashboardStats);
 router.get('/dashboard/revenue/monthly', StaffDashboardController.getMonthlyRevenueReport);
+router.get('/dashboard/revenue/range', StaffDashboardController.getRevenueByDateRange);
 router.get('/dashboard/rooms/usage-stats', StaffDashboardController.getRoomUsageStats);
 
 // ===== プロフィール =====

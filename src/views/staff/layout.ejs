@@ -411,7 +411,7 @@
           <a href="/staff/management" class="<%= currentPath === '/staff/management' ? 'active' : '' %>">職員管理</a>
           <a href="/staff/settings" class="<%= currentPath === '/staff/settings' ? 'active' : '' %>">システム設定</a>
           <a href="/staff/activity-log" class="<%= currentPath === '/staff/activity-log' ? 'active' : '' %>">アクティビティログ</a>
-          <a href="/staff/user-activity-log" class="<%= currentPath === '/staff/user-activity-log' ? 'active' : '' %>">ユーザーアクティビティログ</a>
+          <a href="/staff/user-activity-log" class="<%= currentPath === '/staff/user-activity-log' ? 'active' : '' %>">ユーザーログ</a>
         </div>
         <% } %>
       </nav>
@@ -479,9 +479,11 @@
           };
 
           const okBtn = document.createElement('button');
-          okBtn.textContent = 'OK';
-          okBtn.className = 'btn btn-primary';
-          okBtn.style.cssText = 'padding: 0.75rem 2rem; font-size: 1rem;';
+          okBtn.textContent = type === 'confirm' && message.includes('ログアウト') ? 'ログアウト' : 'OK';
+          okBtn.className = 'btn';
+          okBtn.style.cssText = type === 'confirm' && message.includes('ログアウト') ?
+            'padding: 0.75rem 2rem; font-size: 1rem; background-color: #e74c3c; color: white;' :
+            'padding: 0.75rem 2rem; font-size: 1rem; background-color: #3498db; color: white;';
           okBtn.onclick = () => {
             closeCustomDialog();
             resolve(true);

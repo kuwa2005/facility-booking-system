@@ -30,6 +30,28 @@ export class StaffDashboardController {
   }
 
   /**
+   * 日付範囲の売上レポートを取得
+   */
+  static async getRevenueByDateRange(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { startDate, endDate } = req.query;
+
+      if (!startDate || !endDate) {
+        res.status(400).json({ error: 'startDate and endDate are required' });
+        return;
+      }
+
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+
+      const report = await StaffDashboardService.getRevenueByDateRange(start, end);
+      res.json(report);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * 部屋別利用統計を取得
    */
   static async getRoomUsageStats(req: Request, res: Response, next: NextFunction): Promise<void> {
