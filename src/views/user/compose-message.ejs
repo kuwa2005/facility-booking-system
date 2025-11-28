@@ -458,6 +458,8 @@
     async function submitMessage() {
       if (!pendingMessageData) return;
 
+      // closeConfirmModal()を呼ぶ前にデータをコピー
+      const dataToSend = pendingMessageData;
       closeConfirmModal();
 
       try {
@@ -467,7 +469,7 @@
         console.log('Sending message to admin staff:', {
           recipient_id: adminStaffId,
           recipient_name: adminStaffName,
-          subject: pendingMessageData.subject
+          subject: dataToSend.subject
         });
 
         const response = await fetch('/api/user/messages', {
@@ -475,7 +477,7 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(pendingMessageData)
+          body: JSON.stringify(dataToSend)
         });
 
         const result = await response.json();
