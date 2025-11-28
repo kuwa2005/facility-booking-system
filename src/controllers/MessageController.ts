@@ -359,15 +359,26 @@ export class MessageController {
         limit,
       );
 
-      res.json({
-        success: true,
-        data: messages,
-        pagination: {
-          page,
-          limit,
-          hasMore: messages.length === limit,
-        },
-      });
+      // snake_case を camelCase に変換
+      const camelCaseMessages = messages.map(msg => ({
+        id: msg.id,
+        senderType: msg.sender_type,
+        senderId: msg.sender_id,
+        senderName: (msg as any).sender_name,
+        senderEmail: (msg as any).sender_email,
+        recipientType: msg.recipient_type,
+        recipientId: msg.recipient_id,
+        recipientName: (msg as any).recipient_name,
+        recipientEmail: (msg as any).recipient_email,
+        subject: msg.subject,
+        content: msg.content,
+        readAt: msg.read_at,
+        createdAt: msg.created_at,
+        deletedAt: msg.deleted_at,
+        parentMessageId: msg.parent_message_id,
+      }));
+
+      res.json(camelCaseMessages);
     } catch (error: any) {
       console.error('Error fetching staff messages:', error);
       res.status(500).json({
@@ -489,10 +500,7 @@ export class MessageController {
         showAll && (req as any).user.role === 'admin' ? undefined : staffId,
       );
 
-      res.json({
-        success: true,
-        data: stats,
-      });
+      res.json(stats);
     } catch (error: any) {
       console.error('Error fetching message stats:', error);
       res.status(500).json({
