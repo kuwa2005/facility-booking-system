@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import AuthService from '../services/AuthService';
 import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class AuthController {
   /**
@@ -83,8 +84,8 @@ export class AuthController {
   static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
-      const ipAddress = req.ip || req.connection.remoteAddress;
-      const userAgent = req.get('user-agent');
+      const ipAddress = getClientIp(req);
+      const userAgent = getUserAgent(req);
 
       const result = await AuthService.login(email, password, ipAddress, userAgent);
 
@@ -114,8 +115,8 @@ export class AuthController {
   static async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (req.user) {
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
         await AuthService.logout(
           req.user.userId,

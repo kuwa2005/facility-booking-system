@@ -17,6 +17,7 @@ import UserActivityLogService from '../services/UserActivityLogService';
 import { emailService } from '../services/EmailService';
 import { notificationService } from '../services/NotificationService';
 import { CreateApplicationDto, CreateUsageDto } from '../models/types';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class ApplicationController {
   /**
@@ -274,8 +275,8 @@ export class ApplicationController {
 
       // ログインユーザーの予約作成ログを記録
       if (req.user && req.user.role === 'user') {
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
         const firstRoom = await RoomRepository.findById(usagesData[0].room_id);
         const dates = usagesData.map(u => u.date);
 

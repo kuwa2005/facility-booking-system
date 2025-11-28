@@ -4,6 +4,7 @@ import EquipmentRepository from '../models/EquipmentRepository';
 import AvailabilityRepository from '../models/AvailabilityRepository';
 import { createError } from '../middleware/errorHandler';
 import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class RoomController {
   /**
@@ -73,8 +74,8 @@ export class RoomController {
 
       // 空室確認ログを記録
       if (req.user && req.user.role === 'user') {
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
         await UserActivityLogService.logAvailabilityCheck(
           req.user.userId,
           room.id,

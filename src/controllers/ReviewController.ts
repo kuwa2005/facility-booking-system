@@ -6,6 +6,7 @@ import RoomRepository from '../models/RoomRepository';
 import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
 import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 /**
  * Review controller for handling room reviews
@@ -81,8 +82,8 @@ export class ReviewController {
       // レビュー投稿ログを記録
       if (req.user.role === 'user') {
         const room = await RoomRepository.findById(room_id);
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
         if (room) {
           await UserActivityLogService.logReviewPost(

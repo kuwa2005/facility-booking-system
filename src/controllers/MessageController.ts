@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { MessageService } from '../services/MessageService';
 import { CreateMessageDto } from '../models/types';
 import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 const messageService = new MessageService();
 
@@ -36,8 +37,8 @@ export class MessageController {
 
       // メッセージ送信ログを記録
       if ((req as any).user && (req as any).user.role === 'user') {
-        const ipAddress = (req as any).ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
         await UserActivityLogService.logMessageSend(
           userId,

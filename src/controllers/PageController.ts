@@ -4,6 +4,7 @@ import UserProfileService from '../services/UserProfileService';
 import RoomRepository from '../models/RoomRepository';
 import ApplicationRepository from '../models/ApplicationRepository';
 import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 /**
  * ページレンダリング用コントローラー
@@ -247,8 +248,8 @@ export class PageController {
 
       // ログインユーザーの場合、部屋閲覧ログを記録
       if (req.user && req.user.role === 'user') {
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
         await UserActivityLogService.logRoomView(
           req.user.userId,
           room.id,

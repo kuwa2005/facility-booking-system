@@ -5,6 +5,7 @@ import { calculateCancellationFee } from '../utils/pricing';
 import PaymentService from '../services/PaymentService';
 import { emailService } from '../services/EmailService';
 import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class UserReservationController {
   /**
@@ -210,8 +211,8 @@ export class UserReservationController {
 
       // キャンセルログを記録
       if (req.user && req.user.role === 'user') {
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
         const refundAmount = result.application.total_amount - totalCancellationFee;
 
         await UserActivityLogService.logCancelSuccess(
@@ -418,8 +419,8 @@ export class UserReservationController {
 
       // 決済ログを記録
       if (req.user && req.user.role === 'user') {
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
         await UserActivityLogService.logPaymentSuccess(
           req.user.userId,

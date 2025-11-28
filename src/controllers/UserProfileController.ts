@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import UserActivityLogService from '../services/UserActivityLogService';
 import RoomRepository from '../models/RoomRepository';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 // プロフィール画像のアップロード設定
 const storage = multer.diskStorage({
@@ -280,8 +281,8 @@ export class UserProfileController {
       // お気に入り追加ログを記録
       if (req.user.role === 'user') {
         const room = await RoomRepository.findById(parseInt(roomId));
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
         if (room) {
           await UserActivityLogService.logFavoriteAdd(
@@ -326,8 +327,8 @@ export class UserProfileController {
       // お気に入り削除ログを記録（削除前に部屋情報を取得）
       if (req.user.role === 'user') {
         const room = await RoomRepository.findById(parseInt(roomId));
-        const ipAddress = req.ip || req.connection.remoteAddress;
-        const userAgent = req.get('user-agent');
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
         if (room) {
           await UserActivityLogService.logFavoriteRemove(
