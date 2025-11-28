@@ -51,7 +51,15 @@
 
 <!-- 月別売上グラフ -->
 <div class="card">
-  <h2 class="card-title">月別売上推移</h2>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin: 0;">月別売上推移</h2>
+  </div>
+
+  <!-- 月選択ボタン -->
+  <div id="monthSelector" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; justify-content: center;">
+    <!-- JavaScriptで動的生成 -->
+  </div>
+
   <div id="revenueChartContainer">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
   </div>
@@ -148,6 +156,9 @@ async function loadDashboardData() {
     console.error('Error loading dashboard stats:', error);
   }
 
+  // 月選択ボタンを生成
+  generateMonthSelector();
+
   // 月別売上グラフを読み込み
   loadRevenueChart();
 
@@ -212,13 +223,54 @@ function displayTodayUsages(usages) {
   }
 }
 
-// 月別売上グラフを読み込み
-async function loadRevenueChart() {
-  try {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+// 現在選択中の年月
+let selectedYear = new Date().getFullYear();
+let selectedMonth = new Date().getMonth() + 1;
 
+// 月選択ボタンを生成
+function generateMonthSelector() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const months = [];
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(currentYear, currentMonth - 1 - i, 1);
+    months.push({
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      label: `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`
+    });
+  }
+
+  const selectorHtml = months.map(m => {
+    const isSelected = m.year === selectedYear && m.month === selectedMonth;
+    return `
+      <button
+        onclick="selectMonth(${m.year}, ${m.month})"
+        style="padding: 0.5rem 1rem; border: 2px solid ${isSelected ? '#3498db' : '#ddd'}; background: ${isSelected ? '#3498db' : 'white'}; color: ${isSelected ? 'white' : '#333'}; border-radius: 6px; cursor: pointer; font-weight: ${isSelected ? '600' : '400'}; transition: all 0.3s;"
+        onmouseover="if(!${isSelected}) { this.style.borderColor='#3498db'; this.style.backgroundColor='#f0f8ff'; }"
+        onmouseout="if(!${isSelected}) { this.style.borderColor='#ddd'; this.style.backgroundColor='white'; }"
+      >
+        ${m.label}
+      </button>
+    `;
+  }).join('');
+
+  document.getElementById('monthSelector').innerHTML = selectorHtml;
+}
+
+// 月を選択
+async function selectMonth(year, month) {
+  selectedYear = year;
+  selectedMonth = month;
+  generateMonthSelector();
+  await loadRevenueChart(year, month);
+}
+
+// 月別売上グラフを読み込み
+async function loadRevenueChart(year = selectedYear, month = selectedMonth) {
+  try {
     const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${year}&month=${month}`, {
       credentials: 'include',
       });
@@ -246,7 +298,7 @@ async function loadRevenueChart() {
             }).join('')}
           </div>
           <div style="text-align: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
-            <div style="font-size: 0.875rem; color: #7f8c8d;">今月の総売上</div>
+            <div style="font-size: 0.875rem; color: #7f8c8d;">${year}年${month}月の総売上</div>
             <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
           </div>
         </div>
