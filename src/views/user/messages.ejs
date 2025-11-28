@@ -16,16 +16,41 @@
     header {
       background-color: #2563eb;
       color: white;
-      padding: 1rem 0;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    header .container {
-      max-width: 1200px;
+    .header-top {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .header-top .container {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    header h1 { font-size: 1.5rem; font-weight: 600; }
+    .header-bottom {
+      padding: 0.75rem 0;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .user-name {
+      color: white;
+      padding: 0.5rem 1rem;
+      border-right: 1px solid rgba(255,255,255,0.3);
+    }
+    .logout-link {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    .logout-link:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
     header nav {
       display: flex;
       gap: 1.5rem;
@@ -428,23 +453,31 @@
 </head>
 <body>
   <header>
-    <div class="container">
-      <h1>
-        <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
-      </h1>
-      <nav>
-        <a href="/rooms">施設一覧</a>
-        <a href="/availability">空き状況確認</a>
-        <a href="/contact">お問合せ</a>
-        <% if (user) { %>
-          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
-            <strong><%= user.login_id %></strong> (<%= user.name %>)
-          </span>
-        <% } %>
-        <a href="/my-page">マイページ</a>
-        <a href="/my-reservations">予約一覧</a>
-        <a href="#" onclick="return confirmLogout();">ログアウト</a>
-      </nav>
+    <div class="header-top">
+      <div class="container">
+        <h1>
+          <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
+        </h1>
+        <div class="user-info">
+          <% if (user) { %>
+            <span class="user-name">
+              <strong><%= user.login_id %></strong> (<%= user.name %>)
+            </span>
+          <% } %>
+          <a href="#" class="logout-link" onclick="return confirmLogout();">ログアウト</a>
+        </div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <div class="container">
+        <nav>
+          <a href="/rooms">施設一覧</a>
+          <a href="/availability">空き状況確認</a>
+          <a href="/contact">お問合せ</a>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+        </nav>
+      </div>
     </div>
   </header>
   <script>
