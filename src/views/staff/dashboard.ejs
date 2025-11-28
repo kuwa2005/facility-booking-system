@@ -49,6 +49,31 @@
   </a>
 </div>
 
+<!-- 2カラムレイアウト -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- 最近の申請 -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 class="card-title" style="margin: 0;">最近の申請</h2>
+      <a href="/staff/reservations" class="btn" style="padding: 0.5rem 1rem; background-color: #95a5a6; color: white; text-decoration: none;">すべて見る →</a>
+    </div>
+    <div id="recentApplicationsContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+
+  <!-- 本日の利用 -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 class="card-title" style="margin: 0;">本日の利用</h2>
+      <a href="/staff/usages" class="btn" style="padding: 0.5rem 1rem; background-color: #95a5a6; color: white; text-decoration: none;">すべて見る →</a>
+    </div>
+    <div id="todayUsagesContainer">
+      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+    </div>
+  </div>
+</div>
+
 <!-- 売上推移と施設利用状況（統合版） -->
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
@@ -104,31 +129,6 @@
   <!-- 施設利用状況 -->
   <div id="roomUsageContainer" style="display: none;">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
-  </div>
-</div>
-
-<!-- 2カラムレイアウト -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
-  <!-- 最近の申請 -->
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h2 class="card-title" style="margin: 0;">最近の申請</h2>
-      <a href="/staff/reservations" class="btn" style="padding: 0.5rem 1rem; background-color: #95a5a6; color: white; text-decoration: none;">すべて見る →</a>
-    </div>
-    <div id="recentApplicationsContainer">
-      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
-    </div>
-  </div>
-
-  <!-- 本日の利用 -->
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h2 class="card-title" style="margin: 0;">本日の利用</h2>
-      <a href="/staff/usages" class="btn" style="padding: 0.5rem 1rem; background-color: #95a5a6; color: white; text-decoration: none;">すべて見る →</a>
-    </div>
-    <div id="todayUsagesContainer">
-      <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
-    </div>
   </div>
 </div>
 
