@@ -18,11 +18,13 @@
 </div>
 
 <!-- 未読メッセージバナー -->
-<div id="unreadMessagesBanner" style="display: none; background-color: #dc2626; padding: 0.5rem 1rem; margin-bottom: 1rem; border-radius: 4px;">
-  <p style="margin: 0; color: #fbbf24; font-weight: 700; text-align: center; font-size: 0.95rem;">
-    ⚠️ お客様からの未読メッセージが<span id="unreadCount">0</span>件あります
-  </p>
-</div>
+<a href="/staff/messages" style="text-decoration: none;">
+  <div id="unreadMessagesBanner" style="display: none; background-color: #dc2626; padding: 0.5rem 1rem; margin-bottom: 1rem; border-radius: 4px; cursor: pointer; transition: background-color 0.3s, transform 0.2s;" onmouseover="this.style.backgroundColor='#b91c1c'; this.style.transform='translateY(-1px)';" onmouseout="this.style.backgroundColor='#dc2626'; this.style.transform='translateY(0)';">
+    <p style="margin: 0; color: #fbbf24; font-weight: 700; text-align: center; font-size: 0.95rem;">
+      ⚠️ お客様からの未読メッセージが<span id="unreadCount">0</span>件あります
+    </p>
+  </div>
+</a>
 
 <!-- 統計カード（改善版・クリック可能） -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
