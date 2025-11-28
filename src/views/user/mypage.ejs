@@ -380,8 +380,18 @@
       </div>
 
       <div class="grid">
-        <!-- プロフィール -->
+        <!-- 左側ペイン -->
         <div>
+          <!-- 予約管理 -->
+          <div class="card card-gradient-primary">
+            <h3>📅 予約管理</h3>
+            <div class="action-buttons">
+              <a href="/my-reservations" class="btn" style="background: rgba(255,255,255,0.9); color: #667eea; border: none;">予約一覧を見る</a>
+              <a href="/availability" class="btn" style="background: white; color: #667eea; border: none; font-weight: 600;">新規予約</a>
+            </div>
+          </div>
+
+          <!-- プロフィール -->
           <div class="card">
             <h3>プロフィール</h3>
 
@@ -418,52 +428,19 @@
               <a href="/my-page/edit" class="btn btn-primary btn-block">プロフィール編集</a>
             </div>
           </div>
-        </div>
 
-        <!-- クイックアクション -->
-        <div>
-          <div class="card card-gradient-primary">
-            <h3>📅 予約管理</h3>
-            <div class="action-buttons">
-              <a href="/my-reservations" class="btn" style="background: rgba(255,255,255,0.9); color: #667eea; border: none;">予約一覧を見る</a>
-              <a href="/availability" class="btn" style="background: white; color: #667eea; border: none; font-weight: 600;">新規予約</a>
-            </div>
-          </div>
-
+          <!-- アカウント設定 -->
           <div class="card">
             <h3>アカウント設定</h3>
             <div class="action-buttons">
               <a href="/my-page/change-password" class="btn btn-outline">パスワード変更</a>
             </div>
           </div>
+        </div>
 
-          <div class="card">
-            <h3>⭐ マイレビュー</h3>
-            <div id="myReviews" style="min-height: 100px;">
-              <p style="color: #9ca3af; text-align: center; padding: 2rem;">読み込み中...</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>❤️ お気に入り施設</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
-              お気に入りに登録した施設を管理できます
-            </p>
-            <a href="/my-page/favorites" class="btn btn-outline btn-block">
-              お気に入り一覧を見る
-            </a>
-          </div>
-
-          <div class="card">
-            <h3>📢 お知らせ</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
-              施設からの重要なお知らせを確認できます
-            </p>
-            <a href="/my-page/announcements" class="btn btn-outline btn-block">
-              お知らせを見る
-            </a>
-          </div>
-
+        <!-- 右側ペイン -->
+        <div>
+          <!-- メッセージ -->
           <div class="card card-gradient-accent">
             <h3>✉️ メッセージ</h3>
             <p style="color: rgba(255,255,255,0.9); margin-bottom: 1rem; font-size: 0.875rem;">
@@ -475,6 +452,25 @@
             <a href="/my-page/messages" class="btn btn-block" style="background: white; color: #f5576c; border: none; font-weight: 600;">
               メッセージを見る
             </a>
+          </div>
+
+          <!-- お気に入り施設 -->
+          <div class="card">
+            <h3>❤️ お気に入り施設</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+              お気に入りに登録した施設を管理できます
+            </p>
+            <a href="/my-page/favorites" class="btn btn-outline btn-block">
+              お気に入り一覧を見る
+            </a>
+          </div>
+
+          <!-- マイレビュー -->
+          <div class="card">
+            <h3>⭐ マイレビュー</h3>
+            <div id="myReviews" style="min-height: 100px;">
+              <p style="color: #9ca3af; text-align: center; padding: 2rem;">読み込み中...</p>
+            </div>
           </div>
         </div>
       </div>
