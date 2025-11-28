@@ -504,6 +504,28 @@ export class MessageController {
   }
 
   /**
+   * 一般客からの未読メッセージ数取得（職員向け）
+   * GET /api/staff/messages/unread-from-users/count
+   */
+  async getUnreadCountFromUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const count = await messageService.getUnreadCountFromUsers();
+
+      res.json({
+        success: true,
+        data: { count },
+      });
+    } catch (error: any) {
+      console.error('Error fetching unread count from users:', error);
+      res.status(500).json({
+        success: false,
+        message: '未読メッセージ数の取得に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
    * 有効期限切れ未読メッセージの削除
    * POST /api/staff/messages/cleanup
    */

@@ -363,6 +363,21 @@ export class MessageService {
   }
 
   /**
+   * 一般客からの未読メッセージ数取得（職員向け）
+   */
+  async getUnreadCountFromUsers(): Promise<number> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) as count FROM messages
+       WHERE sender_type = 'user'
+         AND recipient_type = 'staff'
+         AND read_at IS NULL
+         AND deleted_at IS NULL`,
+    );
+
+    return rows[0]?.count ? Number(rows[0].count) : 0;
+  }
+
+  /**
    * 有効期限切れ未読メッセージの削除
    * - 管理者からのメッセージで有効期限切れかつ未読のものを論理削除
    * - 既読メッセージは有効期限に関わらず保持

@@ -179,6 +179,7 @@ router.post('/announcements/:id/toggle', announcementController.toggleAnnounceme
 router.post('/messages', messageController.sendMessageFromStaff.bind(messageController));
 router.get('/messages', messageController.getStaffMessages.bind(messageController));
 router.get('/messages/stats', messageController.getMessageStats.bind(messageController));
+router.get('/messages/unread-from-users/count', messageController.getUnreadCountFromUsers.bind(messageController));
 router.get('/messages/user/:userId', messageController.getMessagesByUser.bind(messageController));
 router.get('/messages/:id/thread', messageController.getMessageThread.bind(messageController));
 router.delete('/messages/:id', messageController.deleteMessageByStaff.bind(messageController));
