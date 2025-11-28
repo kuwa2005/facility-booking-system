@@ -185,6 +185,133 @@
         font-size: 24px;
       }
     }
+
+    /* 確認モーダル */
+    .confirm-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .confirm-modal.active {
+      display: flex;
+    }
+
+    .confirm-modal-content {
+      background-color: white;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      animation: modalFadeIn 0.3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .confirm-modal-icon {
+      text-align: center;
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .confirm-modal-title {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .confirm-modal-message {
+      text-align: center;
+      color: #555;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+      white-space: pre-line;
+    }
+
+    .confirm-modal-details {
+      background-color: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 4px;
+    }
+
+    .confirm-detail-row {
+      display: flex;
+      margin-bottom: 0.5rem;
+    }
+
+    .confirm-detail-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .confirm-detail-label {
+      font-weight: 600;
+      color: #333;
+      min-width: 60px;
+      margin-right: 1rem;
+    }
+
+    .confirm-detail-value {
+      color: #555;
+      flex: 1;
+    }
+
+    .confirm-modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .confirm-btn {
+      padding: 0.875rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      min-width: 120px;
+    }
+
+    .confirm-btn-cancel {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .confirm-btn-cancel:hover {
+      background-color: #e0e0e0;
+      transform: translateY(-1px);
+    }
+
+    .confirm-btn-submit {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .confirm-btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -244,6 +371,29 @@
     </form>
   </div>
 
+  <!-- 送信確認モーダル -->
+  <div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+      <div class="confirm-modal-icon">📧</div>
+      <div class="confirm-modal-title">メッセージ送信の確認</div>
+      <div class="confirm-modal-message">以下の内容でメッセージを送信します。</div>
+      <div class="confirm-modal-details">
+        <div class="confirm-detail-row">
+          <div class="confirm-detail-label">宛先:</div>
+          <div class="confirm-detail-value" id="confirmRecipient"></div>
+        </div>
+        <div class="confirm-detail-row">
+          <div class="confirm-detail-label">件名:</div>
+          <div class="confirm-detail-value" id="confirmSubject"></div>
+        </div>
+      </div>
+      <div class="confirm-modal-actions">
+        <button type="button" class="confirm-btn confirm-btn-cancel" onclick="closeConfirmModal()">キャンセル</button>
+        <button type="button" class="confirm-btn confirm-btn-submit" onclick="submitMessage()">送信する</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const form = document.getElementById('messageForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -288,33 +438,27 @@
     // ページ読み込み時に管理者情報を取得
     loadAdminStaffInfo();
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // 送信するデータを保持する変数
+    let pendingMessageData = null;
 
-      // メッセージをクリア
-      successMessage.classList.remove('show');
-      errorMessage.classList.remove('show');
+    // 確認モーダルを表示
+    function showConfirmModal(data, recipientName, recipientId) {
+      document.getElementById('confirmRecipient').textContent = `${recipientName} (ID: ${recipientId})`;
+      document.getElementById('confirmSubject').textContent = data.subject;
+      document.getElementById('confirmModal').classList.add('active');
+    }
 
-      const formData = new FormData(form);
-      const data = {
-        recipient_id: adminStaffId, // システム設定から取得した管理者へ送信
-        recipient_type: 'staff',
-        subject: formData.get('subject'),
-        content: formData.get('content')
-      };
+    // 確認モーダルを閉じる
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.remove('active');
+      pendingMessageData = null;
+    }
 
-      // バリデーション
-      if (!data.subject || !data.content) {
-        errorMessage.textContent = 'すべての必須項目を入力してください';
-        errorMessage.classList.add('show');
-        return;
-      }
+    // 実際にメッセージを送信
+    async function submitMessage() {
+      if (!pendingMessageData) return;
 
-      // 送信確認
-      const confirmMessage = `以下の内容で${adminStaffName}宛にメッセージを送信します。よろしいですか？\n\n件名: ${data.subject}\n宛先: ${adminStaffName} (ID: ${adminStaffId})`;
-      if (!confirm(confirmMessage)) {
-        return;
-      }
+      closeConfirmModal();
 
       try {
         submitBtn.disabled = true;
@@ -323,7 +467,7 @@
         console.log('Sending message to admin staff:', {
           recipient_id: adminStaffId,
           recipient_name: adminStaffName,
-          subject: data.subject
+          subject: pendingMessageData.subject
         });
 
         const response = await fetch('/api/user/messages', {
@@ -331,7 +475,7 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify(pendingMessageData)
         });
 
         const result = await response.json();
@@ -355,6 +499,47 @@
         errorMessage.classList.add('show');
         submitBtn.disabled = false;
         submitBtn.textContent = '送信する';
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // メッセージをクリア
+      successMessage.classList.remove('show');
+      errorMessage.classList.remove('show');
+
+      const formData = new FormData(form);
+      const data = {
+        recipient_id: adminStaffId, // システム設定から取得した管理者へ送信
+        recipient_type: 'staff',
+        subject: formData.get('subject'),
+        content: formData.get('content')
+      };
+
+      // バリデーション
+      if (!data.subject || !data.content) {
+        errorMessage.textContent = 'すべての必須項目を入力してください';
+        errorMessage.classList.add('show');
+        return;
+      }
+
+      // データを保存して確認モーダルを表示
+      pendingMessageData = data;
+      showConfirmModal(data, adminStaffName, adminStaffId);
+    });
+
+    // モーダル外クリックで閉じる
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeConfirmModal();
+      }
+    });
+
+    // Escapeキーで閉じる
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeConfirmModal();
       }
     });
   </script>
