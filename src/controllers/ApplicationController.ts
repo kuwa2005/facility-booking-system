@@ -13,9 +13,11 @@ import {
 import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
 import PaymentService from '../services/PaymentService';
+import UserActivityLogService from '../services/UserActivityLogService';
 import { emailService } from '../services/EmailService';
 import { notificationService } from '../services/NotificationService';
 import { CreateApplicationDto, CreateUsageDto } from '../models/types';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class ApplicationController {
   /**
@@ -268,6 +270,25 @@ export class ApplicationController {
         await notificationService.sendApplicationCreatedNotification(
           result.application.id,
           applicationData.user_id
+        );
+      }
+
+      // ログインユーザーの予約作成ログを記録
+      if (req.user && req.user.role === 'user') {
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
+        const firstRoom = await RoomRepository.findById(usagesData[0].room_id);
+        const dates = usagesData.map(u => u.date);
+
+        await UserActivityLogService.logBookingSuccess(
+          req.user.userId,
+          result.application.id,
+          firstRoom?.id || 0,
+          firstRoom?.name || 'Unknown',
+          dates,
+          totalAmount,
+          ipAddress,
+          userAgent
         );
       }
 

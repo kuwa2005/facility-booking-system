@@ -1,6 +1,6 @@
 <div class="page-header">
-  <h1 class="page-title">アクティビティログ</h1>
-  <p class="page-description">システムの操作履歴と監査ログ</p>
+  <h1 class="page-title">ユーザーアクティビティログ</h1>
+  <p class="page-description">一般ユーザーの行動履歴とマーケティングデータ</p>
 </div>
 
 <!-- 統計カード -->
@@ -40,17 +40,20 @@
         <option value="">すべて</option>
         <option value="login">ログイン</option>
         <option value="logout">ログアウト</option>
-        <option value="create">作成</option>
-        <option value="update">更新</option>
-        <option value="delete">削除</option>
-        <option value="approve">承認</option>
-        <option value="reject">拒否</option>
-        <option value="access_denied">アクセス拒否</option>
+        <option value="view_room">部屋閲覧</option>
+        <option value="create_booking">予約作成</option>
+        <option value="cancel_booking">予約キャンセル</option>
+        <option value="complete_payment">決済完了</option>
+        <option value="send_message">メッセージ送信</option>
+        <option value="add_favorite">お気に入り追加</option>
+        <option value="remove_favorite">お気に入り削除</option>
+        <option value="post_review">レビュー投稿</option>
+        <option value="check_availability">空室確認</option>
       </select>
     </div>
     <div>
-      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">実行者</label>
-      <input type="text" id="actorSearch" placeholder="職員名で検索..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ユーザー</label>
+      <input type="text" id="userSearch" placeholder="ユーザー名で検索..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
     </div>
   </div>
   <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
@@ -66,7 +69,7 @@
 <!-- アクティビティログ一覧 -->
 <div class="card">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h2 class="card-title" style="margin: 0;">アクティビティログ</h2>
+    <h2 class="card-title" style="margin: 0;">ユーザーアクティビティログ</h2>
     <div style="display: flex; gap: 1rem; align-items: center;">
       <div id="totalCount" style="color: #7f8c8d;"></div>
       <button onclick="exportToCSV()" class="btn" style="background-color: #27ae60; color: white;">📥 CSVエクスポート</button>
@@ -161,7 +164,7 @@ function formatDateTimeLocal(date) {
 // 統計情報を読み込み
 async function loadStats() {
   try {
-    const response = await fetch('/api/staff/activity-logs/stats');
+    const response = await fetch('/api/staff/user-activity-logs/stats');
     const data = await response.json();
 
     if (data.success && data.stats) {
@@ -184,7 +187,7 @@ async function loadActivityLog() {
   const startDateTime = document.getElementById('startDateTime').value;
   const endDateTime = document.getElementById('endDateTime').value;
   const actionType = document.getElementById('actionType').value;
-  const actorSearch = document.getElementById('actorSearch').value;
+  const userSearch = document.getElementById('userSearch').value;
 
   try {
     // クエリパラメータを構築
@@ -194,16 +197,16 @@ async function loadActivityLog() {
     if (actionType) params.append('actionType', actionType);
     params.append('limit', '100');
 
-    const response = await fetch(`/api/staff/activity-logs?${params.toString()}`);
+    const response = await fetch(`/api/staff/user-activity-logs?${params.toString()}`);
     const data = await response.json();
 
     if (data.success && data.logs) {
       let filteredLogs = data.logs;
 
-      // アクター名でフィルタリング（クライアント側）
-      if (actorSearch) {
+      // ユーザー名でフィルタリング（クライアント側）
+      if (userSearch) {
         filteredLogs = filteredLogs.filter(log =>
-          log.staffName && log.staffName.includes(actorSearch)
+          log.userName && log.userName.includes(userSearch)
         );
       }
 
@@ -225,24 +228,18 @@ function getActionTypeInfo(actionType) {
   const actionMap = {
     'login': { label: 'ログイン', icon: '🔐', color: '#3498db' },
     'logout': { label: 'ログアウト', icon: '🚪', color: '#95a5a6' },
-    'create': { label: '作成', icon: '➕', color: '#27ae60' },
-    'update': { label: '更新', icon: '✏️', color: '#f39c12' },
-    'delete': { label: '削除', icon: '🗑️', color: '#e74c3c' },
-    'approve': { label: '承認', icon: '✅', color: '#27ae60' },
-    'reject': { label: '拒否', icon: '❌', color: '#e74c3c' },
-    'access_denied': { label: 'アクセス拒否', icon: '🚫', color: '#c0392b' },
-    'reservation_create': { label: '予約作成', icon: '➕', color: '#27ae60' },
-    'reservation_update': { label: '予約更新', icon: '✏️', color: '#f39c12' },
-    'reservation_cancel': { label: '予約キャンセル', icon: '❌', color: '#e74c3c' },
-    'user_create': { label: 'ユーザー作成', icon: '👤', color: '#9b59b6' },
-    'user_update': { label: 'ユーザー更新', icon: '👤', color: '#9b59b6' },
-    'user_delete': { label: 'ユーザー削除', icon: '🗑️', color: '#e74c3c' },
-    'staff_create': { label: '職員作成', icon: '👥', color: '#16a085' },
-    'staff_update': { label: '職員更新', icon: '👥', color: '#16a085' },
-    'settings_update': { label: '設定変更', icon: '⚙️', color: '#16a085' },
+    'view_room': { label: '部屋閲覧', icon: '👁️', color: '#9b59b6' },
+    'create_booking': { label: '予約作成', icon: '📅', color: '#27ae60' },
+    'cancel_booking': { label: '予約キャンセル', icon: '❌', color: '#e74c3c' },
+    'complete_payment': { label: '決済完了', icon: '💳', color: '#2ecc71' },
+    'send_message': { label: 'メッセージ送信', icon: '✉️', color: '#3498db' },
+    'add_favorite': { label: 'お気に入り追加', icon: '⭐', color: '#f39c12' },
+    'remove_favorite': { label: 'お気に入り削除', icon: '☆', color: '#95a5a6' },
+    'post_review': { label: 'レビュー投稿', icon: '📝', color: '#16a085' },
+    'check_availability': { label: '空室確認', icon: '🔍', color: '#1abc9c' },
   };
 
-  return actionMap[actionType] || { label: actionType, icon: '📝', color: '#7f8c8d' };
+  return actionMap[actionType] || { label: actionType, icon: '📊', color: '#7f8c8d' };
 }
 
 // ログを表示
@@ -257,7 +254,7 @@ function displayLogs(logs) {
             <tr>
               <th>日時</th>
               <th>アクション</th>
-              <th>実行者</th>
+              <th>ユーザー</th>
               <th>IPアドレス</th>
               <th>操作</th>
             </tr>
@@ -274,7 +271,7 @@ function displayLogs(logs) {
                       <span class="badge" style="background-color: ${actionInfo.color};">${actionInfo.label}</span>
                     </div>
                   </td>
-                  <td>${log.staffName || 'システム'}</td>
+                  <td>${log.userName || 'Unknown'}</td>
                   <td style="font-family: monospace; font-size: 0.875rem;">${log.ipAddress || '-'}</td>
                   <td>
                     <button onclick="showDetail(${log.id})" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">詳細</button>
@@ -300,6 +297,19 @@ function showDetail(id) {
 
   const actionInfo = getActionTypeInfo(log.actionType);
 
+  // メタデータを整形
+  let metadataHtml = '-';
+  if (log.metadata) {
+    try {
+      const metadata = typeof log.metadata === 'string' ? JSON.parse(log.metadata) : log.metadata;
+      metadataHtml = '<pre style="background-color: #ecf0f1; padding: 0.75rem; border-radius: 4px; overflow-x: auto; font-size: 0.875rem;">' +
+        JSON.stringify(metadata, null, 2) +
+        '</pre>';
+    } catch (e) {
+      metadataHtml = log.metadata;
+    }
+  }
+
   const html = `
     <div style="display: grid; gap: 1.5rem;">
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
@@ -308,8 +318,8 @@ function showDetail(id) {
           <div><strong>ログID:</strong> ${log.id}</div>
           <div><strong>日時:</strong> ${formatDateTime(log.createdAt)}</div>
           <div><strong>アクション:</strong> ${actionInfo.icon} ${actionInfo.label}</div>
-          <div><strong>実行者:</strong> ${log.staffName || 'システム'}</div>
-          <div><strong>メールアドレス:</strong> ${log.staffEmail || '-'}</div>
+          <div><strong>ユーザー:</strong> ${log.userName || 'Unknown'}</div>
+          <div><strong>メールアドレス:</strong> ${log.userEmail || '-'}</div>
           <div><strong>IPアドレス:</strong> ${log.ipAddress || '-'}</div>
         </div>
       </div>
@@ -325,6 +335,11 @@ function showDetail(id) {
       <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
         <h3 style="margin-bottom: 1rem; color: #2c3e50;">詳細</h3>
         <div>${log.description || 'なし'}</div>
+      </div>
+
+      <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+        <h3 style="margin-bottom: 1rem; color: #2c3e50;">メタデータ</h3>
+        <div>${metadataHtml}</div>
       </div>
 
       ${log.userAgent ? `
@@ -353,7 +368,7 @@ function closeDetailModal() {
 function resetFilters() {
   setDefaultDateRange();
   document.getElementById('actionType').value = '';
-  document.getElementById('actorSearch').value = '';
+  document.getElementById('userSearch').value = '';
 }
 
 // 今日のログを表示（00:00-23:59）
@@ -365,7 +380,7 @@ function loadToday() {
   document.getElementById('startDateTime').value = formatDateTimeLocal(todayStart);
   document.getElementById('endDateTime').value = formatDateTimeLocal(todayEnd);
   document.getElementById('actionType').value = '';
-  document.getElementById('actorSearch').value = '';
+  document.getElementById('userSearch').value = '';
 
   loadActivityLog();
 }
@@ -379,7 +394,7 @@ function loadYesterday() {
   document.getElementById('startDateTime').value = formatDateTimeLocal(yesterdayStart);
   document.getElementById('endDateTime').value = formatDateTimeLocal(yesterdayEnd);
   document.getElementById('actionType').value = '';
-  document.getElementById('actorSearch').value = '';
+  document.getElementById('userSearch').value = '';
 
   loadActivityLog();
 }
@@ -394,7 +409,7 @@ function loadWeek() {
   document.getElementById('startDateTime').value = formatDateTimeLocal(weekAgo);
   document.getElementById('endDateTime').value = formatDateTimeLocal(endTime);
   document.getElementById('actionType').value = '';
-  document.getElementById('actorSearch').value = '';
+  document.getElementById('userSearch').value = '';
 
   loadActivityLog();
 }
@@ -420,7 +435,7 @@ function loadCustomDaysAgo() {
   document.getElementById('startDateTime').value = formatDateTimeLocal(targetStart);
   document.getElementById('endDateTime').value = formatDateTimeLocal(targetEnd);
   document.getElementById('actionType').value = '';
-  document.getElementById('actorSearch').value = '';
+  document.getElementById('userSearch').value = '';
 
   loadActivityLog();
 }
@@ -432,20 +447,31 @@ function exportToCSV() {
     return;
   }
 
-  const headers = ['ID', '日時', 'アクション', '実行者', 'メールアドレス', 'IPアドレス', '対象種別', '対象ID', '詳細'];
+  const headers = ['ID', '日時', 'アクション', 'ユーザー', 'メールアドレス', 'IPアドレス', '対象種別', '対象ID', '詳細', 'メタデータ'];
 
   const rows = currentLogs.map(log => {
     const actionInfo = getActionTypeInfo(log.actionType);
+    let metadataStr = '';
+    if (log.metadata) {
+      try {
+        const metadata = typeof log.metadata === 'string' ? JSON.parse(log.metadata) : log.metadata;
+        metadataStr = JSON.stringify(metadata);
+      } catch (e) {
+        metadataStr = log.metadata;
+      }
+    }
+
     return [
       log.id,
       formatDateTime(log.createdAt),
       actionInfo.label,
-      log.staffName || 'システム',
-      log.staffEmail || '-',
+      log.userName || 'Unknown',
+      log.userEmail || '-',
       log.ipAddress || '-',
       log.targetType || '-',
       log.targetId || '-',
-      log.description || 'なし'
+      log.description || 'なし',
+      metadataStr
     ];
   });
 
@@ -466,7 +492,7 @@ function exportToCSV() {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   const now = new Date();
-  const filename = `activity_log_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+  const filename = `user_activity_log_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
 
   link.setAttribute('href', url);
   link.setAttribute('download', filename);

@@ -10,11 +10,11 @@
     <p style="font-size: 2.5rem; font-weight: 600; color: #3498db;" id="totalMessages">-</p>
   </div>
   <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">未読</h3>
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">お客様からの未読</h3>
     <p style="font-size: 2.5rem; font-weight: 600; color: #e74c3c;" id="unreadMessages">-</p>
   </div>
   <div class="card" style="text-align: center;">
-    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">今日</h3>
+    <h3 style="color: #7f8c8d; font-size: 0.875rem; margin-bottom: 0.5rem;">本日受信</h3>
     <p style="font-size: 2.5rem; font-weight: 600; color: #27ae60;" id="todayMessages">-</p>
   </div>
 </div>
@@ -28,6 +28,44 @@
 
   <div id="messagesContainer">
     <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+</div>
+
+<!-- メッセージ詳細モーダル -->
+<div id="messageDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+  <div style="background-color: white; max-width: 800px; margin: 2rem auto; border-radius: 8px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #ecf0f1;">
+      <h2 style="margin: 0;" id="modalSubject">メッセージ詳細</h2>
+      <button onclick="closeMessageDetailModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d;">&times;</button>
+    </div>
+
+    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
+        <div>
+          <strong>種別:</strong> <span id="modalType"></span>
+        </div>
+        <div>
+          <strong>相手:</strong> <span id="modalOtherParty"></span>
+        </div>
+        <div>
+          <strong>日時:</strong> <span id="modalDate"></span>
+        </div>
+        <div>
+          <strong>状態:</strong> <span id="modalStatus"></span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <h3 style="font-size: 1rem; color: #2c3e50; margin-bottom: 0.75rem;">メッセージ内容</h3>
+      <div id="modalContent" style="background-color: white; padding: 1rem; border: 1px solid #ecf0f1; border-radius: 4px; white-space: pre-wrap; line-height: 1.6; min-height: 150px;"></div>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #ecf0f1;">
+      <button onclick="closeMessageDetailModal()" class="btn" style="background-color: #95a5a6; color: white;">閉じる</button>
+      <button onclick="markCurrentAsRead()" id="markReadBtn" class="btn" style="background-color: #27ae60; color: white; display: none;">既読にする</button>
+      <button onclick="deleteCurrentMessage()" class="btn btn-danger">削除</button>
+    </div>
   </div>
 </div>
 
@@ -154,18 +192,22 @@ async function loadMessages() {
       });
     const messages = await res.json();
 
+    // グローバル変数に保存
+    allMessages = messages || [];
+
     if (messages && messages.length > 0) {
       const html = `
         <div style="overflow-x: auto;">
           <table class="table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>宛先</th>
-                <th>件名</th>
-                <th>メッセージ（抜粋）</th>
-                <th>送信日時</th>
-                <th>操作</th>
+                <th style="width: 60px;">ID</th>
+                <th style="width: 80px;">種別</th>
+                <th style="width: 150px;">相手</th>
+                <th style="width: auto;">件名</th>
+                <th style="width: 350px;">メッセージ（抜粋）</th>
+                <th style="width: 180px;">日時</th>
+                <th style="width: 80px;">状態</th>
               </tr>
             </thead>
             <tbody>
@@ -174,16 +216,28 @@ async function loadMessages() {
                   ? msg.content.substring(0, 50) + '...'
                   : msg.content;
 
+                // メッセージの種別を判定
+                const isFromUser = msg.senderType === 'user';
+                const typeLabel = isFromUser ? '受信' : '送信';
+                const typeBadgeColor = isFromUser ? '#3498db' : '#95a5a6';
+                const otherParty = isFromUser
+                  ? (msg.senderName || 'ユーザーID:' + msg.senderId)
+                  : (msg.recipientName || 'ユーザーID:' + msg.recipientUserId);
+
+                const isUnread = !msg.readAt && isFromUser;
+                const statusBadge = isUnread
+                  ? '<span style="background-color: #e74c3c; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">未読</span>'
+                  : '<span style="background-color: #27ae60; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">既読</span>';
+
                 return `
-                  <tr>
+                  <tr style="${isUnread ? 'background-color: #fff3cd;' : ''} cursor: pointer; transition: background-color 0.2s;" onmouseover="if(!${isUnread}) this.style.backgroundColor='#f8f9fa';" onmouseout="if(!${isUnread}) this.style.backgroundColor='';" onclick="viewMessageDetail(${msg.id})">
                     <td>${msg.id}</td>
-                    <td>${msg.recipientName || 'ユーザーID:' + msg.recipientUserId}</td>
+                    <td><span style="background-color: ${typeBadgeColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">${typeLabel}</span></td>
+                    <td>${otherParty}</td>
                     <td><strong>${msg.subject || '（件名なし）'}</strong></td>
-                    <td>${contentPreview}</td>
-                    <td>${new Date(msg.createdAt).toLocaleString('ja-JP')}</td>
-                    <td>
-                      <button onclick="deleteMessage(${msg.id})" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">削除</button>
-                    </td>
+                    <td style="max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${contentPreview}</td>
+                    <td style="white-space: nowrap;">${new Date(msg.createdAt).toLocaleString('ja-JP')}</td>
+                    <td>${statusBadge}</td>
                   </tr>
                 `;
               }).join('')}
@@ -214,16 +268,21 @@ function closeSendModal() {
 
 // メッセージを送信
 async function sendMessage() {
-  const data = {
-    recipientUserId: parseInt(document.getElementById('recipientUserId').value),
-    subject: document.getElementById('subject').value.trim(),
-    content: document.getElementById('messageContent').value.trim(),
-  };
+  const recipientUserId = parseInt(document.getElementById('recipientUserId').value);
+  const subject = document.getElementById('subject').value.trim();
+  const content = document.getElementById('messageContent').value.trim();
 
-  if (!data.recipientUserId || !data.subject || !data.content) {
+  if (!recipientUserId || !subject || !content) {
     alert('すべての項目を入力してください');
     return;
   }
+
+  const data = {
+    recipient_id: recipientUserId,
+    recipient_type: 'user',
+    subject: subject,
+    content: content,
+  };
 
   try {
     const res = await fetch('/api/staff/messages', {
@@ -276,13 +335,6 @@ async function deleteMessage(id) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('sendModal').addEventListener('click', (e) => {
-  if (e.target.id === 'sendModal') {
-    closeSendModal();
-  }
-});
-
 // ユーザー検索モーダル関連
 let userSearchTargetInputId = null;
 
@@ -312,12 +364,6 @@ async function searchUsers() {
   const phone = document.getElementById('searchUserPhone').value.trim();
   const organization = document.getElementById('searchUserOrganization').value.trim();
   const userId = document.getElementById('searchUserId').value.trim();
-
-  // 検索条件が1つも入力されていない場合
-  if (!name && !email && !phone && !organization && !userId) {
-    alert('検索条件を最低1つ入力してください');
-    return;
-  }
 
   document.getElementById('userSearchResults').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">検索中...</p>';
 
@@ -420,10 +466,111 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ユーザー検索モーダル外クリックで閉じる
-document.getElementById('userSearchModal').addEventListener('click', (e) => {
-  if (e.target.id === 'userSearchModal') {
-    closeUserSearchModal();
+// グローバル変数: 現在表示中のメッセージ
+let currentViewingMessage = null;
+let allMessages = [];
+
+// メッセージ詳細を表示
+function viewMessageDetail(messageId) {
+  const message = allMessages.find(m => m.id === messageId);
+  if (!message) {
+    alert('メッセージが見つかりません');
+    return;
   }
-});
+
+  currentViewingMessage = message;
+
+  // モーダルに内容を設定
+  document.getElementById('modalSubject').textContent = message.subject || '（件名なし）';
+
+  const isFromUser = message.senderType === 'user';
+  const typeLabel = isFromUser ? '受信' : '送信';
+  const otherParty = isFromUser
+    ? (message.senderName || 'ユーザーID:' + message.senderId)
+    : (message.recipientName || 'ユーザーID:' + message.recipientId);
+
+  document.getElementById('modalType').innerHTML = `<span style="background-color: ${isFromUser ? '#3498db' : '#95a5a6'}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${typeLabel}</span>`;
+  document.getElementById('modalOtherParty').textContent = otherParty;
+  document.getElementById('modalDate').textContent = new Date(message.createdAt).toLocaleString('ja-JP');
+
+  const isUnread = !message.readAt && isFromUser;
+  document.getElementById('modalStatus').innerHTML = isUnread
+    ? '<span style="background-color: #e74c3c; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">未読</span>'
+    : '<span style="background-color: #27ae60; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">既読</span>';
+
+  document.getElementById('modalContent').textContent = message.content;
+
+  // 未読の場合のみ「既読にする」ボタンを表示
+  const markReadBtn = document.getElementById('markReadBtn');
+  if (isUnread) {
+    markReadBtn.style.display = 'inline-block';
+  } else {
+    markReadBtn.style.display = 'none';
+  }
+
+  // モーダルを表示
+  document.getElementById('messageDetailModal').style.display = 'flex';
+  document.getElementById('messageDetailModal').style.alignItems = 'center';
+  document.getElementById('messageDetailModal').style.justifyContent = 'center';
+}
+
+// メッセージ詳細モーダルを閉じる
+function closeMessageDetailModal() {
+  document.getElementById('messageDetailModal').style.display = 'none';
+  currentViewingMessage = null;
+}
+
+// 現在のメッセージを既読にする
+async function markCurrentAsRead() {
+  if (!currentViewingMessage) return;
+
+  try {
+    const response = await fetch(`/api/staff/messages/${currentViewingMessage.id}/read`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      alert('メッセージを既読にしました');
+      closeMessageDetailModal();
+      loadMessages();
+      loadStats();
+    } else {
+      const error = await response.json();
+      alert('既読処理に失敗しました: ' + (error.message || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    alert('既読処理中にエラーが発生しました');
+  }
+}
+
+// 現在のメッセージを削除
+async function deleteCurrentMessage() {
+  if (!currentViewingMessage) return;
+
+  if (!confirm('このメッセージを削除しますか？')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/staff/messages/${currentViewingMessage.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      alert('メッセージを削除しました');
+      closeMessageDetailModal();
+      loadMessages();
+      loadStats();
+    } else {
+      const error = await response.json();
+      alert('削除に失敗しました: ' + (error.message || '不明なエラー'));
+    }
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    alert('削除中にエラーが発生しました');
+  }
+}
 </script>

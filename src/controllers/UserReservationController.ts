@@ -4,6 +4,8 @@ import { createError } from '../middleware/errorHandler';
 import { calculateCancellationFee } from '../utils/pricing';
 import PaymentService from '../services/PaymentService';
 import { emailService } from '../services/EmailService';
+import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class UserReservationController {
   /**
@@ -207,6 +209,23 @@ export class UserReservationController {
         totalCancellationFee
       );
 
+      // キャンセルログを記録
+      if (req.user && req.user.role === 'user') {
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
+        const refundAmount = result.application.total_amount - totalCancellationFee;
+
+        await UserActivityLogService.logCancelSuccess(
+          req.user.userId,
+          result.application.id,
+          result.application.event_name,
+          totalCancellationFee,
+          refundAmount,
+          ipAddress,
+          userAgent
+        );
+      }
+
       res.json({
         message: '予約をキャンセルしました',
         cancellation_fee: totalCancellationFee,
@@ -397,6 +416,22 @@ export class UserReservationController {
         result.application.event_name,
         result.application.total_amount
       );
+
+      // 決済ログを記録
+      if (req.user && req.user.role === 'user') {
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
+
+        await UserActivityLogService.logPaymentSuccess(
+          req.user.userId,
+          result.application.id,
+          result.application.event_name,
+          result.application.total_amount,
+          'demo',
+          ipAddress,
+          userAgent
+        );
+      }
 
       res.json({
         success: true,

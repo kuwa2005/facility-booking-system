@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import UserRepository from '../models/UserRepository';
 import { User, CreateUserDto } from '../models/types';
 import { emailService } from './EmailService';
+import { pool } from '../config/database';
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -143,7 +144,7 @@ export class AuthService {
   /**
    * Login
    */
-  async login(email: string, password: string): Promise<AuthResult> {
+  async login(email: string, password: string, ipAddress?: string, userAgent?: string): Promise<AuthResult> {
     const user = await UserRepository.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
@@ -168,10 +169,59 @@ export class AuthService {
     // Update last login time
     await UserRepository.update(user.id, { last_login_at: new Date() });
 
+    // Record activity log for all users (non-blocking - don't fail login if logging fails)
+    try {
+      const logTable = (user.role === 'staff' || user.role === 'admin') ? 'staff_activity_logs' : 'user_activity_logs';
+      const logIdColumn = (user.role === 'staff' || user.role === 'admin') ? 'staff_id' : 'user_id';
+
+      await pool.query(
+        `INSERT INTO ${logTable} (${logIdColumn}, action_type, description, ip_address, user_agent)
+         VALUES (?, 'login', ?, ?, ?)`,
+        [
+          user.id,
+          `${user.name} (${user.email}) がログインしました`,
+          ipAddress || null,
+          userAgent || null,
+        ]
+      );
+    } catch (error) {
+      // Log the error but don't fail the login
+      console.error('Failed to record login activity:', error);
+    }
+
     return {
       user: this.sanitizeUser(user),
       token,
     };
+  }
+
+  /**
+   * Logout and record activity
+   */
+  async logout(userId: number, userRole: string, userEmail: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    // Get user name from database
+    const user = await UserRepository.findById(userId);
+    const userName = user?.name || 'Unknown';
+
+    // Record activity log for all users (non-blocking - don't fail logout if logging fails)
+    try {
+      const logTable = (userRole === 'staff' || userRole === 'admin') ? 'staff_activity_logs' : 'user_activity_logs';
+      const logIdColumn = (userRole === 'staff' || userRole === 'admin') ? 'staff_id' : 'user_id';
+
+      await pool.query(
+        `INSERT INTO ${logTable} (${logIdColumn}, action_type, description, ip_address, user_agent)
+         VALUES (?, 'logout', ?, ?, ?)`,
+        [
+          userId,
+          `${userName} (${userEmail}) がログアウトしました`,
+          ipAddress || null,
+          userAgent || null,
+        ]
+      );
+    } catch (error) {
+      // Log the error but don't fail the logout
+      console.error('Failed to record logout activity:', error);
+    }
   }
 
   /**

@@ -278,6 +278,24 @@ export class StaffPageController {
   }
 
   /**
+   * ユーザーアクティビティログページ（管理者のみ）
+   */
+  static async userActivityLog(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        res.status(403).send('管理者権限が必要です');
+        return;
+      }
+
+      StaffPageController.renderWithLayout('user-activity-log.ejs', {
+        title: 'ユーザーアクティビティログ',
+      }, req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * 祝日管理ページ
    */
   static async holidays(req: Request, res: Response, next: NextFunction): Promise<void> {

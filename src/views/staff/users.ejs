@@ -294,7 +294,7 @@ async function showDetail(id) {
               </div>
               <div style="text-align: center; padding: 1rem; background-color: white; border-radius: 4px;">
                 <div style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 0.5rem;">総支払額</div>
-                <div style="font-size: 1.75rem; font-weight: 600; color: #27ae60;">¥${(user.stats.totalSpent || 0).toLocaleString()}</div>
+                <div style="font-size: 1.75rem; font-weight: 600; color: #27ae60;">¥${(user.stats.totalSpent || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
               </div>
               <div style="text-align: center; padding: 1rem; background-color: white; border-radius: 4px;">
                 <div style="font-size: 0.875rem; color: #7f8c8d; margin-bottom: 0.5rem;">キャンセル数</div>
@@ -579,12 +579,6 @@ async function toggleActive(id, currentStatus) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('detailModal').addEventListener('click', (e) => {
-  if (e.target.id === 'detailModal') {
-    closeDetailModal();
-  }
-});
 
 document.getElementById('editModal').addEventListener('click', (e) => {
   if (e.target.id === 'editModal') {

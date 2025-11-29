@@ -22,14 +22,21 @@
     header .container {
       max-width: 1200px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 1rem;
     }
-    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: left;
+      width: 100%;
+    }
     header nav {
       display: flex;
       gap: 1.5rem;
       align-items: center;
+      justify-content: center;
+      width: 100%;
     }
     header nav a {
       color: white;
@@ -256,6 +263,74 @@
         flex-direction: column;
       }
     }
+    /* ログアウト確認モーダル */
+    .logout-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+    .logout-modal.active {
+      display: flex;
+    }
+    .logout-modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+    .logout-modal-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .logout-modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.75rem;
+    }
+    .logout-modal-message {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    .logout-modal-buttons {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .logout-modal-button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .logout-modal-button.confirm {
+      background-color: #ef4444;
+      color: white;
+    }
+    .logout-modal-button.confirm:hover {
+      background-color: #dc2626;
+    }
+    .logout-modal-button.cancel {
+      background-color: #e5e7eb;
+      color: #374151;
+    }
+    .logout-modal-button.cancel:hover {
+      background-color: #d1d5db;
+    }
   </style>
 </head>
 <body>
@@ -268,25 +343,12 @@
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
-        <% if (user) { %>
-          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
-            <strong><%= user.login_id %></strong> (<%= user.name %>)
-          </span>
-        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
-        <a href="#" onclick="return confirmLogout();">ログアウト</a>
+        <a href="#" onclick="showLogoutModal(); return false;">ログアウト</a>
       </nav>
     </div>
   </header>
-  <script>
-    function confirmLogout() {
-      if (confirm('ログアウトしてもよろしいですか？')) {
-        window.location.href = '/logout';
-      }
-      return false;
-    }
-  </script>
 
   <main>
     <div class="container">
@@ -340,7 +402,7 @@
             （キャンセル日時: <%= new Date(application.cancelled_at).toLocaleString('ja-JP') %>）
           <% } %>
           <% if (application.cancellation_fee > 0) { %>
-            <br>キャンセル料: ¥<%= application.cancellation_fee.toLocaleString() %>
+            <br>キャンセル料: ¥<%= application.cancellation_fee.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>
           <% } %>
         </div>
       <% } %>
@@ -382,7 +444,7 @@
 
           <div class="info-label">入場料</div>
           <div class="info-value">
-            <%= application.entrance_fee_type === 'free' ? '無料' : '有料（¥' + (application.entrance_fee_amount || 0).toLocaleString() + '）' %>
+            <%= application.entrance_fee_type === 'free' ? '無料' : '有料（¥' + (application.entrance_fee_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) + '）' %>
           </div>
 
           <% if (application.event_description) { %>
@@ -421,7 +483,7 @@
                     <% } %>
                   </div>
                   <div style="text-align: right; font-weight: 600; color: #2563eb; font-size: 1.125rem;">
-                    ¥<%= (usage.subtotal_amount || 0).toLocaleString() %>
+                    ¥<%= (usage.subtotal_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %>
                   </div>
                 </div>
 
@@ -489,12 +551,12 @@
         <div class="price-summary">
           <div class="price-row">
             <span>利用料金合計</span>
-            <span>¥<%= (application.total_amount || 0).toLocaleString() %></span>
+            <span>¥<%= (application.total_amount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></span>
           </div>
           <% if (application.cancel_status === 'cancelled' && application.cancellation_fee > 0) { %>
             <div class="price-row">
               <span>キャンセル料</span>
-              <span style="color: #ef4444;">¥<%= application.cancellation_fee.toLocaleString() %></span>
+              <span style="color: #ef4444;">¥<%= application.cancellation_fee.toLocaleString('ja-JP', {maximumFractionDigits: 0}) %></span>
             </div>
           <% } %>
           <div class="price-row total">
@@ -639,6 +701,44 @@
     } else {
       checkReviewStatus();
     }
+
+    // ログアウトモーダル
+    function showLogoutModal() {
+      document.getElementById('logoutModal').classList.add('active');
+    }
+
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('active');
+    }
+
+    function confirmLogout() {
+      window.location.href = '/logout';
+    }
+
+    // モーダル背景クリックで閉じる（ログアウトモーダルのみ）
+    document.addEventListener('DOMContentLoaded', function() {
+      const logoutModal = document.getElementById('logoutModal');
+      if (logoutModal) {
+        logoutModal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            closeLogoutModal();
+          }
+        });
+      }
+    });
   </script>
+
+  <!-- ログアウト確認モーダル -->
+  <div id="logoutModal" class="logout-modal">
+    <div class="logout-modal-content">
+      <div class="logout-modal-icon">🚪</div>
+      <div class="logout-modal-title">ログアウト確認</div>
+      <div class="logout-modal-message">ログアウトしてもよろしいですか？</div>
+      <div class="logout-modal-buttons">
+        <button class="logout-modal-button cancel" onclick="closeLogoutModal()">キャンセル</button>
+        <button class="logout-modal-button confirm" onclick="confirmLogout()">ログアウト</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

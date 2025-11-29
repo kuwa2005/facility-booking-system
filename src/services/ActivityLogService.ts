@@ -1,6 +1,7 @@
 import { Request } from 'express';
 import { pool } from '../config/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 /**
  * アクティビティログサービス
@@ -16,8 +17,8 @@ class ActivityLogService {
     req: Request
   ): Promise<void> {
     try {
-      const ipAddress = this.getClientIp(req);
-      const userAgent = req.get('user-agent') || 'Unknown';
+      const ipAddress = getClientIp(req);
+      const userAgent = getUserAgent(req);
 
       await pool.query(
         `INSERT INTO staff_activity_logs
@@ -48,8 +49,8 @@ class ActivityLogService {
     req: Request
   ): Promise<void> {
     try {
-      const ipAddress = this.getClientIp(req);
-      const userAgent = req.get('user-agent') || 'Unknown';
+      const ipAddress = getClientIp(req);
+      const userAgent = getUserAgent(req);
 
       // 一般ユーザーまたは未認証の場合はaudit_logsに記録
       // audit_logsはuser_idがNULL可能
@@ -82,27 +83,6 @@ class ActivityLogService {
       console.error('Failed to log user access denied:', error);
       // ログ記録失敗でもエラーを投げない
     }
-  }
-
-  /**
-   * クライアントIPアドレスを取得
-   * リバースプロキシ(Nginx)経由の場合はX-Forwarded-Forを使用
-   */
-  private getClientIp(req: Request): string {
-    // trust proxyが有効な場合、req.ipが正しいIPを返す
-    let ip = req.ip || req.socket.remoteAddress || 'Unknown';
-
-    // IPv6のlocalhost表記を正規化
-    if (ip === '::1' || ip === '::ffff:127.0.0.1') {
-      ip = '127.0.0.1';
-    }
-
-    // IPv6の::ffff:プレフィックスを除去
-    if (ip.startsWith('::ffff:')) {
-      ip = ip.substring(7);
-    }
-
-    return ip.substring(0, 45); // ip_address column limit
   }
 
   /**

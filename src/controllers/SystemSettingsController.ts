@@ -81,7 +81,7 @@ export class SystemSettingsController {
         return;
       }
 
-      const { siteName, adminEmail, contactPhone, maintenanceMode, adminStaffId } = req.body;
+      const { siteName, adminEmail, contactPhone, maintenanceMode, adminStaffId, timezone, timezoneOffset } = req.body;
       const staffId = req.user.userId;
 
       const updates = [];
@@ -99,6 +99,12 @@ export class SystemSettingsController {
       }
       if (adminStaffId !== undefined) {
         updates.push({ key: 'admin_staff_id', value: String(adminStaffId), type: 'number' as const });
+      }
+      if (timezone !== undefined) {
+        updates.push({ key: 'timezone', value: timezone, type: 'string' as const });
+      }
+      if (timezoneOffset !== undefined) {
+        updates.push({ key: 'timezone_offset', value: timezoneOffset, type: 'string' as const });
       }
 
       console.log('[SystemSettingsController] Updates:', updates);

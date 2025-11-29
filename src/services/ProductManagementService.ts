@@ -126,18 +126,34 @@ export class ProductManagementService {
       throw new Error('Product not found');
     }
 
-    const fields = Object.keys(updates)
-      .filter(key => key !== 'id' && key !== 'created_at' && key !== 'updated_at')
-      .map(key => `${key} = ?`)
-      .join(', ');
+    // フロントエンドのキーをデータベースのカラム名にマッピング
+    const columnMapping: { [key: string]: string } = {
+      'name': 'name',
+      'category': 'category',
+      'price': 'price',
+      'cost': 'cost',
+      'stock': 'stock_quantity',
+      'stockQuantity': 'stock_quantity',
+      'isActive': 'is_available',
+      'isAvailable': 'is_available',
+      'description': 'description',
+      'displayOrder': 'display_order'
+    };
 
-    const values = Object.keys(updates)
-      .filter(key => key !== 'id' && key !== 'created_at' && key !== 'updated_at')
-      .map(key => updates[key as keyof Product]);
+    const fields: string[] = [];
+    const values: any[] = [];
 
-    if (fields) {
+    Object.keys(updates)
+      .filter(key => key !== 'id' && key !== 'created_at' && key !== 'updated_at' && key !== 'createdAt' && key !== 'updatedAt')
+      .forEach(key => {
+        const dbColumn = columnMapping[key] || key;
+        fields.push(`${dbColumn} = ?`);
+        values.push(updates[key as keyof Product]);
+      });
+
+    if (fields.length > 0) {
       await pool.query(
-        `UPDATE products SET ${fields} WHERE id = ?`,
+        `UPDATE products SET ${fields.join(', ')} WHERE id = ?`,
         [...values, productId]
       );
     }

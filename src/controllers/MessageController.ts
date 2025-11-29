@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { MessageService } from '../services/MessageService';
 import { CreateMessageDto } from '../models/types';
+import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 const messageService = new MessageService();
 
@@ -33,6 +35,21 @@ export class MessageController {
 
       const message = await messageService.sendMessageFromUser(userId, data);
 
+      // メッセージ送信ログを記録
+      if ((req as any).user && (req as any).user.role === 'user') {
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
+
+        await UserActivityLogService.logMessageSend(
+          userId,
+          message.id,
+          data.subject,
+          data.content.length,
+          ipAddress,
+          userAgent
+        );
+      }
+
       res.status(201).json({
         success: true,
         message: 'メッセージを送信しました',
@@ -50,21 +67,30 @@ export class MessageController {
 
   /**
    * 自分のメッセージ一覧取得（一般利用者）
-   * GET /api/messages
+   * GET /api/messages?page=1&limit=30
    */
   async getUserMessages(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user.userId;
       const includeDeleted = req.query.includeDeleted === 'true';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 30;
 
       const messages = await messageService.getUserMessages(
         userId,
         includeDeleted,
+        page,
+        limit,
       );
 
       res.json({
         success: true,
         data: messages,
+        pagination: {
+          page,
+          limit,
+          hasMore: messages.length === limit,
+        },
       });
     } catch (error: any) {
       console.error('Error fetching user messages:', error);
@@ -141,6 +167,7 @@ export class MessageController {
     try {
       const messageId = parseInt(req.params.id);
       const userId = (req as any).user.userId;
+      const userRole = (req as any).user.role;
 
       if (isNaN(messageId)) {
         res.status(400).json({
@@ -150,7 +177,9 @@ export class MessageController {
         return;
       }
 
-      await messageService.markAsRead(messageId, userId);
+      // roleが'staff'または'admin'の場合はuserTypeを'staff'にする
+      const userType = (userRole === 'staff' || userRole === 'admin') ? 'staff' : 'user';
+      await messageService.markAsRead(messageId, userId, userType);
 
       res.json({
         success: true,
@@ -315,22 +344,42 @@ export class MessageController {
 
   /**
    * 職員が関わるメッセージ一覧取得
-   * GET /api/staff/messages
+   * GET /api/staff/messages?page=1&limit=30
    */
   async getStaffMessages(req: Request, res: Response): Promise<void> {
     try {
       const staffId = (req as any).user.userId;
       const showAll = req.query.showAll === 'true';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 30;
 
       // 管理者の場合は全メッセージを表示可能
       const messages = await messageService.getStaffMessages(
         showAll && (req as any).user.role === 'admin' ? undefined : staffId,
+        page,
+        limit,
       );
 
-      res.json({
-        success: true,
-        data: messages,
-      });
+      // snake_case を camelCase に変換
+      const camelCaseMessages = messages.map(msg => ({
+        id: msg.id,
+        senderType: msg.sender_type,
+        senderId: msg.sender_id,
+        senderName: (msg as any).sender_name,
+        senderEmail: (msg as any).sender_email,
+        recipientType: msg.recipient_type,
+        recipientId: msg.recipient_id,
+        recipientName: (msg as any).recipient_name,
+        recipientEmail: (msg as any).recipient_email,
+        subject: msg.subject,
+        content: msg.content,
+        readAt: msg.read_at,
+        createdAt: msg.created_at,
+        deletedAt: msg.deleted_at,
+        parentMessageId: msg.parent_message_id,
+      }));
+
+      res.json(camelCaseMessages);
     } catch (error: any) {
       console.error('Error fetching staff messages:', error);
       res.status(500).json({
@@ -452,15 +501,34 @@ export class MessageController {
         showAll && (req as any).user.role === 'admin' ? undefined : staffId,
       );
 
-      res.json({
-        success: true,
-        data: stats,
-      });
+      res.json(stats);
     } catch (error: any) {
       console.error('Error fetching message stats:', error);
       res.status(500).json({
         success: false,
         message: 'メッセージ統計の取得に失敗しました',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * 一般客からの未読メッセージ数取得（職員向け）
+   * GET /api/staff/messages/unread-from-users/count
+   */
+  async getUnreadCountFromUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const count = await messageService.getUnreadCountFromUsers();
+
+      res.json({
+        success: true,
+        data: { count },
+      });
+    } catch (error: any) {
+      console.error('Error fetching unread count from users:', error);
+      res.status(500).json({
+        success: false,
+        message: '未読メッセージ数の取得に失敗しました',
         error: error.message,
       });
     }

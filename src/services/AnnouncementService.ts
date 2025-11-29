@@ -13,6 +13,34 @@ import {
  */
 export class AnnouncementService {
   /**
+   * スネークケースをキャメルケースに変換
+   */
+  private toCamelCase(announcement: any): Announcement {
+    return {
+      id: announcement.id,
+      announcementType: announcement.announcement_type,
+      announcement_type: announcement.announcement_type,
+      title: announcement.title,
+      content: announcement.content,
+      priority: announcement.priority,
+      isActive: announcement.is_active,
+      is_active: announcement.is_active,
+      startsAt: announcement.starts_at,
+      starts_at: announcement.starts_at,
+      endsAt: announcement.ends_at,
+      ends_at: announcement.ends_at,
+      createdBy: announcement.created_by,
+      created_by: announcement.created_by,
+      createdAt: announcement.created_at,
+      created_at: announcement.created_at,
+      updatedAt: announcement.updated_at,
+      updated_at: announcement.updated_at,
+      deletedAt: announcement.deleted_at,
+      deleted_at: announcement.deleted_at,
+    } as Announcement;
+  }
+
+  /**
    * 公開お知らせ一覧取得（認証不要）
    * - ログイン前に全員向けに表示
    * - 有効期間内かつis_activeなもののみ
@@ -27,7 +55,7 @@ export class AnnouncementService {
          AND (ends_at IS NULL OR ends_at >= NOW())
        ORDER BY priority DESC, created_at DESC`,
     );
-    return rows as Announcement[];
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
@@ -45,7 +73,7 @@ export class AnnouncementService {
          AND (ends_at IS NULL OR ends_at >= NOW())
        ORDER BY priority DESC, created_at DESC`,
     );
-    return rows as Announcement[];
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
@@ -64,7 +92,7 @@ export class AnnouncementService {
     query += ` ORDER BY priority DESC, created_at DESC`;
 
     const [rows] = await pool.query<RowDataPacket[]>(query);
-    return rows as Announcement[];
+    return rows.map(row => this.toCamelCase(row));
   }
 
   /**
@@ -79,7 +107,7 @@ export class AnnouncementService {
     );
 
     if (rows.length === 0) return null;
-    return rows[0] as Announcement;
+    return this.toCamelCase(rows[0]);
   }
 
   /**
@@ -119,7 +147,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'create', 'announcement', ?, ?)`,
       [staffId, announcementId, `お知らせ「${title}」を作成しました`],
     );
@@ -185,7 +213,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'update', 'announcement', ?, ?)`,
       [staffId, announcementId, `お知らせ（ID: ${announcementId}）を更新しました`],
     );
@@ -211,7 +239,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'delete', 'announcement', ?, ?)`,
       [
         staffId,
@@ -236,7 +264,7 @@ export class AnnouncementService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'update', 'announcement', ?, ?)`,
       [
         staffId,

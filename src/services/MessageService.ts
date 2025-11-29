@@ -69,7 +69,7 @@ export class MessageService {
 
     // 活動ログ記録
     await pool.query(
-      `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+      `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
        VALUES (?, 'create', 'message', ?, ?)`,
       [staffId, messageId, `ユーザー（ID: ${recipient_id}）にメッセージを送信しました`],
     );
@@ -108,10 +108,14 @@ export class MessageService {
    * ユーザーのメッセージ一覧取得
    * @param userId 一般利用者ID
    * @param includeDeleted 削除済みメッセージも含めるか
+   * @param page ページ番号（1から開始、デフォルト: 1）
+   * @param limit 1ページあたりの件数（デフォルト: 30）
    */
   async getUserMessages(
     userId: number,
     includeDeleted: boolean = false,
+    page: number = 1,
+    limit: number = 30,
   ): Promise<Message[]> {
     let query = `
       SELECT m.*,
@@ -130,7 +134,11 @@ export class MessageService {
 
     query += ` ORDER BY m.created_at DESC`;
 
-    const [rows] = await pool.query<RowDataPacket[]>(query, [userId, userId]);
+    // ページネーション
+    const offset = (page - 1) * limit;
+    query += ` LIMIT ? OFFSET ?`;
+
+    const [rows] = await pool.query<RowDataPacket[]>(query, [userId, userId, limit, offset]);
 
     // BigInt を Number に変換
     return rows.map((row: any) => ({
@@ -145,8 +153,10 @@ export class MessageService {
   /**
    * 職員が関わるメッセージ一覧取得
    * @param staffId 職員ID（指定しない場合は全メッセージ）
+   * @param page ページ番号（1から開始、デフォルト: 1）
+   * @param limit 1ページあたりの件数（デフォルト: 30）
    */
-  async getStaffMessages(staffId?: number): Promise<Message[]> {
+  async getStaffMessages(staffId?: number, page: number = 1, limit: number = 30): Promise<Message[]> {
     let query = `
       SELECT m.*,
              sender.name as sender_name, sender.email as sender_email,
@@ -166,6 +176,11 @@ export class MessageService {
     }
 
     query += ` ORDER BY m.created_at DESC`;
+
+    // ページネーション
+    const offset = (page - 1) * limit;
+    query += ` LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
@@ -262,16 +277,22 @@ export class MessageService {
 
   /**
    * メッセージを既読にする
+   * @param messageId メッセージID
+   * @param readerId 既読にするユーザーID
+   * @param userType ユーザータイプ（'user' | 'staff'）
    */
-  async markAsRead(messageId: number, readerId: number): Promise<void> {
+  async markAsRead(messageId: number, readerId: number, userType?: 'user' | 'staff'): Promise<void> {
     const message = await this.getMessageById(messageId);
     if (!message) {
       throw new Error('Message not found');
     }
 
-    // 受信者のみが既読にできる
-    if (message.recipient_id !== readerId) {
-      throw new Error('Only the recipient can mark a message as read');
+    // 受信者または職員（スタッフは任意のメッセージを既読にできる）
+    const isRecipient = message.recipient_id === readerId;
+    const isStaff = userType === 'staff';
+
+    if (!isRecipient && !isStaff) {
+      throw new Error('Only the recipient or staff can mark a message as read');
     }
 
     // 既に既読の場合はスキップ
@@ -315,7 +336,7 @@ export class MessageService {
     // 職員の削除の場合は活動ログ記録
     if (userType === 'staff') {
       await pool.query(
-        `INSERT INTO activity_logs (staff_id, action_type, entity_type, entity_id, description)
+        `INSERT INTO staff_activity_logs (staff_id, action_type, target_type, target_id, description)
          VALUES (?, 'delete', 'message', ?, ?)`,
         [userId, messageId, `メッセージ（ID: ${messageId}）を削除しました`],
       );
@@ -336,6 +357,21 @@ export class MessageService {
          AND read_at IS NULL
          AND deleted_at IS NULL`,
       [userType, userId],
+    );
+
+    return rows[0]?.count ? Number(rows[0].count) : 0;
+  }
+
+  /**
+   * 一般客からの未読メッセージ数取得（職員向け）
+   */
+  async getUnreadCountFromUsers(): Promise<number> {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) as count FROM messages
+       WHERE sender_type = 'user'
+         AND recipient_type = 'staff'
+         AND read_at IS NULL
+         AND deleted_at IS NULL`,
     );
 
     return rows[0]?.count ? Number(rows[0].count) : 0;
@@ -366,7 +402,8 @@ export class MessageService {
     let query = `
       SELECT
         COUNT(*) as total_messages,
-        SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread_messages,
+        SUM(CASE WHEN read_at IS NULL AND sender_type = 'user' AND recipient_type = 'staff' THEN 1 ELSE 0 END) as unread_messages,
+        SUM(CASE WHEN sender_type = 'user' AND DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today_messages,
         SUM(CASE WHEN sender_type = 'user' THEN 1 ELSE 0 END) as from_users,
         SUM(CASE WHEN sender_type = 'staff' THEN 1 ELSE 0 END) as from_staff
       FROM messages
@@ -386,10 +423,11 @@ export class MessageService {
 
     // BigInt を Number に変換
     return {
-      total_messages: stats?.total_messages ? Number(stats.total_messages) : 0,
-      unread_messages: stats?.unread_messages ? Number(stats.unread_messages) : 0,
-      from_users: stats?.from_users ? Number(stats.from_users) : 0,
-      from_staff: stats?.from_staff ? Number(stats.from_staff) : 0,
+      totalMessages: stats?.total_messages ? Number(stats.total_messages) : 0,
+      unreadMessages: stats?.unread_messages ? Number(stats.unread_messages) : 0,
+      todayMessages: stats?.today_messages ? Number(stats.today_messages) : 0,
+      fromUsers: stats?.from_users ? Number(stats.from_users) : 0,
+      fromStaff: stats?.from_staff ? Number(stats.from_staff) : 0,
     };
   }
 }

@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import AuthService from '../services/AuthService';
 import { handleValidationErrors } from '../utils/validation';
 import { createError } from '../middleware/errorHandler';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 export class AuthController {
   /**
@@ -83,7 +84,10 @@ export class AuthController {
   static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
-      const result = await AuthService.login(email, password);
+      const ipAddress = getClientIp(req);
+      const userAgent = getUserAgent(req);
+
+      const result = await AuthService.login(email, password, ipAddress, userAgent);
 
       // Set cookie (optional, for browser-based auth)
       // secureフラグはHTTPS接続の時のみ有効にする
@@ -108,9 +112,29 @@ export class AuthController {
   /**
    * Logout
    */
-  static async logout(req: Request, res: Response): Promise<void> {
-    res.clearCookie('token');
-    res.json({ message: 'Logout successful' });
+  static async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (req.user) {
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
+
+        await AuthService.logout(
+          req.user.userId,
+          req.user.role,
+          req.user.email,
+          ipAddress,
+          userAgent
+        );
+      }
+
+      res.clearCookie('token');
+      res.json({ message: 'Logout successful' });
+    } catch (error: any) {
+      // Log the error but still clear the cookie and return success
+      console.error('Error logging logout:', error);
+      res.clearCookie('token');
+      res.json({ message: 'Logout successful' });
+    }
   }
 
   /**

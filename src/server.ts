@@ -32,8 +32,11 @@ const PORT = parseInt(process.env.PORT || '18080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Nginxリバースプロキシ対応：trust proxyを有効化
-// これにより、X-Forwarded-*ヘッダーを信頼し、正しいクライアントIPを取得できます
-app.set('trust proxy', true);
+// Docker環境では、Dockerネットワークサブネットを信頼する必要がある
+// loopback: 127.0.0.0/8
+// linklocal: 169.254.0.0/16
+// uniquelocal: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (Docker含む)
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 // セキュリティミドルウェア
 // HTTPSが必要なヘッダーは開発環境(HTTP)では無効化
@@ -56,21 +59,21 @@ app.use(cors({
   credentials: true,
 }));
 
-// レート制限
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 開発環境では1000リクエスト、本番環境では100リクエスト
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  handler: (req, res) => {
-    res.status(429).json({
-      error: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
-      retryAfter: 900, // 15分後に再試行（秒単位）
-    });
-  },
-});
-
-app.use('/api/', limiter);
+// レート制限（デモ版では無効化）
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15分
+//   max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 開発環境では1000リクエスト、本番環境では100リクエスト
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+//   handler: (req, res) => {
+//     res.status(429).json({
+//       error: 'このIPからのリクエストが多すぎます。後でもう一度お試しください',
+//       retryAfter: 900, // 15分後に再試行（秒単位）
+//     });
+//   },
+// });
+//
+// app.use('/api/', limiter);
 
 // ボディパーサーミドルウェア
 app.use(express.json({ limit: '10mb' }));

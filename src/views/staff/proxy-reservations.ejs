@@ -367,16 +367,6 @@ async function createGuestProxy() {
   }
 }
 
-// モーダル外クリックで閉じる
-['memberProxyModal', 'guestProxyModal'].forEach(modalId => {
-  document.getElementById(modalId).addEventListener('click', (e) => {
-    if (e.target.id === modalId) {
-      if (modalId === 'memberProxyModal') closeMemberProxyModal();
-      else closeGuestProxyModal();
-    }
-  });
-});
-
 // ユーザー検索モーダル関連
 let userSearchTargetInputId = null;
 
@@ -406,12 +396,6 @@ async function searchUsers() {
   const phone = document.getElementById('searchUserPhone').value.trim();
   const organization = document.getElementById('searchUserOrganization').value.trim();
   const userId = document.getElementById('searchUserId').value.trim();
-
-  // 検索条件が1つも入力されていない場合
-  if (!name && !email && !phone && !organization && !userId) {
-    alert('検索条件を最低1つ入力してください');
-    return;
-  }
 
   document.getElementById('userSearchResults').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 3rem 0;">検索中...</p>';
 
@@ -513,11 +497,4 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
-
-// ユーザー検索モーダル外クリックで閉じる
-document.getElementById('userSearchModal').addEventListener('click', (e) => {
-  if (e.target.id === 'userSearchModal') {
-    closeUserSearchModal();
-  }
-});
 </script>

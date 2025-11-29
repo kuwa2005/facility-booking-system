@@ -188,7 +188,7 @@ function displayUsages(usages) {
                     </span>
                   </td>
                   <td>${acStatus}</td>
-                  <td>¥${(usage.subtotalAmount || 0).toLocaleString()}</td>
+                  <td>¥${(usage.subtotalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ${usage.remarks || '-'}
                   </td>
@@ -258,20 +258,20 @@ async function showEditModal(id) {
           <h3 style="margin-bottom: 1rem; color: #2c3e50;">料金情報</h3>
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
             <div>
-              <strong>施設料金（乗数前）:</strong> ¥${(usage.roomBaseChargeBeforeMultiplier || 0).toLocaleString()}
+              <strong>施設料金（乗数前）:</strong> ¥${(usage.roomBaseChargeBeforeMultiplier || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
             </div>
             <div>
-              <strong>施設料金（乗数後）:</strong> ¥${(usage.roomChargeAfterMultiplier || 0).toLocaleString()}
+              <strong>施設料金（乗数後）:</strong> ¥${(usage.roomChargeAfterMultiplier || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
             </div>
             <div>
-              <strong>設備料金:</strong> ¥${(usage.equipmentCharge || 0).toLocaleString()}
+              <strong>設備料金:</strong> ¥${(usage.equipmentCharge || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
             </div>
             <div>
-              <strong>空調料金:</strong> ¥${(usage.acCharge || 0).toLocaleString()}
+              <strong>空調料金:</strong> ¥${(usage.acCharge || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
             </div>
             <div style="grid-column: 1 / -1;">
               <strong style="font-size: 1.1rem;">小計:</strong>
-              <span style="font-size: 1.25rem; color: #3498db; font-weight: 600;">¥${(usage.subtotalAmount || 0).toLocaleString()}</span>
+              <span style="font-size: 1.25rem; color: #3498db; font-weight: 600;">¥${(usage.subtotalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</span>
             </div>
           </div>
         </div>
@@ -439,12 +439,6 @@ async function updateRemarks() {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('editModal').addEventListener('click', (e) => {
-  if (e.target.id === 'editModal') {
-    closeEditModal();
-  }
-});
 
 // CSVエクスポート
 function exportToCSV() {

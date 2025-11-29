@@ -27,6 +27,30 @@
         <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">一般ユーザーからのメッセージを受信するスタッフのIDを指定します</p>
       </div>
       <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">タイムゾーン</label>
+        <select id="timezone" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <option value="Asia/Tokyo" data-offset="540">Asia/Tokyo (日本標準時 / JST +09:00)</option>
+          <option value="Asia/Shanghai" data-offset="480">Asia/Shanghai (中国標準時 / CST +08:00)</option>
+          <option value="Asia/Singapore" data-offset="480">Asia/Singapore (シンガポール時間 / SGT +08:00)</option>
+          <option value="Asia/Seoul" data-offset="540">Asia/Seoul (韓国標準時 / KST +09:00)</option>
+          <option value="UTC" data-offset="0">UTC (協定世界時 / UTC +00:00)</option>
+          <option value="Europe/London" data-offset="0">Europe/London (グリニッジ標準時 / GMT +00:00)</option>
+          <option value="Europe/Paris" data-offset="60">Europe/Paris (中央ヨーロッパ時間 / CET +01:00)</option>
+          <option value="America/New_York" data-offset="-300">America/New_York (米国東部時間 / EST -05:00)</option>
+          <option value="America/Chicago" data-offset="-360">America/Chicago (米国中部時間 / CST -06:00)</option>
+          <option value="America/Denver" data-offset="-420">America/Denver (米国山岳部時間 / MST -07:00)</option>
+          <option value="America/Los_Angeles" data-offset="-480">America/Los_Angeles (米国太平洋時間 / PST -08:00)</option>
+          <option value="Australia/Sydney" data-offset="600">Australia/Sydney (オーストラリア東部時間 / AEST +10:00)</option>
+          <option value="Australia/Perth" data-offset="480">Australia/Perth (オーストラリア西部時間 / AWST +08:00)</option>
+        </select>
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">システム全体で使用するタイムゾーンを選択してください（オフセットは自動計算されます）</p>
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">タイムゾーンオフセット（分）</label>
+        <input type="text" id="timezoneOffset" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; background-color: #f8f9fa; cursor: not-allowed;" value="540">
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">UTC からのオフセット（分単位）※タイムゾーン選択時に自動設定されます</p>
+      </div>
+      <div>
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
           <input type="checkbox" id="maintenanceMode">
           <span>メンテナンスモード（利用者のアクセスを制限）</span>
@@ -175,6 +199,25 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadBusinessHours();
 
+  // タイムゾーン選択時にオフセットを自動更新
+  const timezoneSelect = document.getElementById('timezone');
+  const timezoneOffsetInput = document.getElementById('timezoneOffset');
+
+  timezoneSelect.addEventListener('change', () => {
+    const selectedOption = timezoneSelect.options[timezoneSelect.selectedIndex];
+    const offset = selectedOption.getAttribute('data-offset');
+    if (offset) {
+      timezoneOffsetInput.value = offset;
+    }
+  });
+
+  // 初期読み込み時にもオフセットを設定
+  const initialOption = timezoneSelect.options[timezoneSelect.selectedIndex];
+  const initialOffset = initialOption.getAttribute('data-offset');
+  if (initialOffset) {
+    timezoneOffsetInput.value = initialOffset;
+  }
+
   // フォーム送信イベント
   document.getElementById('basicSettingsForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -223,6 +266,18 @@ async function loadSettings() {
     if (settings.admin_staff_id) {
       document.getElementById('adminStaffId').value = settings.admin_staff_id.value;
     }
+    if (settings.timezone) {
+      const timezoneSelect = document.getElementById('timezone');
+      timezoneSelect.value = settings.timezone.value;
+
+      // タイムゾーン変更時にオフセットも更新
+      const selectedOption = timezoneSelect.options[timezoneSelect.selectedIndex];
+      const offset = selectedOption.getAttribute('data-offset');
+      if (offset) {
+        document.getElementById('timezoneOffset').value = offset;
+      }
+    }
+    // timezone_offsetは読み取り専用なので、データベースから読み込まない（タイムゾーンから自動計算）
     if (settings.maintenance_mode) {
       document.getElementById('maintenanceMode').checked = settings.maintenance_mode.value;
     }
@@ -350,6 +405,8 @@ async function saveBasicSettings() {
     adminEmail: document.getElementById('adminEmail').value,
     contactPhone: document.getElementById('contactPhone').value,
     adminStaffId: parseInt(document.getElementById('adminStaffId').value) || 2,
+    timezone: document.getElementById('timezone').value,
+    timezoneOffset: document.getElementById('timezoneOffset').value,
     maintenanceMode: document.getElementById('maintenanceMode').checked
   };
 

@@ -3,6 +3,8 @@ import { createError } from '../middleware/errorHandler';
 import UserProfileService from '../services/UserProfileService';
 import RoomRepository from '../models/RoomRepository';
 import ApplicationRepository from '../models/ApplicationRepository';
+import UserActivityLogService from '../services/UserActivityLogService';
+import { getClientIp, getUserAgent } from '../utils/ipHelper';
 
 /**
  * ページレンダリング用コントローラー
@@ -15,6 +17,7 @@ export class PageController {
     const rooms = await RoomRepository.findAllActive();
     res.render('public/index', {
       title: '施設予約システム（DEMO）',
+      siteName: '施設予約システム（DEMO）',
       user: req.user,
       rooms: rooms.slice(0, 6),
     });
@@ -241,6 +244,19 @@ export class PageController {
       if (!room) {
         next(createError('施設が見つかりません', 404));
         return;
+      }
+
+      // ログインユーザーの場合、部屋閲覧ログを記録
+      if (req.user && req.user.role === 'user') {
+        const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
+        await UserActivityLogService.logRoomView(
+          req.user.userId,
+          room.id,
+          room.name,
+          ipAddress,
+          userAgent
+        );
       }
 
       res.render('public/room-detail', {

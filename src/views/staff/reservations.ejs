@@ -144,7 +144,7 @@ async function loadReservations() {
                   <td>${res.applicantName || '-'}</td>
                   <td>${res.usageDates ? res.usageDates.join(', ') : '-'}</td>
                   <td>${res.rooms ? res.rooms.join(', ') : '-'}</td>
-                  <td>¥${(res.totalAmount || 0).toLocaleString()}</td>
+                  <td>¥${(res.totalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                   <td>
                     <span class="badge badge-${res.paymentStatus === 'paid' ? 'success' : res.paymentStatus === 'unpaid' ? 'warning' : 'info'}">
                       ${res.paymentStatus === 'paid' ? '支払済' : res.paymentStatus === 'unpaid' ? '未決済' : '返金済'}
@@ -243,7 +243,7 @@ async function showDetail(id) {
             </div>
             ${reservation.entranceFeeType === 'paid' ? `
               <div>
-                <strong>入場料金額:</strong> ¥${(reservation.entranceFeeAmount || 0).toLocaleString()}
+                <strong>入場料金額:</strong> ¥${(reservation.entranceFeeAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
               </div>
               <div>
                 <strong>料金乗数:</strong> ${reservation.ticketMultiplier || 1}
@@ -281,7 +281,7 @@ async function showDetail(id) {
                       <td>${usage.roomName || '-'}</td>
                       <td>${slots.join(', ')}</td>
                       <td>${usage.acRequested ? (usage.acHours ? usage.acHours + '時間' : '要') : '-'}</td>
-                      <td>¥${(usage.subtotalAmount || 0).toLocaleString()}</td>
+                      <td>¥${(usage.subtotalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</td>
                     </tr>
                   `;
                 }).join('')}
@@ -295,7 +295,7 @@ async function showDetail(id) {
           <h3 style="margin-bottom: 1rem; color: #2c3e50;">料金情報</h3>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #3498db; color: white; border-radius: 4px;">
             <span style="font-size: 1.25rem; font-weight: 600;">合計金額</span>
-            <span style="font-size: 1.75rem; font-weight: 700;">¥${(reservation.totalAmount || 0).toLocaleString()}</span>
+            <span style="font-size: 1.75rem; font-weight: 700;">¥${(reservation.totalAmount || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</span>
           </div>
           <div style="margin-top: 1rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
             <div>
@@ -315,7 +315,7 @@ async function showDetail(id) {
                 <strong>キャンセル日:</strong> ${reservation.cancelledAt ? new Date(reservation.cancelledAt).toLocaleDateString('ja-JP') : '-'}
               </div>
               <div>
-                <strong>キャンセル料:</strong> ¥${(reservation.cancellationFee || 0).toLocaleString()}
+                <strong>キャンセル料:</strong> ¥${(reservation.cancellationFee || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
               </div>
             ` : ''}
           </div>
@@ -487,12 +487,6 @@ async function addNote(id) {
   }
 }
 
-// モーダル外クリックで閉じる
-document.getElementById('detailModal').addEventListener('click', (e) => {
-  if (e.target.id === 'detailModal') {
-    closeDetailModal();
-  }
-});
 
 document.getElementById('noteModal').addEventListener('click', (e) => {
   if (e.target.id === 'noteModal') {

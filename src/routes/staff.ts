@@ -14,6 +14,7 @@ import { UserNoteController } from '../controllers/UserNoteController';
 import { NotificationController, notificationController } from '../controllers/NotificationController';
 import { SystemSettingsController } from '../controllers/SystemSettingsController';
 import { ActivityLogController } from '../controllers/ActivityLogController';
+import { UserActivityLogController } from '../controllers/UserActivityLogController';
 import { HolidayController } from '../controllers/HolidayController';
 import multer from 'multer';
 import path from 'path';
@@ -56,6 +57,7 @@ const profileImageUpload = multer({
 // ===== ダッシュボード =====
 router.get('/dashboard/stats', StaffDashboardController.getDashboardStats);
 router.get('/dashboard/revenue/monthly', StaffDashboardController.getMonthlyRevenueReport);
+router.get('/dashboard/revenue/range', StaffDashboardController.getRevenueByDateRange);
 router.get('/dashboard/rooms/usage-stats', StaffDashboardController.getRoomUsageStats);
 
 // ===== プロフィール =====
@@ -177,9 +179,12 @@ router.post('/announcements/:id/toggle', announcementController.toggleAnnounceme
 router.post('/messages', messageController.sendMessageFromStaff.bind(messageController));
 router.get('/messages', messageController.getStaffMessages.bind(messageController));
 router.get('/messages/stats', messageController.getMessageStats.bind(messageController));
+router.get('/messages/unread-from-users/count', messageController.getUnreadCountFromUsers.bind(messageController));
 router.get('/messages/user/:userId', messageController.getMessagesByUser.bind(messageController));
 router.get('/messages/:id/thread', messageController.getMessageThread.bind(messageController));
+router.post('/messages/:id/read', messageController.markAsRead.bind(messageController));
 router.delete('/messages/:id', messageController.deleteMessageByStaff.bind(messageController));
+router.post('/messages/:id/delete', messageController.deleteMessageByStaff.bind(messageController));
 router.post('/messages/cleanup', messageController.cleanupExpiredMessages.bind(messageController));
 
 // ===== ユーザーメモ管理 =====
@@ -231,6 +236,10 @@ router.post('/settings/business-hours', SystemSettingsController.updateBusinessH
 // ===== アクティビティログ（管理者のみ） =====
 router.get('/activity-logs', ActivityLogController.getLogs);
 router.get('/activity-logs/stats', ActivityLogController.getStats);
+
+// ===== ユーザーアクティビティログ（管理者のみ） =====
+router.get('/user-activity-logs', UserActivityLogController.getLogs);
+router.get('/user-activity-logs/stats', UserActivityLogController.getStats);
 
 // ===== 祝日管理 =====
 router.get('/holidays', HolidayController.getAllHolidays);

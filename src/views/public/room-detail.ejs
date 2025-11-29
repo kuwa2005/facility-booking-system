@@ -899,8 +899,8 @@
         }
       });
 
-      document.getElementById('basePrice').textContent = '¥' + total.toLocaleString();
-      document.getElementById('totalPrice').textContent = '¥' + total.toLocaleString();
+      document.getElementById('basePrice').textContent = '¥' + total.toLocaleString('ja-JP', {maximumFractionDigits: 0});
+      document.getElementById('totalPrice').textContent = '¥' + total.toLocaleString('ja-JP', {maximumFractionDigits: 0});
 
       updateSubmitButton();
     }

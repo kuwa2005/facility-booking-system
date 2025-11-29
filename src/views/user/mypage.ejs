@@ -22,14 +22,21 @@
     header .container {
       max-width: 1200px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 1rem;
     }
-    header h1 { font-size: 1.5rem; font-weight: 600; }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: left;
+      width: 100%;
+    }
     header nav {
       display: flex;
       gap: 1.5rem;
       align-items: center;
+      justify-content: center;
+      width: 100%;
     }
     header nav a {
       color: white;
@@ -51,6 +58,65 @@
     .page-header p {
       color: #6b7280;
     }
+    .announcement-banner {
+      background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      box-shadow: 0 4px 6px rgba(250, 204, 21, 0.3);
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #facc15;
+    }
+    .announcement-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+    }
+    .announcement-compact {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+    .announcement-icon {
+      font-size: 1.5rem;
+    }
+    .announcement-content {
+      flex: 1;
+    }
+    .announcement-title {
+      font-weight: 700;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+      color: #1f2937;
+    }
+    .announcement-text {
+      font-size: 0.75rem;
+      line-height: 1.4;
+      color: #374151;
+    }
+    .announcement-link {
+      color: #1f2937;
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+      padding: 0.5rem 1rem;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+    .announcement-link:hover {
+      background: rgba(0, 0, 0, 0.15);
+    }
     .grid {
       display: grid;
       gap: 2rem;
@@ -58,10 +124,16 @@
     }
     .card {
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+      margin-bottom: 1.25rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.1);
     }
     .card h3 {
       font-size: 1.25rem;
@@ -69,6 +141,22 @@
       color: #1f2937;
       padding-bottom: 0.75rem;
       border-bottom: 2px solid #e5e7eb;
+    }
+    .card-gradient-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .card-gradient-primary h3 {
+      color: white;
+      border-bottom-color: rgba(255,255,255,0.2);
+    }
+    .card-gradient-accent {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    .card-gradient-accent h3 {
+      color: white;
+      border-bottom-color: rgba(255,255,255,0.2);
     }
     .profile-image {
       text-align: center;
@@ -183,6 +271,48 @@
       margin-top: 4rem;
       text-align: center;
     }
+    .logout-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    .logout-modal.show {
+      display: flex;
+    }
+    .logout-modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .logout-modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+    .logout-modal-message {
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+    .logout-modal-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .logout-modal-buttons .btn {
+      min-width: 120px;
+    }
     @media (max-width: 768px) {
       .grid {
         grid-template-columns: 1fr;
@@ -200,11 +330,6 @@
         <a href="/rooms">施設一覧</a>
         <a href="/availability">空き状況確認</a>
         <a href="/contact">お問合せ</a>
-        <% if (user) { %>
-          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
-            <strong><%= user.login_id %></strong> (<%= user.name %>)
-          </span>
-        <% } %>
         <a href="/my-page">マイページ</a>
         <a href="/my-reservations">予約一覧</a>
         <a href="#" onclick="return confirmLogout();">ログアウト</a>
@@ -213,11 +338,27 @@
   </header>
   <script>
     function confirmLogout() {
-      if (confirm('ログアウトしてもよろしいですか？')) {
-        window.location.href = '/logout';
-      }
+      document.getElementById('logoutModal').classList.add('show');
       return false;
     }
+
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('show');
+    }
+
+    function doLogout() {
+      window.location.href = '/logout';
+    }
+
+    // モーダルの外側をクリックで閉じる
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('logoutModal');
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeLogoutModal();
+        }
+      });
+    });
   </script>
 
   <main>
@@ -227,9 +368,30 @@
         <p>ようこそ、<%= profile.name %> さん</p>
       </div>
 
+      <!-- お知らせ（コンパクト版） -->
+      <div class="announcement-banner" id="announcements-banner" style="display: none;">
+        <div class="announcement-compact">
+          <div class="announcement-icon">📢</div>
+          <div class="announcement-content" id="announcementsContainer">
+            <div class="announcement-title">読み込み中...</div>
+          </div>
+          <a href="/my-page/announcements" class="announcement-link">すべて表示 →</a>
+        </div>
+      </div>
+
       <div class="grid">
-        <!-- プロフィール -->
+        <!-- 左側ペイン -->
         <div>
+          <!-- 予約管理 -->
+          <div class="card card-gradient-primary">
+            <h3>📅 予約管理</h3>
+            <div class="action-buttons">
+              <a href="/my-reservations" class="btn" style="background: rgba(255,255,255,0.9); color: #667eea; border: none;">予約一覧を見る</a>
+              <a href="/availability" class="btn" style="background: white; color: #667eea; border: none; font-weight: 600;">新規予約</a>
+            </div>
+          </div>
+
+          <!-- プロフィール -->
           <div class="card">
             <h3>プロフィール</h3>
 
@@ -266,32 +428,33 @@
               <a href="/my-page/edit" class="btn btn-primary btn-block">プロフィール編集</a>
             </div>
           </div>
-        </div>
 
-        <!-- クイックアクション -->
-        <div>
-          <div class="card">
-            <h3>予約管理</h3>
-            <div class="action-buttons">
-              <a href="/my-reservations" class="btn btn-outline">予約一覧を見る</a>
-              <a href="/availability" class="btn btn-primary">新規予約</a>
-            </div>
-          </div>
-
+          <!-- アカウント設定 -->
           <div class="card">
             <h3>アカウント設定</h3>
             <div class="action-buttons">
               <a href="/my-page/change-password" class="btn btn-outline">パスワード変更</a>
             </div>
           </div>
+        </div>
 
-          <div class="card">
-            <h3>⭐ マイレビュー</h3>
-            <div id="myReviews" style="min-height: 100px;">
-              <p style="color: #9ca3af; text-align: center; padding: 2rem;">読み込み中...</p>
+        <!-- 右側ペイン -->
+        <div>
+          <!-- メッセージ -->
+          <div class="card card-gradient-accent">
+            <h3>✉️ メッセージ</h3>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: 1rem; font-size: 0.875rem;">
+              施設管理者とのメッセージのやり取りができます
+            </p>
+            <div id="unreadBadge" style="display: none; background-color: rgba(255,255,255,0.3); color: white; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; font-weight: 600; border: 2px solid rgba(255,255,255,0.5);">
+              未読メッセージがあります
             </div>
+            <a href="/my-page/messages" class="btn btn-block" style="background: white; color: #f5576c; border: none; font-weight: 600;">
+              メッセージを見る
+            </a>
           </div>
 
+          <!-- お気に入り施設 -->
           <div class="card">
             <h3>❤️ お気に入り施設</h3>
             <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
@@ -302,27 +465,12 @@
             </a>
           </div>
 
+          <!-- マイレビュー -->
           <div class="card">
-            <h3>📢 お知らせ</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
-              施設からの重要なお知らせを確認できます
-            </p>
-            <a href="/my-page/announcements" class="btn btn-outline btn-block">
-              お知らせを見る
-            </a>
-          </div>
-
-          <div class="card">
-            <h3>✉️ メッセージ</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
-              施設管理者とのメッセージのやり取りができます
-            </p>
-            <div id="unreadBadge" style="display: none; background-color: #ef4444; color: white; padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; font-weight: 600;">
-              未読メッセージがあります
+            <h3>⭐ マイレビュー</h3>
+            <div id="myReviews" style="min-height: 100px;">
+              <p style="color: #9ca3af; text-align: center; padding: 2rem;">読み込み中...</p>
             </div>
-            <a href="/my-page/messages" class="btn btn-outline btn-block">
-              メッセージを見る
-            </a>
           </div>
         </div>
       </div>
@@ -371,6 +519,18 @@
       <p>&copy; 2025 施設予約システム（DEMO）. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- ログアウト確認モーダル -->
+  <div class="logout-modal" id="logoutModal">
+    <div class="logout-modal-content">
+      <div class="logout-modal-title">ログアウト確認</div>
+      <div class="logout-modal-message">ログアウトしてもよろしいですか？</div>
+      <div class="logout-modal-buttons">
+        <button class="btn btn-outline" onclick="closeLogoutModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // レビューを取得・表示
@@ -493,9 +653,41 @@
       }
     }
 
-    // ページロード時にレビューと未読メッセージ数を取得
+    // お知らせを取得・表示（コンパクトバナー）
+    async function loadAnnouncements() {
+      try {
+        const response = await fetch('/api/user/announcements');
+        const data = await response.json();
+
+        const container = document.getElementById('announcementsContainer');
+        const banner = document.getElementById('announcements-banner');
+
+        if (data.success && data.data && data.data.length > 0) {
+          // 最新のお知らせを1件表示
+          const latest = data.data[0];
+          const title = escapeHtml(latest.title);
+          const contentPreview = escapeHtml(latest.content.substring(0, 100));
+
+          container.innerHTML = `
+            <div class="announcement-title">${title}</div>
+            <div class="announcement-text">${contentPreview}${latest.content.length > 100 ? '...' : ''}</div>
+          `;
+          banner.style.display = 'block';
+        } else {
+          // お知らせがない場合はバナーを表示しない
+          banner.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Failed to load announcements:', error);
+        // エラー時もバナーを表示しない
+        document.getElementById('announcements-banner').style.display = 'none';
+      }
+    }
+
+    // ページロード時にレビュー、未読メッセージ数、お知らせを取得
     loadMyReviews();
     loadUnreadCount();
+    loadAnnouncements();
   </script>
 </body>
 </html>

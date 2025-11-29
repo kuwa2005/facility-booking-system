@@ -17,6 +17,7 @@ router.use(authenticate);
 router.get('/profile', UserProfileController.getProfile);
 router.patch(
   '/profile',
+  profileImageUpload.single('profileImage'),
   UserProfileController.updateProfileValidation,
   UserProfileController.updateProfile
 );
@@ -87,6 +88,10 @@ router.post(
 );
 router.delete(
   '/messages/:id',
+  messageController.deleteMessageByUser.bind(messageController)
+);
+router.post(
+  '/messages/:id/delete',
   messageController.deleteMessageByUser.bind(messageController)
 );
 

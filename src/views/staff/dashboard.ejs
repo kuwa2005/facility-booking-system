@@ -7,6 +7,9 @@
     <div style="display: flex; gap: 0.5rem; align-items: center;">
       <span style="font-size: 0.875rem; color: #7f8c8d;">最終更新:</span>
       <span id="lastUpdate" style="font-size: 0.875rem; font-weight: 600; color: #3498db;">-</span>
+      <button id="autoRefreshToggle" onclick="toggleAutoRefresh()" class="btn" style="padding: 0.5rem 1rem; background-color: #27ae60; color: white; border: none; transition: background-color 0.3s;">
+        ⚡ 自動更新: ON
+      </button>
       <button onclick="refreshDashboard()" class="btn btn-primary" style="padding: 0.5rem 1rem;">
         🔄 更新
       </button>
@@ -14,51 +17,52 @@
   </div>
 </div>
 
-<!-- 統計カード（改善版） -->
+<!-- 未読メッセージバナー -->
+<a href="/staff/messages" style="text-decoration: none;">
+  <div id="unreadMessagesBanner" style="display: none; background-color: #dc2626; padding: 0.5rem 1rem; margin-bottom: 1rem; border-radius: 4px; cursor: pointer; transition: background-color 0.3s, transform 0.2s;" onmouseover="this.style.backgroundColor='#b91c1c'; this.style.transform='translateY(-1px)';" onmouseout="this.style.backgroundColor='#dc2626'; this.style.transform='translateY(0)';">
+    <p style="margin: 0; color: #fbbf24; font-weight: 700; text-align: center; font-size: 0.95rem;">
+      ⚠️ お客様からの未読メッセージが<span id="unreadCount">0</span>件あります
+    </p>
+  </div>
+</a>
+
+<!-- 統計カード（改善版・クリック可能） -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-  <div class="card" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
-    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">本日の予約</h3>
-    <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="todayReservations">-</p>
-    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="todayReservationsTrend"></div>
-  </div>
+  <a href="/staff/reservations" style="text-decoration: none; color: inherit;">
+    <div class="card" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; min-height: 150px; display: flex; flex-direction: column; justify-content: center;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
+      <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">本日の予約</h3>
+      <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="todayReservations">-</p>
+      <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="todayReservationsTrend"></div>
+    </div>
+  </a>
 
-  <div class="card" style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
-    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">今後の予約</h3>
-    <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="upcomingReservations">-</p>
-    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="upcomingReservationsTrend"></div>
-  </div>
+  <a href="/staff/reservations" style="text-decoration: none; color: inherit;">
+    <div class="card" style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; min-height: 150px; display: flex; flex-direction: column; justify-content: center;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
+      <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">今後の予約</h3>
+      <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="upcomingReservations">-</p>
+      <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="upcomingReservationsTrend"></div>
+    </div>
+  </a>
 
-  <div class="card" style="text-align: center; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none;">
-    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">未決済</h3>
-    <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="pendingPayments">-</p>
-    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="pendingPaymentsTrend"></div>
-  </div>
+  <a href="/staff/reservations?paymentStatus=pending" style="text-decoration: none; color: inherit;">
+    <div class="card" style="text-align: center; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; min-height: 150px; display: flex; flex-direction: column; justify-content: center;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
+      <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">未決済</h3>
+      <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="pendingPayments">-</p>
+      <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="pendingPaymentsTrend"></div>
+    </div>
+  </a>
 
-  <div class="card" style="text-align: center; background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; border: none;">
-    <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">今月の売上</h3>
-    <p style="font-size: 2rem; font-weight: 700; margin: 0.5rem 0;" id="monthlyRevenue">-</p>
-    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="monthlyRevenueTrend"></div>
-  </div>
-</div>
-
-<!-- 月別売上グラフ -->
-<div class="card">
-  <h2 class="card-title">月別売上推移</h2>
-  <div id="revenueChartContainer">
-    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
-  </div>
-</div>
-
-<!-- 施設利用状況 -->
-<div class="card">
-  <h2 class="card-title">施設利用状況</h2>
-  <div id="roomUsageContainer">
-    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
-  </div>
+  <a href="/staff/reports" style="text-decoration: none; color: inherit;">
+    <div class="card" style="text-align: center; background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; min-height: 150px; display: flex; flex-direction: column; justify-content: center;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';">
+      <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem; opacity: 0.9;">今月の売上</h3>
+      <p style="font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0;" id="monthlyRevenue">-</p>
+      <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;" id="monthlyRevenueTrend"></div>
+    </div>
+  </a>
 </div>
 
 <!-- 2カラムレイアウト -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
   <!-- 最近の申請 -->
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -79,6 +83,64 @@
     <div id="todayUsagesContainer">
       <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
     </div>
+  </div>
+</div>
+
+<!-- 売上推移と施設利用状況（統合版） -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 class="card-title" style="margin: 0;">売上推移と施設利用状況</h2>
+      <p style="color: #7f8c8d; font-size: 0.875rem; margin-top: 0.25rem;">期間を指定して売上と施設利用状況を確認できます</p>
+    </div>
+  </div>
+
+  <!-- 日付範囲選択と月別ボタン -->
+  <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+    <!-- 月選択ボタン -->
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">📅 月別クイック選択</label>
+      <div id="monthSelector" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-start;">
+        <!-- JavaScriptで動的生成 -->
+      </div>
+    </div>
+
+    <!-- カスタム日付範囲 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+      <div>
+        <label for="startDate" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">集計開始日</label>
+        <input type="date" id="startDate" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+      </div>
+      <div>
+        <label for="endDate" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50;">集計終了日</label>
+        <input type="date" id="endDate" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+      </div>
+      <div>
+        <button onclick="applyCustomDateRange()" class="btn btn-primary" style="padding: 0.75rem 2rem; white-space: nowrap;">
+          🔍 表示
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- タブ切り替え -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1;">
+    <button id="tabRevenue" onclick="switchTab('revenue')" style="padding: 0.75rem 1.5rem; border: none; background: none; color: #3498db; font-weight: 600; border-bottom: 3px solid #3498db; cursor: pointer; transition: all 0.2s;">
+      📊 売上推移
+    </button>
+    <button id="tabUsage" onclick="switchTab('usage')" style="padding: 0.75rem 1.5rem; border: none; background: none; color: #7f8c8d; font-weight: 600; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s;">
+      🏢 施設利用状況
+    </button>
+  </div>
+
+  <!-- 売上グラフ -->
+  <div id="revenueChartContainer">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
+  </div>
+
+  <!-- 施設利用状況 -->
+  <div id="roomUsageContainer" style="display: none;">
+    <p style="text-align: center; color: #7f8c8d;">読み込み中...</p>
   </div>
 </div>
 
@@ -107,6 +169,7 @@
 // ダッシュボードを更新
 function refreshDashboard() {
   loadDashboardData();
+  updateUnreadMessagesBanner();
 }
 
 // ダッシュボードデータを読み込み
@@ -140,11 +203,19 @@ async function loadDashboardData() {
     console.error('Error loading dashboard stats:', error);
   }
 
-  // 月別売上グラフを読み込み
-  loadRevenueChart();
+  // 月選択ボタンを生成
+  generateMonthSelector();
 
-  // 施設利用状況を読み込み
-  loadRoomUsage();
+  // 現在の月の日付範囲を初期設定
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  document.getElementById('startDate').value = formatDateForInput(startDate);
+  document.getElementById('endDate').value = formatDateForInput(endDate);
+
+  // 売上グラフを初期ロード（デフォルトは売上タブ）
+  loadRevenueChart(startDate, endDate);
 }
 
 // 最近の申請を表示
@@ -204,16 +275,165 @@ function displayTodayUsages(usages) {
   }
 }
 
-// 月別売上グラフを読み込み
-async function loadRevenueChart() {
-  try {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+// 現在選択中の年月と日付範囲
+let selectedYear = new Date().getFullYear();
+let selectedMonth = new Date().getMonth() + 1;
+let currentStartDate = null;
+let currentEndDate = null;
+let currentTab = 'revenue'; // 'revenue' or 'usage'
 
-    const res = await fetch(`/api/staff/dashboard/revenue/monthly?year=${year}&month=${month}`, {
+// 月選択ボタンを生成
+function generateMonthSelector() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const months = [];
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(currentYear, currentMonth - 1 - i, 1);
+    months.push({
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      label: `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`
+    });
+  }
+
+  const selectorHtml = months.map(m => {
+    const isSelected = m.year === selectedYear && m.month === selectedMonth && !currentStartDate;
+    return `
+      <button
+        onclick="selectMonth(${m.year}, ${m.month})"
+        style="padding: 0.5rem 1rem; border: 2px solid ${isSelected ? '#3498db' : '#ddd'}; background: ${isSelected ? '#3498db' : 'white'}; color: ${isSelected ? 'white' : '#333'}; border-radius: 6px; cursor: pointer; font-weight: ${isSelected ? '600' : '400'}; transition: all 0.3s;"
+        onmouseover="if(!${isSelected}) { this.style.borderColor='#3498db'; this.style.backgroundColor='#f0f8ff'; }"
+        onmouseout="if(!${isSelected}) { this.style.borderColor='#ddd'; this.style.backgroundColor='white'; }"
+      >
+        ${m.label}
+      </button>
+    `;
+  }).join('');
+
+  document.getElementById('monthSelector').innerHTML = selectorHtml;
+}
+
+// 月を選択
+async function selectMonth(year, month) {
+  selectedYear = year;
+  selectedMonth = month;
+
+  // 月の開始日と終了日を設定
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0); // 月の最終日
+
+  // 日付入力フィールドを更新
+  document.getElementById('startDate').value = formatDateForInput(startDate);
+  document.getElementById('endDate').value = formatDateForInput(endDate);
+
+  // カスタム日付範囲をクリア
+  currentStartDate = null;
+  currentEndDate = null;
+
+  generateMonthSelector();
+  await loadData(startDate, endDate);
+}
+
+// カスタム日付範囲を適用
+async function applyCustomDateRange() {
+  const startDateStr = document.getElementById('startDate').value;
+  const endDateStr = document.getElementById('endDate').value;
+
+  if (!startDateStr || !endDateStr) {
+    alert('開始日と終了日を両方入力してください');
+    return;
+  }
+
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+
+  if (startDate > endDate) {
+    alert('開始日は終了日より前である必要があります');
+    return;
+  }
+
+  currentStartDate = startDate;
+  currentEndDate = endDate;
+
+  generateMonthSelector(); // ボタンの選択状態を更新
+  await loadData(startDate, endDate);
+}
+
+// データを読み込み
+async function loadData(startDate, endDate) {
+  if (currentTab === 'revenue') {
+    await loadRevenueChart(startDate, endDate);
+  } else {
+    await loadRoomUsage(startDate, endDate);
+  }
+}
+
+// タブを切り替え
+function switchTab(tab) {
+  currentTab = tab;
+
+  // タブボタンのスタイルを更新
+  const tabRevenue = document.getElementById('tabRevenue');
+  const tabUsage = document.getElementById('tabUsage');
+
+  if (tab === 'revenue') {
+    tabRevenue.style.color = '#3498db';
+    tabRevenue.style.borderBottomColor = '#3498db';
+    tabUsage.style.color = '#7f8c8d';
+    tabUsage.style.borderBottomColor = 'transparent';
+
+    document.getElementById('revenueChartContainer').style.display = 'block';
+    document.getElementById('roomUsageContainer').style.display = 'none';
+  } else {
+    tabRevenue.style.color = '#7f8c8d';
+    tabRevenue.style.borderBottomColor = 'transparent';
+    tabUsage.style.color = '#3498db';
+    tabUsage.style.borderBottomColor = '#3498db';
+
+    document.getElementById('revenueChartContainer').style.display = 'none';
+    document.getElementById('roomUsageContainer').style.display = 'block';
+  }
+
+  // データを読み込み
+  const startDateStr = document.getElementById('startDate').value;
+  const endDateStr = document.getElementById('endDate').value;
+
+  if (startDateStr && endDateStr) {
+    loadData(new Date(startDateStr), new Date(endDateStr));
+  }
+}
+
+// 日付をYYYY-MM-DD形式にフォーマット
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 日付をMM/DD形式にフォーマット
+function formatDateShort(dateStr) {
+  try {
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+// 月別売上グラフを読み込み
+async function loadRevenueChart(startDate, endDate) {
+  try {
+    const startStr = formatDateForInput(startDate);
+    const endStr = formatDateForInput(endDate);
+
+    const res = await fetch(`/api/staff/dashboard/revenue/range?startDate=${startStr}&endDate=${endStr}`, {
       credentials: 'include',
-      });
+    });
     const data = await res.json();
 
     if (data.dailyRevenue && data.dailyRevenue.length > 0) {
@@ -221,31 +441,31 @@ async function loadRevenueChart() {
 
       const html = `
         <div style="padding: 1rem;">
-          <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 200px; gap: 0.5rem;">
-            ${data.dailyRevenue.slice(0, 15).map(day => {
+          <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 250px; gap: 0.25rem; overflow-x: auto;">
+            ${data.dailyRevenue.map(day => {
               const height = maxRevenue > 0 ? (day.revenue / maxRevenue * 100) : 0;
               return `
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-                  <div style="font-size: 0.75rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                <div style="flex: 0 0 auto; min-width: 40px; display: flex; flex-direction: column; align-items: center;">
+                  <div style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 0.5rem; white-space: nowrap;">
                     ¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
                   </div>
                   <div style="width: 100%; background: linear-gradient(to top, #3498db, #5dade2); height: ${height}%; min-height: 2px; border-radius: 4px 4px 0 0;" title="¥${(day.revenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}"></div>
-                  <div style="font-size: 0.75rem; color: #7f8c8d; margin-top: 0.5rem;">
-                    ${day.date.split('-')[2]}日
+                  <div style="font-size: 0.7rem; color: #7f8c8d; margin-top: 0.5rem; white-space: nowrap;">
+                    ${formatDateShort(day.date)}
                   </div>
                 </div>
               `;
             }).join('')}
           </div>
-          <div style="text-align: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
-            <div style="font-size: 0.875rem; color: #7f8c8d;">今月の総売上</div>
-            <div style="font-size: 1.5rem; font-weight: 600; color: #3498db;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
+          <div style="text-align: center; margin-top: 1.5rem; padding: 1.5rem; background-color: #f8f9fa; border-radius: 4px;">
+            <div style="font-size: 0.875rem; color: #7f8c8d;">期間の総売上（${startStr} 〜 ${endStr}）</div>
+            <div style="font-size: 1.75rem; font-weight: 600; color: #3498db; margin-top: 0.5rem;">¥${(data.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}</div>
           </div>
         </div>
       `;
       document.getElementById('revenueChartContainer').innerHTML = html;
     } else {
-      document.getElementById('revenueChartContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">データがありません</p>';
+      document.getElementById('revenueChartContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">この期間のデータがありません</p>';
     }
   } catch (error) {
     console.error('Error loading revenue chart:', error);
@@ -254,29 +474,35 @@ async function loadRevenueChart() {
 }
 
 // 施設利用状況を読み込み
-async function loadRoomUsage() {
+async function loadRoomUsage(startDate, endDate) {
   try {
-    const res = await fetch('/api/staff/dashboard/rooms/usage-stats', {
+    const startStr = formatDateForInput(startDate);
+    const endStr = formatDateForInput(endDate);
+
+    const res = await fetch(`/api/staff/dashboard/rooms/usage-stats?startDate=${startStr}&endDate=${endStr}`, {
       credentials: 'include',
-      });
+    });
     const data = await res.json();
 
     if (data.rooms && data.rooms.length > 0) {
       const html = `
         <div style="padding: 1rem;">
+          <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px; text-align: center;">
+            <div style="font-size: 0.875rem; color: #7f8c8d;">集計期間（${startStr} 〜 ${endStr}）</div>
+          </div>
           ${data.rooms.map(room => `
-            <div style="margin-bottom: 1.5rem;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="font-weight: 600;">${room.name}</span>
-                <span style="color: #7f8c8d;">
-                  ${room.usageCount || 0}回 · ¥${(room.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #f9fafb; border-radius: 6px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-weight: 600; font-size: 1.1rem;">${room.name}</span>
+                <span style="color: #7f8c8d; font-size: 0.9rem;">
+                  ${room.usageCount || 0}回利用 · ¥${(room.totalRevenue || 0).toLocaleString('ja-JP', {maximumFractionDigits: 0})}
                 </span>
               </div>
               <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="flex: 1; height: 12px; background-color: #ecf0f1; border-radius: 6px; overflow: hidden;">
+                <div style="flex: 1; height: 16px; background-color: #ecf0f1; border-radius: 8px; overflow: hidden;">
                   <div style="height: 100%; background: linear-gradient(to right, #3498db, #2ecc71); width: ${room.utilizationRate || 0}%; transition: width 0.3s ease;"></div>
                 </div>
-                <span style="min-width: 50px; text-align: right; font-weight: 600; color: #3498db;">
+                <span style="min-width: 60px; text-align: right; font-weight: 600; color: #3498db; font-size: 1.1rem;">
                   ${room.utilizationRate || 0}%
                 </span>
               </div>
@@ -286,7 +512,7 @@ async function loadRoomUsage() {
       `;
       document.getElementById('roomUsageContainer').innerHTML = html;
     } else {
-      document.getElementById('roomUsageContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">データがありません</p>';
+      document.getElementById('roomUsageContainer').innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 2rem;">この期間のデータがありません</p>';
     }
   } catch (error) {
     console.error('Error loading room usage:', error);
@@ -300,11 +526,77 @@ function updateLastUpdateTime() {
   document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ja-JP');
 }
 
+// 自動更新の管理
+let autoRefreshEnabled = true;
+let autoRefreshInterval = null;
+
+// 自動更新をトグル
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  const toggleBtn = document.getElementById('autoRefreshToggle');
+
+  if (autoRefreshEnabled) {
+    toggleBtn.textContent = '⚡ 自動更新: ON';
+    toggleBtn.style.backgroundColor = '#27ae60';
+    startAutoRefresh();
+  } else {
+    toggleBtn.textContent = '⏸️ 自動更新: OFF';
+    toggleBtn.style.backgroundColor = '#95a5a6';
+    stopAutoRefresh();
+  }
+}
+
+// 自動更新を開始
+function startAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+  }
+  // 1分ごとに自動更新
+  autoRefreshInterval = setInterval(loadDashboardData, 1 * 60 * 1000);
+}
+
+// 自動更新を停止
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+}
+
+// 未読メッセージバナーを更新
+async function updateUnreadMessagesBanner() {
+  try {
+    const response = await fetch('/api/staff/messages/unread-from-users/count', {
+      credentials: 'include',
+    });
+
+    if (!response.ok) return;
+
+    const result = await response.json();
+    const count = result.data?.count || 0;
+
+    const banner = document.getElementById('unreadMessagesBanner');
+    const countSpan = document.getElementById('unreadCount');
+
+    if (banner && countSpan) {
+      countSpan.textContent = count;
+      if (count > 0) {
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load unread messages count:', error);
+  }
+}
+
 // 初期ロード
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboardData();
+  updateUnreadMessagesBanner();
 
-  // 5分ごとに自動更新
-  setInterval(loadDashboardData, 5 * 60 * 1000);
+  // 1分ごとに自動更新（デフォルトでON）
+  startAutoRefresh();
 });
 </script>

@@ -258,13 +258,20 @@ function showProductFormModal(product = null) {
       </div>
 
       <div>
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">カテゴリ *</label>
+        <input type="text" id="productCategory" value="${product?.category || ''}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;" placeholder="例: 飲料、食品、グッズ">
+      </div>
+
+      <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">価格（円） *</label>
-        <input type="number" id="productPrice" value="${product?.price || ''}" required min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="number" id="productPrice" value="${product?.price || ''}" required min="0" step="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">整数で入力してください（小数点は使用できません）</p>
       </div>
 
       <div>
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">在庫数</label>
-        <input type="number" id="productStock" value="${product?.stock || 0}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="number" id="productStock" value="${product?.stock !== undefined && product?.stock !== null ? product.stock : ''}" min="0" step="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+        <p style="font-size: 0.875rem; color: #666; margin-top: 0.25rem;">在庫数を入力（空欄の場合は無制限）</p>
       </div>
 
       <div>
@@ -298,15 +305,18 @@ function closeProductModal() {
 
 // 商品を保存
 async function saveProduct() {
+  const stockValue = document.getElementById('productStock').value.trim();
+
   const data = {
     name: document.getElementById('productName').value.trim(),
+    category: document.getElementById('productCategory').value.trim(),
     price: parseInt(document.getElementById('productPrice').value),
-    stock: parseInt(document.getElementById('productStock').value) || 0,
+    stock: stockValue === '' ? null : parseInt(stockValue),
     isActive: document.getElementById('productIsActive').checked,
   };
 
-  if (!data.name || !data.price) {
-    alert('商品名と価格は必須です');
+  if (!data.name || !data.category || !data.price) {
+    alert('商品名、カテゴリ、価格は必須です');
     return;
   }
 
@@ -410,14 +420,4 @@ async function recordSale() {
     alert('記録に失敗しました');
   }
 }
-
-// モーダル外クリックで閉じる
-['productModal', 'saleModal'].forEach(modalId => {
-  document.getElementById(modalId).addEventListener('click', (e) => {
-    if (e.target.id === modalId) {
-      if (modalId === 'productModal') closeProductModal();
-      else closeSaleModal();
-    }
-  });
-});
 </script>

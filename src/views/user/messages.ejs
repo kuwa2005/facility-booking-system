@@ -16,16 +16,41 @@
     header {
       background-color: #2563eb;
       color: white;
-      padding: 1rem 0;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    header .container {
-      max-width: 1200px;
+    .header-top {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .header-top .container {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    header h1 { font-size: 1.5rem; font-weight: 600; }
+    .header-bottom {
+      padding: 0.75rem 0;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .user-name {
+      color: white;
+      padding: 0.5rem 1rem;
+      border-right: 1px solid rgba(255,255,255,0.3);
+    }
+    .logout-link {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    .logout-link:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
     header nav {
       display: flex;
       gap: 1.5rem;
@@ -428,33 +453,33 @@
 </head>
 <body>
   <header>
-    <div class="container">
-      <h1>
-        <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
-      </h1>
-      <nav>
-        <a href="/rooms">施設一覧</a>
-        <a href="/availability">空き状況確認</a>
-        <a href="/contact">お問合せ</a>
-        <% if (user) { %>
-          <span style="color: white; padding: 0.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.3);">
-            <strong><%= user.login_id %></strong> (<%= user.name %>)
-          </span>
-        <% } %>
-        <a href="/my-page">マイページ</a>
-        <a href="/my-reservations">予約一覧</a>
-        <a href="#" onclick="return confirmLogout();">ログアウト</a>
-      </nav>
+    <div class="header-top">
+      <div class="container">
+        <h1>
+          <a href="/" style="color: white; text-decoration: none;">施設予約システム（DEMO）</a>
+        </h1>
+        <div class="user-info">
+          <% if (user) { %>
+            <span class="user-name">
+              <strong><%= user.login_id %></strong> (<%= user.name %>)
+            </span>
+          <% } %>
+          <a href="#" class="logout-link" onclick="return confirmLogout();">ログアウト</a>
+        </div>
+      </div>
+    </div>
+    <div class="header-bottom">
+      <div class="container">
+        <nav>
+          <a href="/rooms">施設一覧</a>
+          <a href="/availability">空き状況確認</a>
+          <a href="/contact">お問合せ</a>
+          <a href="/my-page">マイページ</a>
+          <a href="/my-reservations">予約一覧</a>
+        </nav>
+      </div>
     </div>
   </header>
-  <script>
-    function confirmLogout() {
-      if (confirm('ログアウトしてもよろしいですか？')) {
-        window.location.href = '/logout';
-      }
-      return false;
-    }
-  </script>
 
   <main>
     <div class="container">
@@ -534,7 +559,131 @@
     </div>
   </footer>
 
+  <!-- カスタムダイアログ -->
+  <div id="customDialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div id="customDialogBox" style="background-color: white; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.2s ease-out;">
+      <div id="customDialogIcon" style="text-align: center; font-size: 3rem; margin-bottom: 1rem;"></div>
+      <h3 id="customDialogTitle" style="text-align: center; margin-bottom: 1rem; font-size: 1.25rem; color: #2c3e50;"></h3>
+      <p id="customDialogMessage" style="text-align: center; margin-bottom: 2rem; color: #555; white-space: pre-wrap; line-height: 1.6;"></p>
+      <div id="customDialogButtons" style="display: flex; gap: 1rem; justify-content: center;"></div>
+    </div>
+  </div>
+
   <script>
+    // カスタムダイアログの表示関数
+    function showCustomDialog(type, message, title) {
+      return new Promise((resolve) => {
+        const dialog = document.getElementById('customDialog');
+        const dialogBox = document.getElementById('customDialogBox');
+        const iconEl = document.getElementById('customDialogIcon');
+        const titleEl = document.getElementById('customDialogTitle');
+        const messageEl = document.getElementById('customDialogMessage');
+        const buttonsEl = document.getElementById('customDialogButtons');
+
+        // アイコンとタイトルを設定
+        if (type === 'confirm') {
+          iconEl.innerHTML = '❓';
+          titleEl.textContent = title || '確認';
+        } else if (type === 'alert') {
+          iconEl.innerHTML = 'ℹ️';
+          titleEl.textContent = title || 'お知らせ';
+        } else if (type === 'error') {
+          iconEl.innerHTML = '⚠️';
+          titleEl.textContent = title || 'エラー';
+        } else if (type === 'success') {
+          iconEl.innerHTML = '✅';
+          titleEl.textContent = title || '成功';
+        }
+
+        messageEl.textContent = message;
+
+        // ボタンを作成
+        buttonsEl.innerHTML = '';
+        if (type === 'confirm') {
+          const cancelBtn = document.createElement('button');
+          cancelBtn.textContent = 'キャンセル';
+          cancelBtn.className = 'btn';
+          cancelBtn.style.cssText = 'background-color: #95a5a6; color: white; padding: 0.75rem 2rem; font-size: 1rem; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s;';
+          cancelBtn.onmouseover = function() { this.style.backgroundColor = '#7f8c8d'; };
+          cancelBtn.onmouseout = function() { this.style.backgroundColor = '#95a5a6'; };
+          cancelBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(false);
+          };
+
+          const okBtn = document.createElement('button');
+          okBtn.textContent = type === 'confirm' && message.includes('ログアウト') ? 'ログアウト' : 'OK';
+          okBtn.className = 'btn';
+          okBtn.style.cssText = type === 'confirm' && message.includes('ログアウト') ?
+            'padding: 0.75rem 2rem; font-size: 1rem; background-color: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s;' :
+            'padding: 0.75rem 2rem; font-size: 1rem; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s;';
+          okBtn.onmouseover = function() { this.style.backgroundColor = type === 'confirm' && message.includes('ログアウト') ? '#c0392b' : '#2980b9'; };
+          okBtn.onmouseout = function() { this.style.backgroundColor = type === 'confirm' && message.includes('ログアウト') ? '#e74c3c' : '#3498db'; };
+          okBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(true);
+          };
+
+          buttonsEl.appendChild(cancelBtn);
+          buttonsEl.appendChild(okBtn);
+        } else {
+          const okBtn = document.createElement('button');
+          okBtn.textContent = 'OK';
+          okBtn.className = 'btn btn-primary';
+          okBtn.style.cssText = 'padding: 0.75rem 2rem; font-size: 1rem; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s;';
+          okBtn.onmouseover = function() { this.style.backgroundColor = '#2980b9'; };
+          okBtn.onmouseout = function() { this.style.backgroundColor = '#3498db'; };
+          okBtn.onclick = () => {
+            closeCustomDialog();
+            resolve(true);
+          };
+          buttonsEl.appendChild(okBtn);
+        }
+
+        // ダイアログを表示
+        dialog.style.display = 'flex';
+        setTimeout(() => {
+          dialogBox.style.transform = 'scale(1)';
+        }, 10);
+
+        // Escapeキーで閉じる
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            closeCustomDialog();
+            resolve(false);
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        // 背景クリックで閉じる
+        dialog.onclick = (e) => {
+          if (e.target === dialog) {
+            closeCustomDialog();
+            resolve(false);
+          }
+        };
+      });
+    }
+
+    function closeCustomDialog() {
+      const dialog = document.getElementById('customDialog');
+      const dialogBox = document.getElementById('customDialogBox');
+      dialogBox.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        dialog.style.display = 'none';
+      }, 200);
+    }
+
+    // ログアウト確認関数
+    async function confirmLogout() {
+      const confirmed = await showCustomDialog('confirm', 'ログアウトしてもよろしいですか？', 'ログアウト確認');
+      if (confirmed) {
+        window.location.href = '/logout';
+      }
+      return false;
+    }
+
     let currentMessages = [];
     let currentMessageId = null;
     let messageIdToDelete = null;
