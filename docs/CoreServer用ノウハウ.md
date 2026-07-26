@@ -280,7 +280,89 @@ node dist/migrations/runner.js
 
 ---
 
-## 9. このサーバーの制約まとめ
+## 9. Playwright セットアップ（root権限なし）
+
+### 問題
+
+`npx playwright install-deps` はsudo権限が必要。共有ホスティングでは使えない。
+
+### 解決策: Ubuntuパッケージから手動でライブラリを取得
+
+```bash
+# 1. Playwrightインストール
+cd /tmp && npm install playwright
+
+# 2. Chromiumインストール
+npx playwright install chromium
+
+# 3. 共有ライブラリをUbuntuパッケージから手動ダウンロード
+mkdir -p /tmp/libs
+
+# focal-updatesからダウンロード（xz形式、展開可能）
+PACKAGES=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/focal-updates/main/binary-amd64/Packages.xz" | xz -d)
+
+for pkg in libnspr4 libnss3 libasound2 libdrm2 libglib2.0-0 libgdk-pixbuf2.0-0 libgbm1; do
+  path=$(echo "$PACKAGES" | grep -A15 "^Package: ${pkg}$" | grep "Filename:" | tail -1 | awk '{print $2}')
+  curl -sL -o "${pkg}.deb" "http://archive.ubuntu.com/ubuntu/$path"
+done
+
+# bionicからダウンロード（GLIBC 2.27対応）
+for pkg in libatk-bridge2.0-0 libatspi2.0-0 libcairo2 libpango-1.0-0 libfontconfig1 libxkbcommon0; do
+  path=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/bionic/main/binary-amd64/Packages.xz" | xz -d | grep -A15 "^Package: ${pkg}$" | grep "Filename:" | tail -1 | awk '{print $2}')
+  curl -sL -o "${pkg}.deb" "http://archive.ubuntu.com/ubuntu/$path"
+done
+
+# 追加ライブラリ
+curl -sL -o libpcre3.deb "http://archive.ubuntu.com/ubuntu/pool/main/p/pcre3/libpcre3_8.39-12ubuntu0.1_amd64.deb"
+curl -sL -o libwayland.deb "http://archive.ubuntu.com/ubuntu/pool/main/w/wayland/libwayland-server0_1.18.0-1ubuntu0.1_amd64.deb"
+curl -sL -o libffi7.deb "http://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi7_3.3-4_amd64.deb"
+
+# 4. 全debを展開してライブラリを収集
+mkdir -p /virtual/pcm/.local/lib/playwright
+for deb in *.deb; do
+  mkdir -p "tmp_$deb" && cd "tmp_$deb"
+  ar x "../$deb"
+  tar xf data.tar.xz 2>/dev/null || tar xf data.tar.gz 2>/dev/null
+  find . -name "*.so*" \( -type f -o -type l \) -exec cp -Pn {} /virtual/pcm/.local/lib/playwright/ \;
+  cd ..
+done
+
+# 5. シンボリックリンクを再作成（cp -Pn でリンクが切れる場合がある）
+cd /virtual/pcm/.local/lib/playwright
+ln -sf libatk-bridge-2.0.so.0.0.0 libatk-bridge-2.0.so.0
+ln -sf libatspi.so.0.0.1 libatspi.so.0
+ln -sf libgbm.so.1.0.0 libgbm.so.1
+ln -sf libasound.so.2.0.0 libasound.so.2
+ln -sf libcairo.so.2.11600.0 libcairo.so.2
+ln -sf libdrm.so.2.4.0 libdrm.so.2
+ln -sf libfontconfig.so.1.12.0 libfontconfig.so.1
+ln -sf libgdk_pixbuf-2.0.so.0.4000.0 libgdk_pixbuf-2.0.so.0
+ln -sf libglib-2.0.so.0.6400.6 libglib-2.0.so.0
+ln -sf libpango-1.0.so.0.4400.7 libpango-1.0.so.0
+ln -sf libxkbcommon.so.0.0.0 libxkbcommon.so.0
+ln -sf libwayland-server.so.0.1.0 libwayland-server.so.0
+ln -sf libffi.so.7.1.0 libffi.so.7
+```
+
+### 使い方
+
+```bash
+# テスト実行
+cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright node test.js
+
+# ラッパー使用
+playwright-run test.js
+```
+
+### 注意点
+
+- `cp -Pn` でシンボリックリンクが切れることがある → 再作成が必要
+- bionicパッケージ（GLIBC 2.27）とfocalパッケージを混在させない
+- Chromium Headless ShellはGLIBC 2.28まで対応
+
+---
+
+## 10. このサーバーの制約まとめ
 
 | 項目 | 状態 |
 |------|------|
