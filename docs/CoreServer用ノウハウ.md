@@ -501,16 +501,26 @@ ln -sf libffi.so.7.1.0 libffi.so.7
 
 ### Step 6: 動作確認
 
+**Chromium起動テスト:**
+
 ```bash
 NODE=/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
-
-# Chromium起動テスト
 LD_LIBRARY_PATH=~/.local/lib/playwright \
   ~/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell --version
-# → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
+```
 
-# Playwrightテスト（Yahoo! JAPAN ニュースのトピックス一覧を表示 + スクショ）
-LD_LIBRARY_PATH=~/.local/lib/playwright NODE_PATH=~/.local/lib/node_modules $NODE -e "
+→ `Google Chrome for Testing 151.0.7922.34` と表示されれば成功
+
+**Playwrightテスト（Yahoo! JAPAN ニュースのトピックス一覧 + スクショ）:**
+
+```bash
+NODE=/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
+LD_LIBRARY_PATH=~/.local/lib/playwright NODE_PATH=~/.local/lib/node_modules $NODE playwright-test.js
+```
+
+playwright-test.js の内容:
+
+```javascript
 const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -521,15 +531,18 @@ const { chromium } = require('playwright');
   console.log('Title:', await page.title());
   await page.screenshot({ path: './yahoo-topics.png', fullPage: false });
   console.log('Screenshot saved: ./yahoo-topics.png');
-  const topics = await page.\$\$eval('[class*="topic"], [class*="Topic"], [data-cl-params*="topic"]', els =>
+  const topics = await page.$$eval('[class*="topic"], [class*="Topic"], [data-cl-params*="topic"]', els =>
     els.slice(0, 10).map(e => e.textContent.trim().substring(0, 60))
   );
   console.log('Topics:');
   topics.forEach((t, i) => console.log('  ' + (i+1) + '. ' + t));
   await browser.close();
 })();
-"
-# → トピックス一覧とスクショが表示/保存されれば成功
+```
+
+→ トピックス一覧とスクショが表示/保存されれば成功
+
+---
 ---
 
 ## 8. トラブルシューティング集
