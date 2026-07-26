@@ -52,7 +52,14 @@ function parseCookies(cookieHeader) {
 function cgiOutput(statusCode, headers, body) {
   let output = 'Status: ' + statusCode + '\r\n';
   for (const [name, value] of Object.entries(headers)) {
-    output += name.charAt(0).toUpperCase() + name.slice(1) + ': ' + value + '\r\n';
+    if (Array.isArray(value)) {
+      // Handle multiple values (e.g., Set-Cookie)
+      for (const v of value) {
+        output += name.charAt(0).toUpperCase() + name.slice(1) + ': ' + v + '\r\n';
+      }
+    } else {
+      output += name.charAt(0).toUpperCase() + name.slice(1) + ': ' + value + '\r\n';
+    }
   }
   output += '\r\n';
   process.stdout.write(output);
@@ -223,8 +230,25 @@ async function main() {
       return true;
     },
 
-    cookie() { return this; },
-    clearCookie() { return this; },
+    cookie(name, value, options) {
+      // Build Set-Cookie header
+      let cookie = `${name}=${value}`;
+      if (options) {
+        if (options.httpOnly) cookie += '; HttpOnly';
+        if (options.secure) cookie += '; Secure';
+        if (options.sameSite) cookie += `; SameSite=${options.sameSite}`;
+        if (options.maxAge) cookie += `; Max-Age=${Math.floor(options.maxAge / 1000)}`;
+        if (options.path) cookie += `; Path=${options.path}`;
+        if (options.domain) cookie += `; Domain=${options.domain}`;
+      }
+      // Append to existing Set-Cookie headers
+      if (!this._setCookies) this._setCookies = [];
+      this._setCookies.push(cookie);
+      return this;
+    },
+    clearCookie(name, options) {
+      return this.cookie(name, '', Object.assign({}, options, { maxAge: 0 }));
+    },
     format(obj) {
       if (obj['text/html']) return obj['text/html']();
       if (obj['application/json']) return obj['application/json']();
@@ -237,6 +261,16 @@ async function main() {
       this._ended = true;
       const body = Buffer.concat(this._chunks.length > 0 ? this._chunks : [Buffer.alloc(0)]);
       this._headers['content-length'] = String(body.length);
+      // Add Set-Cookie headers
+      if (this._setCookies && this._setCookies.length > 0) {
+        for (const cookie of this._setCookies) {
+          this._headers['set-cookie'] = (this._headers['set-cookie'] || []);
+          if (!Array.isArray(this._headers['set-cookie'])) {
+            this._headers['set-cookie'] = [this._headers['set-cookie']];
+          }
+          this._headers['set-cookie'].push(cookie);
+        }
+      }
       cgiOutput(this._statusCode, this._headers, body);
     }
   };

@@ -95,7 +95,7 @@ export class AuthController {
       res.cookie('token', result.token.token, {
         httpOnly: true,
         secure: useHttps, // HTTPSの時のみsecure
-        sameSite: 'lax',
+        sameSite: 'lax', path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
