@@ -216,3 +216,4 @@ CGIモードではリクエストごとにNode.jsプロセスが起動するた�
 ## 参考
 
 - [Express CGI アダプターパターン](../cgi-bin/app.cjs)
+- [CoreServer用ノウハウ](./CoreServer用ノウハウ.md)

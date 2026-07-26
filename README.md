@@ -77,6 +77,7 @@ chmod +x cgi-bin/*.cgi
 |-------------|------|
 | [docs/機能一覧.md](./docs/機能一覧.md) | 全機能の詳細一覧 |
 | [docs/CGI_MODE.md](./docs/CGI_MODE.md) | CGIモードデプロイガイド |
+| [docs/CoreServer用ノウハウ.md](./docs/CoreServer用ノウハウ.md) | CoreServer環境でのNode.js CGI運用ノウハウ |
 | [docs/SSL化の手順書.md](./docs/SSL化の手順書.md) | SSL/TLS設定手順 |
 | [docs/IMPLEMENTATION_STATUS.md](./docs/IMPLEMENTATION_STATUS.md) | 実装状況 |
 | [docs/AUTH_FIX_SUMMARY.md](./docs/AUTH_FIX_SUMMARY.md) | 認証関連の修正履歴 |
