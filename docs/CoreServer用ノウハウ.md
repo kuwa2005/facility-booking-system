@@ -508,7 +508,7 @@ LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright \
 # → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
 
 # Playwrightテスト（Yahoo! JAPAN ニュースのトピックス一覧を表示 + スクショ）
-LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
+LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright NODE_PATH=/tmp/node_modules $NODE -e "
 const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -528,7 +528,7 @@ const { chromium } = require('playwright');
 })();
 "
 # → トピックス一覧とスクショが表示/保存されれば成功
-LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
+LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright NODE_PATH=/tmp/node_modules $NODE -e "
 (async () => {
   console.log('Title:', await page.title());
 ```
