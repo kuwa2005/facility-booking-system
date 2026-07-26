@@ -507,30 +507,27 @@ LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright \
   /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell --version
 # → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
 
-# Playwrightテスト
+# Playwrightテスト（Yahoo! JAPAN ニュースのトピックス一覧を表示 + スクショ）
 cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
 const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
-  await page.goto('https://example.com');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('https://news.yahoo.co.jp/topics', { waitUntil: 'load', timeout: 30000 });
+  await page.waitForTimeout(5000);
   console.log('Title:', await page.title());
+  await page.screenshot({ path: '/tmp/yahoo-topics.png', fullPage: false });
+  console.log('Screenshot saved: /tmp/yahoo-topics.png');
+  const topics = await page.\$\$eval('[class*=\"topic\"], [class*=\"Topic\"], [data-cl-params*=\"topic\"]', els =>
+    els.slice(0, 10).map(e => e.textContent.trim().substring(0, 60))
+  );
+  console.log('Topics:');
+  topics.forEach((t, i) => console.log('  ' + (i+1) + '. ' + t));
   await browser.close();
 })();
 "
-```
-
-### 使い方
-
-```bash
-NODE=/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
-
-# 毎回 LD_LIBRARY_PATH を指定
-cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE test.js
-
-# ~/.bashrc に追加して省略可能
-export LD_LIBRARY_PATH="/virtual/pcm/.local/lib/playwright:${LD_LIBRARY_PATH}"
-alias node='/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node'
+# → トピックス一覧とスクショが表示/保存されれば成功
 ```
 
 ---
