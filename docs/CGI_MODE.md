@@ -215,5 +215,4 @@ CGIモードではリクエストごとにNode.jsプロセスが起動するた�
 
 ## 参考
 
-- [CoreServer用ノウハウ](../ax.geo.jp/-CoreServer%E7%94%A8%E3%83%8E%E3%82%A6%E3%83%8F%E3%82%A6.md)
-- [Express CGI アダプターパターン](./cgi-bin/app.cjs)
+- [Express CGI アダプターパターン](../cgi-bin/app.cjs)
