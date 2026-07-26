@@ -384,8 +384,10 @@ Ubuntuパッケージから共有ライブラリを手動でダウンロード�
 ### Step 1: Playwright と Chromium をインストール
 
 ```bash
-cd /tmp && npm install playwright
-npx playwright install chromium
+mkdir -p ~/.local/lib && cd ~/.local/lib
+npm init -y
+npm install playwright
+~/.local/lib/node_modules/.bin/playwright install chromium
 ```
 
 ### Step 2: 不足しているライブラリを確認
@@ -528,11 +530,6 @@ const { chromium } = require('playwright');
 })();
 "
 # → トピックス一覧とスクショが表示/保存されれば成功
-LD_LIBRARY_PATH=~/.local/lib/playwright NODE_PATH=~/.local/lib/node_modules $NODE -e "
-(async () => {
-  console.log('Title:', await page.title());
-```
-
 ---
 
 ## 8. トラブルシューティング集
