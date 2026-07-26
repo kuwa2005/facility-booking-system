@@ -476,7 +476,7 @@ echo "Collected: $(ls /virtual/pcm/.local/lib/playwright/*.so* 2>/dev/null | wc 
 
 ### Step 5: シンボリックリンクを再作成
 
-`cp -Pn` はシンボリックリンクを实体ファイルとしてコピーしてしまう。リンクを再作成する。
+`cp -Pn` はシンボリックリンクを実体ファイルとしてコピーしてしまう。リンクを再作成する。
 
 ```bash
 cd /virtual/pcm/.local/lib/playwright
