@@ -500,13 +500,15 @@ ln -sf libffi.so.7.1.0 libffi.so.7
 ### Step 6: 動作確認
 
 ```bash
+NODE=/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
+
 # Chromium起動テスト
 LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright \
   /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell --version
 # → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
 
 # Playwrightテスト
-cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright node -e "
+cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
 const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -521,11 +523,14 @@ const { chromium } = require('playwright');
 ### 使い方
 
 ```bash
+NODE=/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
+
 # 毎回 LD_LIBRARY_PATH を指定
-cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright node test.js
+cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE test.js
 
 # ~/.bashrc に追加して省略可能
 export LD_LIBRARY_PATH="/virtual/pcm/.local/lib/playwright:${LD_LIBRARY_PATH}"
+alias node='/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node'
 ```
 
 ---
