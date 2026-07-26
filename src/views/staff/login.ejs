@@ -125,6 +125,62 @@
     .back-link a:hover {
       text-decoration: underline;
     }
+
+    /* DEMO用アカウント一覧（本番リリース時に削除） */
+    .demo-accounts {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .demo-accounts h3 {
+      font-size: 0.9rem;
+      color: #856404;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #ffc107;
+    }
+
+    .demo-accounts table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .demo-accounts th,
+    .demo-accounts td {
+      padding: 0.4rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #ffeeba;
+    }
+
+    .demo-accounts th {
+      color: #856404;
+      font-weight: 600;
+    }
+
+    .demo-accounts td {
+      color: #856404;
+    }
+
+    .demo-accounts tr:last-child td {
+      border-bottom: none;
+    }
+
+    .demo-accounts .account-email {
+      font-family: monospace;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .demo-accounts .account-password {
+      font-family: monospace;
+      background-color: #fff;
+      padding: 0.1rem 0.3rem;
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
@@ -153,9 +209,51 @@
     <div class="back-link">
       <a href="/">一般利用者ページに戻る</a>
     </div>
+
+    <!-- DEMO用アカウント一覧（本番リリース時に削除） -->
+    <div class="demo-accounts">
+      <h3>📋 デモ用アカウント一覧</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>権限</th>
+            <th>メールアドレス</th>
+            <th>パスワード</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>管理者</td>
+            <td><span class="account-email" onclick="fillAccount('admin@facility.local', 'admin123')">admin@facility.local</span></td>
+            <td><span class="account-password">admin123</span></td>
+          </tr>
+          <tr>
+            <td>管理者</td>
+            <td><span class="account-email" onclick="fillAccount('admin@example.com', 'admin123')">admin@example.com</span></td>
+            <td><span class="account-password">admin123</span></td>
+          </tr>
+          <tr>
+            <td>職員</td>
+            <td><span class="account-email" onclick="fillAccount('staff@facility.local', 'staff123')">staff@facility.local</span></td>
+            <td><span class="account-password">staff123</span></td>
+          </tr>
+          <tr>
+            <td>職員</td>
+            <td><span class="account-email" onclick="fillAccount('staff2@facility.local', 'staff123')">staff2@facility.local</span></td>
+            <td><span class="account-password">staff123</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
+    // DEMO用アカウント自動入力（本番リリース時に削除）
+    function fillAccount(email, password) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = password;
+    }
+
     const form = document.getElementById('loginForm');
     const alert = document.getElementById('alert');
     const submitBtn = document.getElementById('submitBtn');

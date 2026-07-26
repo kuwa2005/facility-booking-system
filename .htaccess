@@ -1,0 +1,18 @@
+# Apache configuration for facility booking system (CGI mode)
+Options +ExecCGI
+AddHandler cgi-script .cgi
+
+RewriteEngine On
+
+# Static files - serve directly (before CGI catch-all)
+RewriteCond %{REQUEST_URI} \.(ico|png|jpg|jpeg|gif|svg|css|js|woff|woff2|ttf|eot|json|txt|xml)$ [NC]
+RewriteRule ^ - [L]
+
+# Upload files - serve directly
+RewriteCond %{REQUEST_URI} ^/uploads/
+RewriteRule ^ - [L]
+
+# All other requests go through the CGI app
+# Pass original path as PATH_INFO
+RewriteCond %{REQUEST_URI} !^/cgi-bin/
+RewriteRule ^(.*)$ cgi-bin/app.cgi/$1 [L,QSA]
