@@ -1,107 +1,223 @@
 # CoreServer で Express/Node.js アプリを動かすノウハウ
 
-## 前提知識
-
-このサーバー（CoreServer: b45.coreserver.jp）は共有ホスティング環境で、Node.jsは**常駐サーバーとして実行できない**。Apacheが常駐し、Node.jsは**CGIモード**でしか実行できない。
+> **対象環境**: CoreServer（b45.coreserver.jp）共有ホスティング
+> **最終更新**: 2026-07-26
+> **検証済み**: 施設予約システム（fbs.geo.jp）で動作確認済み
 
 ---
 
-## 1. Node.js インストール（NVM）
+## 目次
 
-sudo権限がないため、ユーザー領域にNVMでインストール。
+1. [環境の制約](#1-環境の制約)
+2. [Node.js インストール](#2-nodejs-インストール)
+3. [CGIモードの基本](#3-cgimードの基本)
+4. [Express をCGIで動かす](#4-express-をcgiで動かす)
+5. [.htaccess 設定](#5-htaccess-設定)
+6. [デプロイ手順](#6-デプロイ手順)
+7. [Playwright セットアップ](#7-playwright-セットアップ)
+8. [トラブルシューティング集](#8-トラブルシューティング集)
+9. [このサーバーの制約一覧](#9-このサーバーの制約一覧)
+
+---
+
+## 1. 環境の制約
+
+**最重要**: このサーバーではNode.jsを**常駐サーバーとして実行できない**。
+
+| 項目 | 状態 | 備考 |
+|------|------|------|
+| sudo / root | **不可** | パッケージインストール不可 |
+| Apache設定 | **不可** | `.htaccess` のみ変更可能 |
+| Node.js常駐 | **不可** | `node server.js` は実行できない |
+| pm2 / forever | **不可** | プロセス管理ツール使えない |
+| NVM | **あり** | ユーザー領域にインストール済み |
+| Node.js | v24.18.0 | NVMで管理 |
+| PHP | 7.4.33 | fcgidモード |
+| DB | MariaDB 10.6.24 | localhost接続 |
+| ドキュメントルート | `/virtual/pcm/public_html/<ドメイン>/` | |
+
+**結論**: Node.jsアプリは**CGIモード**で動作させる。
+
+---
+
+## 2. Node.js インストール
+
+### 初回セットアップ
 
 ```bash
+# NVMインストール
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.bashrc
+
+# Node.jsインストール
 nvm install 24
 nvm alias default 24
+
+# 確認
+node -v  # v24.x.x
+npm -v   # 11.x.x
 ```
 
-- node パス: `/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node`
-- CGI環境では `PATH` が未設定 → **フルパス必須**
-- `#!/usr/bin/env node` は **使えない**
+### 重要: node のフルパス
+
+NVMでインストールしたnodeはPATHに含まれない場合がある。**必ずフルパスを使う**。
+
+```bash
+# フルパス（pcmアカウントの場合）
+/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
+
+# 確認方法
+which node  # NVMが有効なら /virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
+```
+
+### CGI環境での注意
+
+```bash
+# ✗ 使えない
+#!/usr/bin/env node
+node server.js
+
+# ○ 使うべき
+#!/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
+/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node server.js
+```
 
 ---
 
-## 2. CGIモードの基本パターン
+## 3. CGIモードの基本
+
+### 仕組み
+
+```
+クライエント → Apache(.htaccess) → cgi-bin/app.cgi → Node.jsプロセス → Express → レスポンス
+```
+
+**ポイント**: リクエストごとにNode.jsプロセスが起動・終了する。常駐しない。
 
 ### ファイル構成（2ファイル方式）
 
 ```
 cgi-bin/
-├── xxx.cgi    ← シェルラッパー（#!/bin/sh + exec node）
-└── xxx.cjs    ← 実際のNode.jsロジック
+├── app.cgi    ← シェルラッパー（Node.jsを起動するだけ）
+└── app.cjs    ← 実際のNode.jsロジック
 ```
 
-### シェルラッパー (.cgi)
+### シェルラッパー（app.cgi）
 
 ```sh
 #!/bin/sh
-exec /virtual/pcm/.nvm/versions/node/v24.18.0/bin/node "$(dirname "$0")/xxx.cjs"
+exec /virtual/pcm/.nvm/versions/node/v24.18.0/bin/node --max-old-space-size=256 "$(dirname "$0")/app.cjs"
 ```
 
-### CGI出力 (.cjs)
+- `#!/bin/sh` は必須（bashではない可能性がある）
+- `--max-old-space-size=256` はメモリ制限（共有ホスティングでは重要）
+- `$(dirname "$0")` で.cjsファイルのフルパスを取得
+
+### CGI出力の書き方（app.cjs）
 
 ```js
 const process = require('node:process');
 
-// console.log() は使わない（Content-Typeが先に来ない）
+// ✗ 使えない（Content-Typeが先に来ない → malformed header エラー）
+console.log('{"status": "ok"}');
+
+// ○ 使うべき
+const json = JSON.stringify({ status: 'ok' });
 process.stdout.write(
   'Content-Type: application/json; charset=utf-8\r\n' +
   'Content-Length: ' + Buffer.byteLength(json) + '\r\n' +
-  'Cache-Control: no-cache\r\n' +
   '\r\n' +
   json
-)
+);
 ```
 
-### .htaccess
+### CGI出力のフォーマット
 
-```apache
-Options +ExecCGI
-AddHandler cgi-script .cgi
-
-RewriteEngine On
-RewriteRule ^api/status$ cgi-bin/status.cgi [L,QSA]
+```
+Content-Type: text/html; charset=utf-8\r\n    ← ヘッダー
+Content-Length: 123\r\n                         ← ヘッダー
+\r\n                                           ← 空行（必須）
+<html>...</html>                               ← ボディ
 ```
 
 ---
 
-## 3. Express アプリをCGIモードで動かす（実践ノウハウ）
+## 4. Express をCGIで動かす
 
-### 問題点
+### 必要な対応（3つ）
 
-| 問題 | 原因 | 解決策 |
-|------|------|--------|
-| `Cannot convert undefined or null to object` | Express 4がasyncミドルウェアのエラーをキャッチしない | `Promise.resolve(fn(...)).catch(next)` でラップ |
-| `malformed header from script` | `console.log()`出力がCGIヘッダーを壊す | `console.log = (...args) => process.stderr.write(...)` にリダイレクト |
-| ポート競合 | `server.listen()` がCGIでも実行される | CGI専用エントリーポイント作成（listen不要） |
-| DB接続プール枯渇 | リクエストごとにプロセス起動、プールが残る | CGI起動時に接続テストのみ、プールは使い捨てる |
+| # | 問題 | 解決策 |
+|---|------|--------|
+| 1 | `console.log` がCGIヘッダーを壊す | `console.log` を `process.stderr.write` にリダイレクト |
+| 2 | asyncミドルウェアのエラーが無視される | `Promise.resolve(fn(...)).catch(next)` でラップ |
+| 3 | `server.listen()` が実行される | CGI専用エントリーポイント作成（listen不要） |
 
-### CGI Express アダプターパターン
+### console出力のリダイレクト（必須）
 
 ```js
-// cgi-bin/app.cjs
+// app.cjs の先頭に追加
+console.log = (...args) => process.stderr.write(args.join(' ') + '\n');
+console.error = (...args) => process.stderr.write('[ERROR] ' + args.join(' ') + '\n');
+console.warn = (...args) => process.stderr.write('[WARN] ' + args.join(' ') + '\n');
+```
+
+**なぜ必要か**: Apacheは最初の行が `Content-Type:` でないとmalformed headerエラーになる。`console.log()` が出力するとヘッダーが壊れる。
+
+### CGI専用エントリーポイント（cgi.ts）
+
+```typescript
+// src/cgi.ts
+import express from 'express';
+// ... ルートやミドルウェアのインポート
+
+const app = express();
+// ... Express設定（server.ts と同じ内容）
+// ※ server.listen() は呼ばない
+
+// マイグレーションスキップ（既に初期化済みの場合）
+async function initDb() {
+  const [rows] = await pool.query(
+    "SELECT COUNT(*) as cnt FROM information_schema.tables " +
+    "WHERE table_schema = ? AND table_name = 'users'",
+    [dbName]
+  );
+  if ((rows as any[])[0]?.cnt > 0) return; // 初期化済み
+  await runMigrations(); // 初回のみ
+}
+
+export { app, initDb };
+export default app;
+```
+
+### CGIハンドラ（cgi-bin/app.cjs）
+
+```js
 // 1. console出力をstderrにリダイレクト
 console.log = (...args) => process.stderr.write(args.join(' ') + '\n');
 
 // 2. リクエストBodyをstdinから読む
-function readBody() { /* Promise-based stdin reader */ }
+function readBody() {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    process.stdin.on('data', (chunk) => chunks.push(chunk));
+    process.stdin.on('end', () => resolve(Buffer.concat(chunks)));
+    process.stdin.on('error', reject);
+  });
+}
 
 // 3. CGI環境変数からreqオブジェクト構築
-const req = {
-  method: env.REQUEST_METHOD,
-  url: parsedUrl.pathname + parsedUrl.search,
-  headers: /* HTTP_* → lowercase */,
-  cookies: /* Cookie パーサー */,
-  body: /* POST/PUT のみ */,
-};
+const env = process.env;
+const method = env.REQUEST_METHOD || 'GET';
+const pathInfo = env.PATH_INFO || '/';
+const host = env.HTTP_HOST || 'localhost';
+// ... URL解析、ヘッダー変換
 
-// 4. Express appに渡す（モックresオブジェクト）
+// 4. Express appに渡す
+const app = require('../dist/cgi.js').default;
 app(req, res, (err) => { /* エラーハンドリング */ });
 ```
 
-### Express CGI用 モックresオブジェクトの必須メソッド
+### Express CGI用 res オブジェクトの必須メソッド
 
 ```js
 res = {
@@ -119,183 +235,160 @@ res = {
 
 ---
 
-## 4. .htaccess の書き方（全リクエストCGI化）
+## 5. .htaccess 設定
 
-### 基本パターン
+### 完全な設定例
 
 ```apache
 Options +ExecCGI
 AddHandler cgi-script .cgi
+
 RewriteEngine On
 
 # 静的ファイルは直接配信（CGIに回さない）
-RewriteCond %{REQUEST_URI} \.(ico|png|jpg|css|js|svg|woff|woff2)$ [NC]
+RewriteCond %{REQUEST_URI} \.(ico|png|jpg|jpeg|gif|svg|css|js|woff|woff2|ttf|eot|json|txt|xml)$ [NC]
 RewriteRule ^ - [L]
 
 # アップロードファイルも直接配信
 RewriteCond %{REQUEST_URI} ^/uploads/
 RewriteRule ^ - [L]
 
-# 残りをすべてCGIに（PATH_INFO経由）
+# 全リクエストをCGIに転送
+# 重要: cgi-bin/ を除外しないと無限ループになる
 RewriteCond %{REQUEST_URI} !^/cgi-bin/
 RewriteRule ^(.*)$ cgi-bin/app.cgi/$1 [L,QSA]
 ```
 
-### 重要ポイント
+### 各ルールの意味
 
-- `RewriteRule ^(.*)$ cgi-bin/app.cgi/$1` の `/$1` で **PATH_INFO** にパスが渡される
-- `RewriteCond %{REQUEST_URI} !^/cgi-bin/` で**無限ループ防止**
-- `[L,QSA]` フラグ: 最後のルール + クエリ文字列を保持
+| ルール | 意味 |
+|--------|------|
+| `RewriteCond %{REQUEST_URI} \.(css\|js...)$` | CSS/JS/画像はApache直接配信 |
+| `RewriteCond %{REQUEST_URI} ^/uploads/` | アップロードファイルは直接配信 |
+| `RewriteCond %{REQUEST_URI} !^/cgi-bin/` | **無限ループ防止**（必須） |
+| `RewriteRule ^(.*)$ cgi-bin/app.cgi/$1` | 元のURLをPATH_INFOとして渡す |
+| `[L,QSA]` | 最後のルール + クエリ文字列を保持 |
 
----
+### 無限ループに注意
 
-## 5. EJSテンプレートのCGI対応
+```apache
+# ✗ 無限ループ（cgi-bin/ へのリクエストもルーティングしてしまう）
+RewriteRule ^(.*)$ cgi-bin/app.cgi/$1 [L,QSA]
 
-EJSは `res.render()` で使うが、CGIモードでは独自実装が必要。
-
-```js
-res.render = function(view, data) {
-  const ejs = require('ejs');
-  const viewsDir = path.join(__dirname, '..', 'src', 'views');
-  const viewPath = path.join(viewsDir, view + '.ejs');
-  const template = fs.readFileSync(viewPath, 'utf-8');
-  const html = ejs.render(template, { ...res.locals, ...data }, {
-    views: [viewsDir],
-    filename: viewPath
-  });
-  res._chunks.push(Buffer.from(html, 'utf-8'));
-  res._end();
-};
+# ○ 無限ループしない（cgi-bin/ を除外）
+RewriteCond %{REQUEST_URI} !^/cgi-bin/
+RewriteRule ^(.*)$ cgi-bin/app.cgi/$1 [L,QSA]
 ```
 
 ---
 
-## 6. データベース接続（CGIモード）
+## 6. デプロイ手順
 
-### 接続プールの問題
-
-CGIモードではリクエストごとにプロセスが起動・終了する。コネクションプールは使い捨てになる。
-
-```ts
-// 通常モード: プール使用
-export const pool = mysql.createPool(dbConfig);
-
-// CGIモード: プールは使えるが、プロセス終了時に自動クローズ
-// 明示的に closePool() を呼ぶ必要はない（プロセスが死ぬので）
-```
-
-### 推奨: CGI用initDb関数
-
-```ts
-async function initDb() {
-  await testConnection();
-
-  // マイグレーション済みチェック（information_schema利用）
-  const [rows] = await pool.query(
-    "SELECT COUNT(*) as cnt FROM information_schema.tables " +
-    "WHERE table_schema = ? AND table_name = 'users'",
-    [dbName]
-  );
-  if ((rows as any[])[0]?.cnt > 0) return; // 既に初期化済み
-
-  await runMigrations(); // 初回のみ実行
-}
-```
-
----
-
-## 7. 実際のデプロイ手順（施設予約システムの場合）
+### Step 1: ファイルをデプロイ先にコピー
 
 ```bash
-# 1. ファイルコピー
-cp -r facility-booking-system/* /virtual/pcm/public_html/fbs.geo.jp/
+cd /path/to/project
+cp -r * /virtual/pcm/public_html/<ドメイン>/
+```
 
-# 2. .env作成（DB接続情報）
-cat > .env << 'EOF'
+### Step 2: .env ファイル作成
+
+```bash
+cat > /virtual/pcm/public_html/<ドメイン>/.env << 'EOF'
+NODE_ENV=production
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=pcm_fbs
-DB_PASSWORD=bbCE
-DB_NAME=pcm_fbs
-JWT_SECRET=xxxxx
-APP_URL=https://fbs.geo.jp
+DB_USER=<DBユーザー名>
+DB_PASSWORD=<DBパスワード>
+DB_NAME=<DB名>
+JWT_SECRET=<ランダムな文字列>
+APP_URL=https://<ドメイン>
 EOF
+```
 
-# 3. 依存関係インストール（本番モード）
+### Step 3: 依存関係インストール
+
+```bash
+cd /virtual/pcm/public_html/<ドメイン>
+
+# 本番モードでインストール（devDependencies をスキップ）
 npm install --omit=dev
 
-# 4. bcrypt等のネイティブモジュール再ビルド
+# メモリ不足で失敗する場合
+NODE_OPTIONS="--max-old-space-size=512" npm install --omit=dev
+```
+
+### Step 4: ネイティブモジュール再ビルド
+
+```bash
+# bcrypt（パスワードハッシュに必要）
 npm rebuild bcrypt
+
+# sharp（画像処理に必要）
 npm rebuild sharp
+```
 
-# 5. TypeScriptビルド
+**なぜ再ビルドが必要か**: `npm install` は現在のnodeバージョン用のバイナリをダウンロードするが、失敗することがある。`npm rebuild` で強制的に再コンパイルする。
+
+### Step 5: TypeScriptビルド
+
+```bash
+# tsc をローカルから実行（npx tsc は使えない場合がある）
 node node_modules/typescript/bin/tsc
+```
 
-# 6. マイグレーション実行
+**なぜ `npx tsc` が使えない場合があるか**: `npx` はグローバルにインストールされたパッケージを探すが、共有ホスティングでは設定が異なる場合がある。
+
+### Step 6: マイグレーション実行
+
+```bash
 node dist/migrations/runner.js
+```
 
-# 7. CGIスクリプトに実行権限
+### Step 7: CGIスクリプトに実行権限
+
+```bash
 chmod +x cgi-bin/*.cgi
+```
 
-# 8. アップロードディレクトリ作成
+### Step 8: アップロードディレクトリ作成
+
+```bash
 mkdir -p uploads
 ```
 
----
-
-## 8. トラブルシューティング
-
-### CGI が 500 Internal Server Error
+### Step 9: 動作確認
 
 ```bash
-# Apache エラーログ確認
-tail -20 /usr/local/apache24/logs/error.log
+# ヘルスチェック
+curl -s -o /dev/null -w "%{http_code}" https://<ドメイン>/health
+# → 200 なら成功
 
-# よくある原因:
-# - node パス間違い → フルパスを使う
-# - 実行権限なし → chmod +x
-# - console.log() がヘッダーを壊す → stderrにリダイレクト
-# - 無限リダイレクト → RewriteCond で cgi-bin/ を除外
-```
-
-### サイトが表示されない
-
-```bash
-# .htaccess の RewriteRule が無限ループしていないか
-# RewriteCond %{REQUEST_URI} !^/cgi-bin/ を追加
-
-# 静的ファイルが配信されない
-# RewriteCond で .css/.js/.svg をスキップ
-```
-
-### データベース接続エラー
-
-```bash
-# DB接続テスト
-mysql -u pcm_fbs -pbbCE -h localhost -P 3306 -e "SELECT 1"
-
-# マイグレーション再実行
-node dist/migrations/runner.js
+# トップページ
+curl -s https://<ドメイン>/ | grep "<title>"
+# → タイトルが表示されれば成功
 ```
 
 ---
 
-## 9. Playwright セットアップ（root権限なし）
+## 7. Playwright セットアップ
 
 ### 問題
 
 `npx playwright install-deps` はsudo権限が必要。共有ホスティングでは使えない。
 
-### 解決策: Ubuntuパッケージから共有ライブラリを手動取得
+### 解決策
 
-#### Step 1: Playwright と Chromium をインストール
+Ubuntuパッケージから共有ライブラリを手動でダウンロードする。
+
+### Step 1: Playwright と Chromium をインストール
 
 ```bash
 cd /tmp && npm install playwright
 npx playwright install chromium
 ```
 
-#### Step 2: 不足している共有ライブラリを確認
+### Step 2: 不足しているライブラリを確認
 
 ```bash
 ldd /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
@@ -320,15 +413,12 @@ libffi.so.7 => not found
 libpcre.so.3 => not found
 ```
 
-#### Step 3: Ubuntuパッケージからライブラリをダウンロード
-
-**ポイント**: focal（20.04）パッケージはxz形式で展開可能。直接URLを指定してダウンロードする。
+### Step 3: Ubuntuパッケージからライブラリをダウンロード
 
 ```bash
 mkdir -p /tmp/libs && cd /tmp/libs
 
 # === focal-updates からダウンロード ===
-# Packages.xzから正しいパスを取得
 PACKAGES=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/focal-updates/main/binary-amd64/Packages.xz" | xz -d)
 
 for pkg in libnspr4 libnss3 libasound2 libdrm2 libglib2.0-0 libgdk-pixbuf2.0-0 libgbm1; do
@@ -339,7 +429,7 @@ for pkg in libnspr4 libnss3 libasound2 libdrm2 libglib2.0-0 libgdk-pixbuf2.0-0 l
   fi
 done
 
-# === focal-main からダウンロード（focal-updatesにないもの）===
+# === focal-main からダウンロード ===
 PACKAGES_MAIN=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64/Packages.xz" | xz -d)
 
 for pkg in libatk-bridge2.0-0 libatspi2.0-0 libcairo2 libpango-1.0-0 libfontconfig1 libxkbcommon0; do
@@ -351,31 +441,24 @@ for pkg in libatk-bridge2.0-0 libatspi2.0-0 libcairo2 libpango-1.0-0 libfontconf
 done
 
 # === 追加ライブラリ（直接URL指定）===
-echo "Downloading libpcre3..."
 curl -sL -o "libpcre3.deb" "http://archive.ubuntu.com/ubuntu/pool/main/p/pcre3/libpcre3_8.39-12ubuntu0.1_amd64.deb"
-
-echo "Downloading libwayland-server0..."
 curl -sL -o "libwayland.deb" "http://archive.ubuntu.com/ubuntu/pool/main/w/wayland/libwayland-server0_1.18.0-1ubuntu0.1_amd64.deb"
-
-echo "Downloading libffi7..."
 curl -sL -o "libffi7.deb" "http://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi7_3.3-4_amd64.deb"
 
 # === ダウンロード確認 ===
-echo "--- Downloaded packages ---"
 for f in *.deb; do
   if file "$f" | grep -q "Debian binary"; then
     echo "  ✓ $f"
   else
-    echo "  ✗ $f (invalid)"
+    echo "  ✗ $f (invalid - removing)"
     rm -f "$f"
   fi
 done
 ```
 
-#### Step 4: パッケージを展開してライブラリを収集
+### Step 4: パッケージを展開してライブラリを収集
 
 ```bash
-# 展開先ディレクトリ作成
 mkdir -p /virtual/pcm/.local/lib/playwright
 
 for deb in *.deb; do
@@ -383,28 +466,22 @@ for deb in *.deb; do
   tmpdir="tmp_${deb%.deb}"
   mkdir -p "$tmpdir" && cd "$tmpdir"
   ar x "../$deb" 2>/dev/null
-
-  # focalパッケージはdata.tar.xz、bionicはdata.tar.xzまたはdata.tar.gz
   tar xf data.tar.xz 2>/dev/null || tar xf data.tar.gz 2>/dev/null
-
-  # .soファイルをコピー
   find . -name "*.so*" \( -type f -o -type l \) -exec cp -Pn {} /virtual/pcm/.local/lib/playwright/ \; 2>/dev/null
   cd ..
 done
 
-echo "--- Collected libraries ---"
-ls /virtual/pcm/.local/lib/playwright/*.so* 2>/dev/null | wc -l
+echo "Collected: $(ls /virtual/pcm/.local/lib/playwright/*.so* 2>/dev/null | wc -l) libraries"
 ```
 
-#### Step 5: シンボリックリンクを再作成
+### Step 5: シンボリックリンクを再作成
 
-`cp -Pn` はシンボリックリンクを複製すると实体ファイルとしてコピーしてしまうため、リンクを再作成する必要がある。
+`cp -Pn` はシンボリックリンクを实体ファイルとしてコピーしてしまう。リンクを再作成する。
 
 ```bash
 cd /virtual/pcm/.local/lib/playwright
 
-# 実体ファイル名はバージョンにより異なる場合がある
-# ls *.so.* で確認してからリンクを作成する
+# ls で実体ファイル名を確認してからリンクを作成
 ln -sf libatk-bridge-2.0.so.0.0.0 libatk-bridge-2.0.so.0
 ln -sf libatspi.so.0.0.1 libatspi.so.0
 ln -sf libgbm.so.1.0.0 libgbm.so.1
@@ -420,7 +497,7 @@ ln -sf libwayland-server.so.0.1.0 libwayland-server.so.0
 ln -sf libffi.so.7.1.0 libffi.so.7
 ```
 
-#### Step 6: 動作確認
+### Step 6: 動作確認
 
 ```bash
 # Chromium起動テスト
@@ -444,33 +521,108 @@ const { chromium } = require('playwright');
 ### 使い方
 
 ```bash
-# 毎回 LD_LIBRARY_PATH を指定する必要がある
+# 毎回 LD_LIBRARY_PATH を指定
 cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright node test.js
 
-# またはグローバルに設定（~/.bashrcに追加）
+# ~/.bashrc に追加して省略可能
 export LD_LIBRARY_PATH="/virtual/pcm/.local/lib/playwright:${LD_LIBRARY_PATH}"
 ```
 
-### トラブルシューティング
+---
 
-| エラー | 原因 | 対処 |
-|--------|------|------|
-| `libXXX.so: cannot open shared object file` | ライブラリ未インストール | Step 3-5を実行 |
-| `GLIBC_2.XX not found` | パッケージバージョン不一致 | focalパッケージを使用 |
-| `Target page, context or browser has been closed` | CGIモードで接続切断 | テストごとに`browser.newPage()`を作成 |
-| `End of script output before headers` | CGIスクリプトが異常終了 | `LD_LIBRARY_PATH`が設定されているか確認 |
+## 8. トラブルシューティング集
+
+### CGI が 500 Internal Server Error を返す
+
+```bash
+# Apacheエラーログ確認
+tail -20 /usr/local/apache24/logs/error.log
+
+# よくある原因と対処:
+```
+
+| エラーメッセージ | 原因 | 対処 |
+|------------------|------|------|
+| `exec: node: not found` | nodeパス間違い | フルパスを使う |
+| `Permission denied` | 実行権限なし | `chmod +x cgi-bin/*.cgi` |
+| `malformed header from script` | console.log出力 | stderrにリダイレクト |
+| `Request exceeded the limit of 10 internal redirects` | 無限ループ | `RewriteCond %{REQUEST_URI} !^/cgi-bin/` を追加 |
+| `Cannot convert undefined or null to object` | asyncミドルウェアエラー | `Promise.resolve().catch(next)` でラップ |
+
+### サイトが表示されない
+
+```bash
+# 1. CGIスクリプトが実行できるか確認
+cd /virtual/pcm/public_html/<ドメイン>
+REQUEST_METHOD=GET PATH_INFO=/health HTTP_HOST=<ドメイン> \
+  /virtual/pcm/.nvm/versions/node/v24.18.0/bin/node cgi-bin/app.cjs
+
+# 2. .htaccess の RewriteRule を確認
+# 無限ループしていないか、cgi-bin/ を除外しているか
+```
+
+### データベース接続エラー
+
+```bash
+# DB接続テスト
+mysql -u <ユーザー名> -p<パスワード> -h localhost -e "SELECT 1"
+
+# マイグレーション再実行
+node dist/migrations/runner.js
+```
+
+### npm install が失敗する
+
+```bash
+# メモリ不足の場合
+NODE_OPTIONS="--max-old-space-size=512" npm install --omit=dev
+
+# それでも失敗する場合
+rm -rf node_modules package-lock.json
+NODE_OPTIONS="--max-old-space-size=512" npm install --omit=dev
+```
+
+### Playwright が動かない
+
+```bash
+# ライブラリが足りない場合
+ldd /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
+
+# 対処: Section 7 の Step 3-5 を実行
+```
 
 ---
 
-## 10. このサーバーの制約まとめ
+## 9. このサーバーの制約一覧
 
-| 項目 | 状態 |
-|------|------|
-| sudo | 不可 |
-| Apache設定変更 | 不可（.htaccess のみ可） |
-| Node.js常駐 | 不可（CGIモードのみ） |
-| pm2/forever | 使えない |
-| NVM | ユーザー領域にインストール済み |
-| PHP | fcgid（7.4.33） |
-| データベース | MariaDB 10.6.24（localhost） |
-| ドキュメントルート | `/virtual/pcm/public_html/<ドメイン>/` |
+| # | 項目 | 状態 | 備考 |
+|---|------|------|------|
+| 1 | sudo / root | 不可 | パッケージインストール不可 |
+| 2 | Apache設定変更 | 不可 | `.htaccess` のみ変更可能 |
+| 3 | Node.js常駐 | 不可 | CGIモードのみ |
+| 4 | pm2 / forever | 不可 | プロセス管理ツール使えない |
+| 5 | NVM | あり | ユーザー領域にインストール済み |
+| 6 | node パス | `/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node` | CGIではフルパス必須 |
+| 7 | PHP | fcgid（7.4.33） | 動作確認済み |
+| 8 | DB | MariaDB 10.6.24 | localhost接続 |
+| 9 | ドキュメントルート | `/virtual/pcm/public_html/<ドメイン>/` | |
+| 10 | GLIBC | 2.28 | Chromium Headless Shell対応済み |
+| 11 | .htaccess | AllowOverride 有効 | 変更は即反映 |
+| 12 | Apacheログ | `/usr/local/apache24/logs/error.log` | トラブル時確認 |
+
+---
+
+## 付録: 過去に踏んだ罠まとめ
+
+| # | 罠 | 解決策 |
+|---|-----|--------|
+| 1 | `#!/usr/bin/env node` が使えない | シェルラッパーでフルパス指定 |
+| 2 | `console.log()` がCGIヘッダーを壊す | stderrにリダイレクト |
+| 3 | Express 4がasyncミドルウェアのエラーを無視 | `Promise.resolve().catch(next)` でラップ |
+| 4 | `server.listen()` がCGIでも実行される | CGI専用エントリーポイント作成 |
+| 5 | RewriteRule で無限ループ | `RewriteCond %{REQUEST_URI} !^/cgi-bin/` |
+| 6 | PATH_INFO が渡されない | `RewriteRule ^(.*)$ cgi-bin/app.cgi/$1` の `/$1` |
+| 7 | cp -Pn でシンボリックリンクが切れる | 手動でリンクを再作成 |
+| 8 | focalパッケージのURL取得で404 | Packages.xzから正しいパスを取得 |
+| 9 | GLIBC_2.29 not found | focalパッケージ（GLIBC 2.28対応）を使用 |
+| 10 | npm install がメモリ不足で失敗 | `NODE_OPTIONS="--max-old-space-size=512"` |
