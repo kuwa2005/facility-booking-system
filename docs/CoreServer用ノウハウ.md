@@ -286,49 +286,125 @@ node dist/migrations/runner.js
 
 `npx playwright install-deps` はsudo権限が必要。共有ホスティングでは使えない。
 
-### 解決策: Ubuntuパッケージから手動でライブラリを取得
+### 解決策: Ubuntuパッケージから共有ライブラリを手動取得
+
+#### Step 1: Playwright と Chromium をインストール
 
 ```bash
-# 1. Playwrightインストール
 cd /tmp && npm install playwright
-
-# 2. Chromiumインストール
 npx playwright install chromium
+```
 
-# 3. 共有ライブラリをUbuntuパッケージから手動ダウンロード
-mkdir -p /tmp/libs
+#### Step 2: 不足している共有ライブラリを確認
 
-# focal-updatesからダウンロード（xz形式、展開可能）
+```bash
+ldd /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
+```
+
+以下のようなエラーが出る：
+```
+libnspr4.so => not found
+libnss3.so => not found
+libasound.so.2 => not found
+libgbm.so.1 => not found
+libatk-bridge-2.0.so.0 => not found
+libatspi.so.0 => not found
+libcairo.so.2 => not found
+libdrm.so.2 => not found
+libfontconfig.so.1 => not found
+libglib-2.0.so.0 => not found
+libpango-1.0.so.0 => not found
+libxkbcommon.so.0 => not found
+libwayland-server.so.0 => not found
+libffi.so.7 => not found
+libpcre.so.3 => not found
+```
+
+#### Step 3: Ubuntuパッケージからライブラリをダウンロード
+
+**ポイント**: focal（20.04）パッケージはxz形式で展開可能。直接URLを指定してダウンロードする。
+
+```bash
+mkdir -p /tmp/libs && cd /tmp/libs
+
+# === focal-updates からダウンロード ===
+# Packages.xzから正しいパスを取得
 PACKAGES=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/focal-updates/main/binary-amd64/Packages.xz" | xz -d)
 
 for pkg in libnspr4 libnss3 libasound2 libdrm2 libglib2.0-0 libgdk-pixbuf2.0-0 libgbm1; do
   path=$(echo "$PACKAGES" | grep -A15 "^Package: ${pkg}$" | grep "Filename:" | tail -1 | awk '{print $2}')
-  curl -sL -o "${pkg}.deb" "http://archive.ubuntu.com/ubuntu/$path"
+  if [ -n "$path" ]; then
+    echo "Downloading $pkg..."
+    curl -sL -o "${pkg}.deb" "http://archive.ubuntu.com/ubuntu/$path"
+  fi
 done
 
-# bionicからダウンロード（GLIBC 2.27対応）
+# === focal-main からダウンロード（focal-updatesにないもの）===
+PACKAGES_MAIN=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64/Packages.xz" | xz -d)
+
 for pkg in libatk-bridge2.0-0 libatspi2.0-0 libcairo2 libpango-1.0-0 libfontconfig1 libxkbcommon0; do
-  path=$(curl -sL "http://archive.ubuntu.com/ubuntu/dists/bionic/main/binary-amd64/Packages.xz" | xz -d | grep -A15 "^Package: ${pkg}$" | grep "Filename:" | tail -1 | awk '{print $2}')
-  curl -sL -o "${pkg}.deb" "http://archive.ubuntu.com/ubuntu/$path"
+  path=$(echo "$PACKAGES_MAIN" | grep -A15 "^Package: ${pkg}$" | grep "Filename:" | tail -1 | awk '{print $2}')
+  if [ -n "$path" ]; then
+    echo "Downloading $pkg..."
+    curl -sL -o "${pkg}.deb" "http://archive.ubuntu.com/ubuntu/$path"
+  fi
 done
 
-# 追加ライブラリ
-curl -sL -o libpcre3.deb "http://archive.ubuntu.com/ubuntu/pool/main/p/pcre3/libpcre3_8.39-12ubuntu0.1_amd64.deb"
-curl -sL -o libwayland.deb "http://archive.ubuntu.com/ubuntu/pool/main/w/wayland/libwayland-server0_1.18.0-1ubuntu0.1_amd64.deb"
-curl -sL -o libffi7.deb "http://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi7_3.3-4_amd64.deb"
+# === 追加ライブラリ（直接URL指定）===
+echo "Downloading libpcre3..."
+curl -sL -o "libpcre3.deb" "http://archive.ubuntu.com/ubuntu/pool/main/p/pcre3/libpcre3_8.39-12ubuntu0.1_amd64.deb"
 
-# 4. 全debを展開してライブラリを収集
+echo "Downloading libwayland-server0..."
+curl -sL -o "libwayland.deb" "http://archive.ubuntu.com/ubuntu/pool/main/w/wayland/libwayland-server0_1.18.0-1ubuntu0.1_amd64.deb"
+
+echo "Downloading libffi7..."
+curl -sL -o "libffi7.deb" "http://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi7_3.3-4_amd64.deb"
+
+# === ダウンロード確認 ===
+echo "--- Downloaded packages ---"
+for f in *.deb; do
+  if file "$f" | grep -q "Debian binary"; then
+    echo "  ✓ $f"
+  else
+    echo "  ✗ $f (invalid)"
+    rm -f "$f"
+  fi
+done
+```
+
+#### Step 4: パッケージを展開してライブラリを収集
+
+```bash
+# 展開先ディレクトリ作成
 mkdir -p /virtual/pcm/.local/lib/playwright
+
 for deb in *.deb; do
-  mkdir -p "tmp_$deb" && cd "tmp_$deb"
-  ar x "../$deb"
+  echo "Extracting $deb..."
+  tmpdir="tmp_${deb%.deb}"
+  mkdir -p "$tmpdir" && cd "$tmpdir"
+  ar x "../$deb" 2>/dev/null
+
+  # focalパッケージはdata.tar.xz、bionicはdata.tar.xzまたはdata.tar.gz
   tar xf data.tar.xz 2>/dev/null || tar xf data.tar.gz 2>/dev/null
-  find . -name "*.so*" \( -type f -o -type l \) -exec cp -Pn {} /virtual/pcm/.local/lib/playwright/ \;
+
+  # .soファイルをコピー
+  find . -name "*.so*" \( -type f -o -type l \) -exec cp -Pn {} /virtual/pcm/.local/lib/playwright/ \; 2>/dev/null
   cd ..
 done
 
-# 5. シンボリックリンクを再作成（cp -Pn でリンクが切れる場合がある）
+echo "--- Collected libraries ---"
+ls /virtual/pcm/.local/lib/playwright/*.so* 2>/dev/null | wc -l
+```
+
+#### Step 5: シンボリックリンクを再作成
+
+`cp -Pn` はシンボリックリンクを複製すると实体ファイルとしてコピーしてしまうため、リンクを再作成する必要がある。
+
+```bash
 cd /virtual/pcm/.local/lib/playwright
+
+# 実体ファイル名はバージョンにより異なる場合がある
+# ls *.so.* で確認してからリンクを作成する
 ln -sf libatk-bridge-2.0.so.0.0.0 libatk-bridge-2.0.so.0
 ln -sf libatspi.so.0.0.1 libatspi.so.0
 ln -sf libgbm.so.1.0.0 libgbm.so.1
@@ -344,21 +420,45 @@ ln -sf libwayland-server.so.0.1.0 libwayland-server.so.0
 ln -sf libffi.so.7.1.0 libffi.so.7
 ```
 
+#### Step 6: 動作確認
+
+```bash
+# Chromium起動テスト
+LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright \
+  /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell --version
+# → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
+
+# Playwrightテスト
+cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright node -e "
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto('https://example.com');
+  console.log('Title:', await page.title());
+  await browser.close();
+})();
+"
+```
+
 ### 使い方
 
 ```bash
-# テスト実行
+# 毎回 LD_LIBRARY_PATH を指定する必要がある
 cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright node test.js
 
-# ラッパー使用
-playwright-run test.js
+# またはグローバルに設定（~/.bashrcに追加）
+export LD_LIBRARY_PATH="/virtual/pcm/.local/lib/playwright:${LD_LIBRARY_PATH}"
 ```
 
-### 注意点
+### トラブルシューティング
 
-- `cp -Pn` でシンボリックリンクが切れることがある → 再作成が必要
-- bionicパッケージ（GLIBC 2.27）とfocalパッケージを混在させない
-- Chromium Headless ShellはGLIBC 2.28まで対応
+| エラー | 原因 | 対処 |
+|--------|------|------|
+| `libXXX.so: cannot open shared object file` | ライブラリ未インストール | Step 3-5を実行 |
+| `GLIBC_2.XX not found` | パッケージバージョン不一致 | focalパッケージを使用 |
+| `Target page, context or browser has been closed` | CGIモードで接続切断 | テストごとに`browser.newPage()`を作成 |
+| `End of script output before headers` | CGIスクリプトが異常終了 | `LD_LIBRARY_PATH`が設定されているか確認 |
 
 ---
 
