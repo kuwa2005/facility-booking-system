@@ -391,7 +391,7 @@ npx playwright install chromium
 ### Step 2: 不足しているライブラリを確認
 
 ```bash
-ldd /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
+ldd ~/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
 ```
 
 以下のようなエラーが出る：
@@ -459,7 +459,7 @@ done
 ### Step 4: パッケージを展開してライブラリを収集
 
 ```bash
-mkdir -p /virtual/pcm/.local/lib/playwright
+mkdir -p ~/.local/lib/playwright
 
 for deb in *.deb; do
   echo "Extracting $deb..."
@@ -467,11 +467,11 @@ for deb in *.deb; do
   mkdir -p "$tmpdir" && cd "$tmpdir"
   ar x "../$deb" 2>/dev/null
   tar xf data.tar.xz 2>/dev/null || tar xf data.tar.gz 2>/dev/null
-  find . -name "*.so*" \( -type f -o -type l \) -exec cp -Pn {} /virtual/pcm/.local/lib/playwright/ \; 2>/dev/null
+  find . -name "*.so*" \( -type f -o -type l \) -exec cp -Pn {} ~/.local/lib/playwright/ \; 2>/dev/null
   cd ..
 done
 
-echo "Collected: $(ls /virtual/pcm/.local/lib/playwright/*.so* 2>/dev/null | wc -l) libraries"
+echo "Collected: $(ls ~/.local/lib/playwright/*.so* 2>/dev/null | wc -l) libraries"
 ```
 
 ### Step 5: シンボリックリンクを再作成
@@ -479,7 +479,7 @@ echo "Collected: $(ls /virtual/pcm/.local/lib/playwright/*.so* 2>/dev/null | wc 
 `cp -Pn` はシンボリックリンクを実体ファイルとしてコピーしてしまう。リンクを再作成する。
 
 ```bash
-cd /virtual/pcm/.local/lib/playwright
+cd ~/.local/lib/playwright
 
 # ls で実体ファイル名を確認してからリンクを作成
 ln -sf libatk-bridge-2.0.so.0.0.0 libatk-bridge-2.0.so.0
@@ -503,12 +503,12 @@ ln -sf libffi.so.7.1.0 libffi.so.7
 NODE=/virtual/pcm/.nvm/versions/node/v24.18.0/bin/node
 
 # Chromium起動テスト
-LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright \
-  /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell --version
+LD_LIBRARY_PATH=~/.local/lib/playwright \
+  ~/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell --version
 # → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
 
 # Playwrightテスト（Yahoo! JAPAN ニュースのトピックス一覧を表示 + スクショ）
-LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright NODE_PATH=/tmp/node_modules $NODE -e "
+LD_LIBRARY_PATH=~/.local/lib/playwright NODE_PATH=~/.local/lib/node_modules $NODE -e "
 const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -528,7 +528,7 @@ const { chromium } = require('playwright');
 })();
 "
 # → トピックス一覧とスクショが表示/保存されれば成功
-LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright NODE_PATH=/tmp/node_modules $NODE -e "
+LD_LIBRARY_PATH=~/.local/lib/playwright NODE_PATH=~/.local/lib/node_modules $NODE -e "
 (async () => {
   console.log('Title:', await page.title());
 ```
@@ -591,7 +591,7 @@ NODE_OPTIONS="--max-old-space-size=512" npm install --omit=dev
 
 ```bash
 # ライブラリが足りない場合
-ldd /virtual/pcm/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
+ldd ~/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell 2>&1 | grep "not found"
 
 # 対処: Section 7 の Step 3-5 を実行
 ```
