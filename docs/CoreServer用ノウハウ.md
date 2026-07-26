@@ -508,7 +508,7 @@ LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright \
 # → "Google Chrome for Testing 151.0.7922.34" と表示されれば成功
 
 # Playwrightテスト（Yahoo! JAPAN ニュースのトピックス一覧を表示 + スクショ）
-cd /tmp && LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
+LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
 const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -517,9 +517,9 @@ const { chromium } = require('playwright');
   await page.goto('https://news.yahoo.co.jp/topics', { waitUntil: 'load', timeout: 30000 });
   await page.waitForTimeout(5000);
   console.log('Title:', await page.title());
-  await page.screenshot({ path: '/tmp/yahoo-topics.png', fullPage: false });
-  console.log('Screenshot saved: /tmp/yahoo-topics.png');
-  const topics = await page.\$\$eval('[class*=\"topic\"], [class*=\"Topic\"], [data-cl-params*=\"topic\"]', els =>
+  await page.screenshot({ path: './yahoo-topics.png', fullPage: false });
+  console.log('Screenshot saved: ./yahoo-topics.png');
+  const topics = await page.\$\$eval('[class*="topic"], [class*="Topic"], [data-cl-params*="topic"]', els =>
     els.slice(0, 10).map(e => e.textContent.trim().substring(0, 60))
   );
   console.log('Topics:');
@@ -528,6 +528,9 @@ const { chromium } = require('playwright');
 })();
 "
 # → トピックス一覧とスクショが表示/保存されれば成功
+LD_LIBRARY_PATH=/virtual/pcm/.local/lib/playwright $NODE -e "
+(async () => {
+  console.log('Title:', await page.title());
 ```
 
 ---
