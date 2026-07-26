@@ -101,7 +101,7 @@ async function main() {
     path: parsedUrl.pathname,
     query: Object.fromEntries(parsedUrl.searchParams),
     headers,
-    body: (method === 'POST' || method === 'PUT' || method === 'PATCH') ? body.toString('utf-8') : undefined,
+    _rawBody: body,
     ip: env.REMOTE_ADDR || '127.0.0.1',
     protocol,
     secure: protocol === 'https',

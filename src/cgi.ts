@@ -26,9 +26,26 @@ const app: Application = express();
 // Trust proxy
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
-// Body parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// CGI body parser - parse body from pre-read buffer (skip express.json/urlencoded for CGI)
+app.use((req: any, res: any, next: any) => {
+  // In CGI mode, body is already read and stored in req._rawBody
+  if (req._rawBody && !req.body) {
+    const contentType = req.headers['content-type'] || '';
+    try {
+      if (contentType.includes('application/json')) {
+        req.body = JSON.parse(req._rawBody.toString('utf-8'));
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const params = new URLSearchParams(req._rawBody.toString('utf-8'));
+        req.body = Object.fromEntries(params);
+      } else {
+        req.body = req._rawBody.toString('utf-8');
+      }
+    } catch (e) {
+      req.body = {};
+    }
+  }
+  next();
+});
 
 // Cookie parser
 app.use(cookieParser());
